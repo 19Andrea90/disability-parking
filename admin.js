@@ -20,6 +20,13 @@
     bases.osm.addTo(map); curBase = 'osm';
     layer = L.layerGroup().addTo(map); candLayer = L.layerGroup().addTo(map);
     document.querySelectorAll('input[name=base]').forEach((r) => r.onchange = () => setBase(r.value));
+    map.on('moveend zoomend', zoomInfo); zoomInfo();
+  }
+  function zoomInfo() {
+    const b = map.getBounds(); const wKm = map.distance(b.getSouthWest(), b.getSouthEast()) / 1000, hKm = map.distance(b.getSouthWest(), b.getNorthWest()) / 1000;
+    const cells = Math.ceil(wKm * 1000 / 120) * Math.ceil(hKm * 1000 / 120); const z = map.getZoom();
+    const hint = cells > 900 ? ' · troppo grande per lo scanner: avvicina' : cells < 36 ? ' · lo scanner userà 720 m attorno al centro' : ' · ok per lo scanner';
+    $('#zinfo').textContent = `zoom ${z} · area visibile ${wKm.toFixed(1)} × ${hKm.toFixed(1)} km · ${cells} riquadri${hint}`;
   }
   // livelli di base: strade, satellite Esri, TrueOrtofoto FVG 2020 (WMS regionale, 10-20 cm/px)
   const CRS900913 = L.extend({}, L.CRS.EPSG3857, { code: 'EPSG:900913' });
