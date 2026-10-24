@@ -86,47 +86,56 @@ def patch(img, cx, cy):
     return img[y0:y0 + P, x0:x0 + P]
 
 
+CELL = 32 // UP * RES    # 1.6 m: passo della mappa di caratteristiche sul terreno
+WIN = 4                  # finestra 4x4 celle = 6.4 m
+
+
 class Backbone:
     def __init__(self):
         m = torchvision.models.mobilenet_v3_large(weights='IMAGENET1K_V2').eval(); self.f = m.features
     @torch.no_grad()
-    def __call__(self, patches, bs=256):
-        out = []
-        for i in range(0, len(patches), bs):
-            x = torch.from_numpy(np.ascontiguousarray(patches[i:i + bs])).permute(0, 3, 1, 2)
-            x = torch.nn.functional.interpolate(x, scale_factor=UP, mode='bilinear', align_corners=False)
-            y = self.f((x - MEAN) / STD)
-            out.append(torch.cat([y.mean((2, 3)), y.amax((2, 3))], 1).numpy())
-        return np.concatenate(out) if out else np.zeros((0, 1920), np.float32)
+    def windows(self, img):
+        """Una sola passata sull'intero ritaglio. Ritorna (F[Ny,Nx,1920] float16, cx[Nx], cy[Ny]) con i centri delle finestre in px del ritaglio."""
+        x = torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1)[None]
+        x = torch.nn.functional.interpolate(x, scale_factor=UP, mode='bilinear', align_corners=False)
+        y = self.f((x - MEAN) / STD)
+        mean = torch.nn.functional.avg_pool2d(y, WIN, 1); mx = torch.nn.functional.max_pool2d(y, WIN, 1)
+        F = torch.cat([mean, mx], 1)[0].permute(1, 2, 0).numpy().astype(np.float16)
+        step = 32 / UP; c0 = WIN * step / 2
+        return F, c0 + step * np.arange(F.shape[1]), c0 + step * np.arange(F.shape[0])
 
 
-def dihedral(p, k): p = np.rot90(p, k % 4); return p[:, ::-1] if k >= 4 else p
+def rot_pts(pts, k, S):
+    """Coordinate dei punti dopo np.rot90(img, k) su un'immagine SxS (rotazione antioraria)."""
+    p = pts.copy()
+    for _ in range(k % 4): p = np.stack([p[:, 1], S - p[:, 0]], 1) if len(p) else p
+    return p
 
 
-def training_set(items, bb, rng):
-    X, y = [], []
-    for it in items:
-        img, pts = it['img'], it['pts']; h, w, _ = img.shape; ps = []
-        if it['kind'] == 'label':
-            for (px_, py_) in pts:
-                for _ in range(4):
-                    j = rng.uniform(-JIT, JIT, 2) / RES; base = patch(img, px_ + j[0], py_ + j[1])
-                    ps += [(dihedral(base, k), 1) for k in rng.choice(8, 4, replace=False)]
-        n = 0; tries = 0; want = 30 if it['kind'] == 'label' else (30 if not it['id'].startswith('neg-') else 10)
-        while n < want and tries < 600:
-            tries += 1; cx, cy = rng.uniform(P / 2, w - P / 2), rng.uniform(P / 2, h - P / 2)
-            if len(pts) and np.min(np.hypot(pts[:, 0] - cx, pts[:, 1] - cy)) * RES < NEG_MIN: continue
-            ps.append((dihedral(patch(img, cx, cy), int(rng.integers(8))), 0)); n += 1
-        if ps:
-            X.append(bb(np.stack([p for p, _ in ps]))); y += [l for _, l in ps]
-    return np.concatenate(X), np.array(y)
+def featurize(items, bb, rng):
+    """Per ogni ritaglio: mappa a rotazione 0 (per la valutazione) + campioni di addestramento da 4 rotazioni."""
+    t0 = time.time()
+    for n, it in enumerate(items):
+        img = it['img']; S = img.shape[0]; it['train'] = []
+        for k in range(4):
+            F, cx, cy = bb.windows(np.rot90(img, k))
+            if k == 0: it['map'] = (F, cx, cy)
+            pts = rot_pts(it['pts'], k, S)
+            gx, gy = np.meshgrid(cx, cy)
+            border = (gx >= 2 * P / 3) & (gx <= S - 2 * P / 3) & (gy >= 2 * P / 3) & (gy <= S - 2 * P / 3)
+            if len(pts):
+                d = np.min(np.hypot(gx[..., None] - pts[:, 0], gy[..., None] - pts[:, 1]), -1) * RES
+            else:
+                d = np.full(gx.shape, 1e9)
+            pos = np.argwhere((d <= 1.0)); neg = np.argwhere((d >= NEG_MIN) & border)
+            want = 25 if it['kind'] == 'label' else (25 if not it['id'].startswith('neg-') else 6)
+            if len(neg) > want: neg = neg[rng.choice(len(neg), want, replace=False)]
+            it['train'] += [(F[i, j], 1) for i, j in pos] + [(F[i, j], 0) for i, j in neg]
+        if (n + 1) % 50 == 0: print(f'    caratteristiche {n + 1}/{len(items)} · {time.time() - t0:.0f} s', flush=True)
 
 
-def dense(bb, head, sc, img):
-    h, w, _ = img.shape; ys = list(range(0, h - P + 1, STRIDE)); xs = list(range(0, w - P + 1, STRIDE))
-    F = bb(np.stack([img[y:y + P, x:x + P] for y in ys for x in xs]))
-    s = head.predict_proba(sc.transform(F))[:, 1].reshape(len(ys), len(xs))
-    return s, np.array(xs) + P / 2, np.array(ys) + P / 2
+def stack(items):
+    X = np.stack([f for it in items for f, _ in it['train']]).astype(np.float32); y = np.array([l for it in items for _, l in it['train']]); return X, y
 
 
 def nms(s, cx, cy, thr):
@@ -143,17 +152,20 @@ def main():
     L = [i for i in items if i['kind'] == 'label']
     print(f"Ritagli: {len(L)} con stalli ({sum(len(i['pts']) for i in L)} posti) · {sum(i['kind'] == 'empty' and not i['id'].startswith('neg-') for i in items)} senza stalli visibili · {sum(i['id'].startswith('neg-') for i in items)} candidati scartati", flush=True)
     bb = Backbone(); rng = np.random.default_rng(0)
+    print('Calcolo le caratteristiche (una passata per ritaglio e rotazione)…', flush=True)
+    featurize(items, bb, rng)
     zones = sorted({zone(i) for i in items}); rng.shuffle(zones); folds = [set(zones[k::a.folds]) for k in range(a.folds)]
     thrs = [0.5, 0.7, 0.8, 0.9, 0.95]; agg = {t: dict(tp=0, fp=0, fn=0, fp_empty=0, n_empty=0) for t in thrs}
     for k, zs in enumerate(folds):
         tr = [i for i in items if zone(i) not in zs]; te = [i for i in items if zone(i) in zs and not i['id'].startswith('neg-')]
         if not any(i['kind'] == 'label' for i in te): continue
-        X, y = training_set(tr, bb, np.random.default_rng(k)); sc = StandardScaler().fit(X)
+        X, y = stack(tr); sc = StandardScaler().fit(X)
         head = LogisticRegression(C=0.05, class_weight='balanced', max_iter=4000).fit(sc.transform(X), y)
         for it in te:
-            s, cx, cy = dense(bb, head, sc, it['img']); h, w, _ = it['img'].shape
+            F, cx, cy = it['map']; S = it['img'].shape[0]
+            s_ = head.predict_proba(sc.transform(F.reshape(-1, F.shape[-1]).astype(np.float32)))[:, 1].reshape(F.shape[:2])
             for t in thrs:
-                det = [d for d in nms(s, cx, cy, t) if 2 * P / 3 <= d[1] <= w - 2 * P / 3 and 2 * P / 3 <= d[2] <= h - 2 * P / 3]
+                det = [d for d in nms(s_, cx, cy, t) if 2 * P / 3 <= d[1] <= S - 2 * P / 3 and 2 * P / 3 <= d[2] <= S - 2 * P / 3]
                 A = agg[t]
                 if it['kind'] == 'label':
                     used = set()
@@ -161,17 +173,19 @@ def main():
                         dd = np.hypot(it['pts'][:, 0] - x, it['pts'][:, 1] - yy) * RES; j = int(np.argmin(dd))
                         if dd[j] <= MATCH and j not in used: used.add(j); A['tp'] += 1
                         else: A['fp'] += 1
-                    A['fn'] += len(it['pts']) - len(used)
+                    # i posti vicino al bordo non sono valutabili (la finestra non ci arriva)
+                    inner = [(px_, py_) for px_, py_ in it['pts'] if 2 * P / 3 <= px_ <= S - 2 * P / 3 and 2 * P / 3 <= py_ <= S - 2 * P / 3]
+                    A['fn'] += max(0, len(inner) - len(used))
                 else:
                     A['fp_empty'] += len(det); A['n_empty'] += 1
-        print(f'  zona {k + 1}/{a.folds} fatta ({time.time() - t0:.0f} s)', flush=True)
+        print(f'  zona {k + 1}/{a.folds}: addestrato su {len(y)} esempi ({int(y.sum())} positivi) · {time.time() - t0:.0f} s', flush=True)
     print('\nValidazione su zone mai viste in addestramento (ritagli 40×40 m attorno a stalli noti):')
     best = None
     for t in thrs:
         A = agg[t]; p = A['tp'] / max(1, A['tp'] + A['fp']); r = A['tp'] / max(1, A['tp'] + A['fn'])
         print(f"  soglia {t:.2f}: trovati {A['tp']}/{A['tp'] + A['fn']} posti (recall {r:.0%}) · precisione {p:.0%} · falsi per ritaglio senza stalli {A['fp_empty'] / max(1, A['n_empty']):.2f}")
         if r >= 0.6 and (best is None or p > best[1]): best = (t, p, r)
-    X, y = training_set(items, bb, np.random.default_rng(99)); sc = StandardScaler().fit(X)
+    X, y = stack(items); sc = StandardScaler().fit(X)
     head = LogisticRegression(C=0.05, class_weight='balanced', max_iter=4000).fit(sc.transform(X), y)
     np.savez(os.path.join(a.out, 'head.npz'), coef=head.coef_[0], intercept=head.intercept_, mean=sc.mean_, scale=sc.scale_)
     json.dump(dict(backbone='mobilenet_v3_large IMAGENET1K_V2 features, mean+max', res=RES, patch=P, up=UP, threshold=best[0] if best else 0.9, nms_m=NMS,
