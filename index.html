@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#ffcc00">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Disability Parking</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="map" role="application" aria-label="Mappa degli stalli riservati"></div>
+
+<!-- barra superiore -->
+<header id="top">
+  <form id="searchform" role="search" autocomplete="off">
+    <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Dove vai? Indirizzo o luogo" aria-label="Cerca destinazione" enterkeyhint="search">
+    <button type="button" id="qclear" class="xbtn" aria-label="Cancella ricerca" hidden>×</button>
+  </form>
+  <button class="ib" id="loc" aria-label="La mia posizione"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></button>
+</header>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- mirino per nuova segnalazione -->
+<div id="crosshair" hidden aria-hidden="true"><div class="pin-ghost"></div></div>
+<div id="addbar" hidden>
+  <div>Centra la mappa sullo stallo</div>
+  <div class="row"><button class="btn" id="addcancel">Annulla</button><button class="btn primary" id="addok">Lo stallo è qui</button></div>
+</div>
+
+<!-- pulsanti mappa -->
+<div id="side">
+  <button class="ib" id="layers" aria-label="Cambia mappa"><svg class="ico" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></button>
+  <button class="ib big" id="add" aria-label="Segnala uno stallo mancante"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+
+<!-- pannello inferiore -->
+<section id="sheet" class="min" aria-label="Elenco stalli">
+  <div class="grip" id="grip"></div>
+  <div class="head" id="head">
+    <div class="ttl">
+      <h1 id="title">Stalli in zona</h1>
+      <div class="sub" id="sub">Sposta la mappa o cerca una destinazione</div>
+    </div>
+    <button class="tab-btn" id="tabfav" aria-pressed="false" aria-label="Preferiti">★</button>
+  </div>
+  <div class="legend">
+    <span><i class="dot generico"></i>Generico</span>
+    <span><i class="dot personalizzato"></i>Personalizzato</span>
+    <span><i class="dot proposto"></i>Da verificare</span>
+  </div>
+  <div class="body" id="list"></div>
+  <footer class="foot">
+    <span id="stats"></span>
+    <a href="admin.html" class="muted">Admin</a>
+  </footer>
+</section>
+
+<!-- scheda stallo -->
+<section id="card" class="card" hidden aria-label="Dettaglio stallo">
+  <div class="grip" id="cardgrip"></div>
+  <div class="card-head">
+    <div>
+      <div class="badges" id="c-badges"></div>
+      <h2 id="c-title">Stallo</h2>
+      <div class="sub" id="c-sub"></div>
+    </div>
+    <button class="xbtn" id="cardclose" aria-label="Chiudi">×</button>
+  </div>
+  <div class="card-body">
+    <div id="c-warn" class="warn" hidden></div>
+    <img id="c-photo" alt="Foto dello stallo" hidden>
+    <dl id="c-info"></dl>
+    <div class="actions">
+      <a id="c-nav" class="btn primary wide" target="_blank" rel="noopener">Naviga</a>
+      <button class="btn" id="c-fav">☆ Salva</button>
+    </div>
+    <div class="confirm">
+      <div class="lbl">Sei sul posto?</div>
+      <div class="row">
+        <button class="btn ok" data-esito="esiste">✓ Esiste</button>
+        <button class="btn" data-esito="libero">Libero</button>
+        <button class="btn" data-esito="occupato">Occupato</button>
+        <button class="btn danger" data-esito="non_esiste">✗ Non esiste</button>
+      </div>
+      <div class="sub" id="c-last"></div>
+    </div>
+  </div>
+</section>
+
+<!-- form nuova segnalazione -->
+<section id="form" class="card" hidden aria-label="Nuova segnalazione">
+  <div class="card-head">
+    <div><h2>Nuovo stallo</h2><div class="sub" id="f-pos"></div></div>
+    <button class="xbtn" id="formclose" aria-label="Chiudi">×</button>
+  </div>
+  <form class="card-body" id="newform">
+    <div class="field">
+      <div class="lbl">Tipo</div>
+      <div class="seg" role="radiogroup">
+        <label><input type="radio" name="tipo" value="generico" checked><span>Generico</span></label>
+        <label><input type="radio" name="tipo" value="personalizzato"><span>Personalizzato</span></label>
+        <label><input type="radio" name="tipo" value="sconosciuto"><span>Non so</span></label>
+      </div>
+    </div>
+    <div class="field two">
+      <label>Posti <input type="number" id="f-posti" min="1" max="50" value="1" inputmode="numeric"></label>
+      <label>Segnale verticale
+        <select id="f-segnale"><option value="">Non so</option><option value="true">Sì</option><option value="false">No</option></select>
+      </label>
+    </div>
+    <label class="field">Orari (se personalizzato o con limiti)<input type="text" id="f-orari" placeholder="es. libero per tutti 20:00–08:00"></label>
+    <label class="field">Note utili<textarea id="f-note" rows="2" placeholder="es. davanti alla farmacia, rampa sul marciapiede, in salita"></textarea></label>
+    <label class="field file">
+      <input type="file" id="f-foto" accept="image/*" capture="environment">
+      <span id="f-fotolbl">📷 Scatta o scegli una foto</span>
+    </label>
+    <button class="btn primary wide" type="submit" id="f-send">Invia segnalazione</button>
+    <div class="sub">La segnalazione sarà visibile come "da verificare" fino all'approvazione.</div>
+  </form>
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

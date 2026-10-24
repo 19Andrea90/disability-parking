@@ -1,0 +1,17 @@
+{
+  "name": "Disability Parking",
+  "short_name": "Disability Parking",
+  "description": "Trova e segnala gli stalli di sosta riservati alle persone con disabilità.",
+  "lang": "it",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffcc00",
+  "theme_color": "#ffcc00",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
