@@ -508,6 +508,26 @@
     return { comps, strips, cands };
   }
 
+
+  // l'intorno del candidato deve essere asfalto (grigio neutro, luminosità media): esclude alberi, prati, cortili in terra, tetti
+  function asphaltAround(ctx, px, c, res) {
+    const d = ctx.getImageData(0, 0, px, px).data;
+    const x0 = Math.max(0, Math.round(c.cx - c.w / 2 - 2.5 / res)), x1 = Math.min(px - 1, Math.round(c.cx + c.w / 2 + 2.5 / res));
+    const y0 = Math.max(0, Math.round(c.cy - c.h / 2 - 2.5 / res)), y1 = Math.min(px - 1, Math.round(c.cy + c.h / 2 + 2.5 / res));
+    const ix0 = c.cx - c.w / 2, ix1 = c.cx + c.w / 2, iy0 = c.cy - c.h / 2, iy1 = c.cy + c.h / 2;
+    let n = 0, grey = 0, green = 0, dark = 0, bright = 0;
+    for (let y = y0; y <= y1; y += 2) for (let x = x0; x <= x1; x += 2) {
+      if (x >= ix0 && x <= ix1 && y >= iy0 && y <= iy1) continue;
+      const i = (y * px + x) * 4; const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      n++;
+      if (g > r * 1.06 && g > b * 1.06) green++;
+      else if (mx < 0.22) dark++;
+      else if (mx > 0.88) bright++;
+      else if ((mx - mn) / Math.max(mx, 0.01) < 0.22 && mx >= 0.22 && mx <= 0.88) grey++;
+    }
+    if (!n) return { ok: false, grey: 0, green: 0 };
+    return { ok: grey / n >= 0.5 && green / n <= 0.25, grey: grey / n, green: green / n };
+  }
   // --- contesto OSM: analizzo solo strade e parcheggi, escludo gli edifici ---
   let ctxData = null; // { key, buildings:[[ [lon,lat],... ]], roads:[{pts,w}], parkings:[[...]] }
   async function loadContext(s0, w0, n0, e0, logFn) {
@@ -558,6 +578,8 @@
     const ym = yellowMask(pctx, px, sens, calib.res);
     if (calib.ctx) { const cm = contextMask(calib.ctx, calib.s, calib.w, calib.n, calib.e, px, calib.res); applyContext(ym.mask, cm.mask); ym.count = ym.mask.reduce((a, b) => a + b, 0); calib.cm = cm.mask; }
     const det = detect(ym.mask, px, calib.res);
+    const rejected = []; det.cands = det.cands.filter((c) => { const a = asphaltAround(pctx, px, c, calib.res); if (!a.ok) rejected.push(`${c.kind} (asfalto ${Math.round(a.grey * 100)}%, verde ${Math.round(a.green * 100)}%)`); return a.ok; });
+    if (rejected.length) slog('  scartati per intorno non asfaltato: ' + rejected.join('; '));
     const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) { if (calib.cm && !calib.cm[i]) { im.data[i * 4] = im.data[i * 4] * .45; im.data[i * 4 + 1] = im.data[i * 4 + 1] * .45; im.data[i * 4 + 2] = im.data[i * 4 + 2] * .45 + 60; } if (ym.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } } pctx.putImageData(im, 0, 0);
     pctx.lineWidth = 2; pctx.strokeStyle = '#ffd400'; det.strips.forEach((c) => pctx.strokeRect(c.cx - c.bw / 2, c.cy - c.bh / 2, c.bw, c.bh));
     pctx.lineWidth = 4; pctx.strokeStyle = '#ff2d2d'; det.cands.forEach((c) => pctx.strokeRect(c.cx - c.w / 2, c.cy - c.h / 2, c.w, c.h));
