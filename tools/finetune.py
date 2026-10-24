@@ -58,7 +58,7 @@ def sampler(items, rng):
 
 def to_batch(ps, rng):
     b = np.stack([dihedral(p, int(rng.integers(8))) for p in ps]).astype(np.float32)
-    m = b.mean(axis=(1, 2, 3), keepdims=True); b = np.clip((b - m) * rng.uniform(.85, 1.15, (len(b), 1, 1, 1)) + m + rng.uniform(-.06, .06, (len(b), 1, 1, 1)), 0, 1)
+    m = b.mean(axis=(1, 2, 3), keepdims=True); b = np.clip((b - m) * rng.uniform(.85, 1.15, (len(b), 1, 1, 1)) + m + rng.uniform(-.06, .06, (len(b), 1, 1, 1)), 0, 1).astype(np.float32)
     x = torch.from_numpy(b).permute(0, 3, 1, 2)
     return torch.nn.functional.interpolate(x, scale_factor=T.UP, mode='bilinear', align_corners=False)
 
