@@ -115,14 +115,16 @@
     csT = setTimeout(async () => {
       if (csCtl) csCtl.abort(); csCtl = new AbortController();
       try {
-        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(v)}&lang=it&limit=8&osm_tag=place:city&osm_tag=place:town&osm_tag=place:village&osm_tag=boundary:administrative`, { signal: csCtl.signal });
+        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(v)}&lang=it&limit=15`, { signal: csCtl.signal });
         const j = await r.json();
-        const seen = new Set();
-        csItems = j.features.filter((f) => f.properties.countrycode === 'IT' && f.properties.name).filter((f) => { const k = f.properties.name + '|' + (f.properties.county || f.properties.state); if (seen.has(k)) return false; seen.add(k); return true; })
+        const seen = new Set(); const okPlace = ['city', 'town', 'village', 'municipality', 'hamlet', 'borough'];
+        csItems = j.features.filter((f) => { const p = f.properties; return p.countrycode === 'IT' && p.name && ((p.osm_key === 'place' && okPlace.includes(p.osm_value)) || (p.osm_key === 'boundary' && p.osm_value === 'administrative')); })
+          .filter((f) => { const k = f.properties.name + '|' + (f.properties.county || f.properties.state); if (seen.has(k)) return false; seen.add(k); return true; })
+          .slice(0, 8)
           .map((f) => ({ name: f.properties.name, where: [f.properties.county, f.properties.state].filter(Boolean).join(', '), extent: f.properties.extent, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }));
         cs.innerHTML = csItems.map((c, i) => `<li data-i="${i}"><span class="m">${esc(c.name)}</span><span class="s">${esc(c.where)}</span></li>`).join('');
         cs.hidden = !csItems.length;
-      } catch (e) { /* ignora */ }
+      } catch (e) { if (e.name !== 'AbortError') ilog('Suggerimenti non disponibili: ' + e.message); }
     }, 250);
   });
   cs.addEventListener('mousedown', (e) => { const li = e.target.closest('li'); if (!li) return; e.preventDefault(); chosen = csItems[+li.dataset.i]; $('#i-area').value = chosen.name; cs.hidden = true; });
@@ -215,5 +217,6 @@
     $('#i-go').disabled = false;
   };
 
+  $('#ver').textContent = 'v' + C.VERSION;
   boot();
 })();
