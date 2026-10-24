@@ -97,7 +97,7 @@
     Object.assign(sel, patch); $('#e-msg').textContent = 'Salvato ' + new Date().toLocaleTimeString('it-IT'); kpi(); render();
   }
   // ---------- import da OpenStreetMap (dal browser dell'admin) ----------
-  const OVERPASS = ['https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass-api.de/api/interpreter'];
+  const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
   const ilog = (m) => { $('#i-log').textContent += m + '\n'; };
   function osmQuery(bb) { // bb = "sud,ovest,nord,est"
     return `[out:json][timeout:90];(
