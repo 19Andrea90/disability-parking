@@ -73,12 +73,28 @@
   }
   window.addEventListener('online', loadData);
 
+  // stato recente (libero/occupato nelle ultime 3 ore) segnalato dagli utenti
+  const recent = new Map(); // stallo_id -> {esito, at}
+  async function loadRecent() {
+    try {
+      const since = new Date(Date.now() - 3 * 3600e3).toISOString();
+      const { data } = await sb.from('conferme').select('stallo_id,esito,created_at').in('esito', ['libero', 'occupato']).gte('created_at', since).order('created_at', { ascending: false }).limit(500);
+      recent.clear(); (data || []).forEach((c) => { if (!recent.has(c.stallo_id)) recent.set(c.stallo_id, { esito: c.esito, at: c.created_at }); });
+      refreshList();
+    } catch (e) { /* offline */ }
+  }
+  setInterval(loadRecent, 120e3);
+  function stTag(id) { const r = recent.get(id); return r ? `<span class="st ${r.esito}">${r.esito} ${timeAgo(r.at)}</span>` : ''; }
+  let onlyUsable = ls.get('dp.onlyusable', true);
+  $('#onlygen').checked = onlyUsable;
+  $('#onlygen').onchange = () => { onlyUsable = $('#onlygen').checked; ls.set('dp.onlyusable', onlyUsable); refreshList(); };
+
   // ---------- lista ----------
   function dist(a, b) { return map.distance([a.lat, a.lon], [b.lat, b.lon]); }
   function fmtDist(d) { return d < 950 ? Math.round(d) + ' m' : (d / 1000).toFixed(1) + ' km'; }
   function refreshList() {
     const list = $('#list');
-    let rows = [...stalli.values()];
+    let rows = [...stalli.values()].filter((s) => !onlyUsable || s.tipo !== 'personalizzato');
     let origin, title, sub;
     if (showFav) {
       rows = rows.filter((s) => favs.has(s.id)); origin = mePos || { lat: map.getCenter().lat, lon: map.getCenter().lng };
@@ -86,7 +102,7 @@
     } else if (dest) {
       origin = dest; rows = rows.filter((s) => dist(s, dest) <= C.RAGGIO_DESTINAZIONE);
       title = 'Vicino a ' + dest.label; sub = rows.length ? `${rows.length} stalli entro ${C.RAGGIO_DESTINAZIONE} m` : `Nessuno stallo entro ${C.RAGGIO_DESTINAZIONE} m: allarga la mappa per vedere i più vicini`;
-      if (!rows.length) { rows = [...stalli.values()].filter((s) => dist(s, dest) <= 1500); }
+      if (!rows.length) { rows = [...stalli.values()].filter((s) => (!onlyUsable || s.tipo !== 'personalizzato') && dist(s, dest) <= 1500); }
     } else {
       const b = map.getBounds(); origin = mePos && b.contains([mePos.lat, mePos.lon]) ? mePos : { lat: map.getCenter().lat, lon: map.getCenter().lng };
       rows = rows.filter((s) => b.contains([s.lat, s.lon]));
@@ -98,7 +114,7 @@
     list.innerHTML = rows.length ? `<div class="list">${rows.slice(0, 80).map((s) => `
       <button class="item" data-id="${s.id}">
         <i class="dot ${pinClass(s)}"></i>
-        <div class="t"><div class="n">${esc(s.nome || s.indirizzo || TIPO_LABEL[s.tipo])}${s.posti > 1 ? ` · ${s.posti} posti` : ''}</div>
+        <div class="t"><div class="n">${esc(s.nome || s.indirizzo || TIPO_LABEL[s.tipo])}${s.posti > 1 ? ` · ${s.posti} posti` : ''}${stTag(s.id)}</div>
         <div class="s">${TIPO_LABEL[s.tipo]}${s.stato === 'proposto' ? ' · da verificare' : ''}${s.orari ? ' · ' + esc(s.orari) : ''}</div></div>
         <div class="d">${fmtDist(s._d)}<small>${favs.has(s.id) ? '★' : ''}</small></div>
       </button>`).join('')}</div>` : `<div class="empty">${sub}</div>`;
@@ -154,6 +170,7 @@
     b.disabled = false;
     if (error) { toast('Non riesco a inviare: ' + error.message); return; }
     toast('Grazie, segnalazione registrata'); $('#c-last').textContent = 'Ultimo aggiornamento: adesso, da te';
+    if (b.dataset.esito === 'libero' || b.dataset.esito === 'occupato') { recent.set(selectedId, { esito: b.dataset.esito, at: new Date().toISOString() }); refreshList(); }
   });
 
   // ---------- posizione ----------
@@ -168,9 +185,41 @@
     }, () => toast('Posizione non disponibile: controlla i permessi del GPS'), { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
   };
 
-  // ---------- ricerca destinazione ----------
+  // ---------- ricerca destinazione con suggerimenti (Photon/komoot, dati OSM) ----------
+  const sug = $('#suggest'); let sugItems = [], sugIdx = -1, sugT, sugCtl;
+  function photonLabel(p) {
+    const name = p.name || [p.street, p.housenumber].filter(Boolean).join(' ') || p.city || '';
+    const where = [p.street && p.name ? [p.street, p.housenumber].filter(Boolean).join(' ') : null, p.postcode, p.city || p.town || p.village || p.county, p.state].filter(Boolean).join(', ');
+    return { main: name, sub: where, label: name + (p.city && p.city !== name ? ', ' + p.city : '') };
+  }
+  async function suggest(q) {
+    if (sugCtl) sugCtl.abort(); sugCtl = new AbortController();
+    const c = mePos || { lat: map.getCenter().lat, lon: map.getCenter().lng };
+    try {
+      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lang=it&limit=6&lat=${c.lat}&lon=${c.lon}&zoom=12&location_bias_scale=0.4`, { signal: sugCtl.signal });
+      const j = await r.json();
+      sugItems = j.features.filter((f) => f.properties.country === 'Italia' || f.properties.countrycode === 'IT').map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }, photonLabel(f.properties)));
+      renderSug();
+    } catch (e) { if (e.name !== 'AbortError') { sugItems = []; renderSug(); } }
+  }
+  function renderSug() {
+    sugIdx = -1;
+    sug.innerHTML = sugItems.map((s, i) => `<li role="option" data-i="${i}"><span class="m">${esc(s.main)}</span>${s.sub ? `<span class="s">${esc(s.sub)}</span>` : ''}</li>`).join('');
+    sug.hidden = !sugItems.length;
+  }
+  function pickSug(i) { const s = sugItems[i]; if (!s) return; $('#q').value = s.label; sug.hidden = true; sugItems = []; setDest({ lat: s.lat, lon: s.lon, label: s.main }); $('#q').blur(); }
+  sug.addEventListener('mousedown', (e) => { const li = e.target.closest('li'); if (li) { e.preventDefault(); pickSug(+li.dataset.i); } });
+  $('#q').addEventListener('input', () => { const v = $('#q').value.trim(); $('#qclear').hidden = !v; clearTimeout(sugT); if (v.length < 3) { sug.hidden = true; sugItems = []; return; } sugT = setTimeout(() => suggest(v), 250); });
+  $('#q').addEventListener('keydown', (e) => {
+    if (sug.hidden) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sugIdx = (sugIdx + (e.key === 'ArrowDown' ? 1 : -1) + sugItems.length) % sugItems.length; [...sug.children].forEach((li, i) => li.setAttribute('aria-selected', i === sugIdx)); }
+    else if (e.key === 'Escape') sug.hidden = true;
+  });
+  $('#q').addEventListener('blur', () => setTimeout(() => { sug.hidden = true; }, 150));
+  $('#q').addEventListener('focus', () => { if (sugItems.length) sug.hidden = false; });
   $('#searchform').onsubmit = async (e) => {
     e.preventDefault(); const v = $('#q').value.trim(); if (!v) return;
+    if (sugItems.length) { pickSug(sugIdx >= 0 ? sugIdx : 0); return; }
     toast('Cerco "' + v + '"…', 8000);
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=it&q=${encodeURIComponent(v)}` + (mePos ? `&viewbox=${mePos.lon - .3},${mePos.lat + .3},${mePos.lon + .3},${mePos.lat - .3}` : '');
@@ -187,8 +236,7 @@
     L.circle([d.lat, d.lon], { radius: C.RAGGIO_DESTINAZIONE, color: '#ffcc00', weight: 2, fillOpacity: .06, interactive: false }).addTo(map).bringToBack();
     map.setView([d.lat, d.lon], 17); $('#qclear').hidden = false; sheet.classList.remove('min'); setTimeout(syncSide, 260); toast('Destinazione impostata', 1200);
   }
-  $('#qclear').onclick = () => { dest = null; $('#q').value = ''; $('#qclear').hidden = true; if (destMarker) { map.removeLayer(destMarker); destMarker = null; } map.eachLayer((l) => { if (l instanceof L.Circle) map.removeLayer(l); }); refreshList(); };
-  $('#q').addEventListener('input', () => { $('#qclear').hidden = !$('#q').value; });
+  $('#qclear').onclick = () => { dest = null; $('#q').value = ''; $('#qclear').hidden = true; sug.hidden = true; sugItems = []; if (destMarker) { map.removeLayer(destMarker); destMarker = null; } map.eachLayer((l) => { if (l instanceof L.Circle) map.removeLayer(l); }); refreshList(); };
 
   // ---------- nuova segnalazione ----------
   let adding = false;
@@ -231,5 +279,5 @@
   // ---------- PWA ----------
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
-  loadData();
+  loadData().then(loadRecent);
 })();

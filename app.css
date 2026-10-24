@@ -131,3 +131,43 @@ input[type=text],input[type=number],select,textarea{font:inherit;font-size:16px;
 
 :focus-visible{outline:3px solid var(--giallo);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ===== v0.2: suggerimenti, pulsante segnala, stato, desktop ===== */
+#searchform{position:relative}
+#suggest{position:absolute;left:0;right:0;top:calc(100% + 6px);margin:0;padding:6px;list-style:none;background:var(--panel);border-radius:16px;box-shadow:var(--shadow);max-height:50vh;overflow:auto;z-index:1100}
+#suggest li{padding:11px 12px;border-radius:10px;cursor:pointer;color:var(--fg);display:flex;flex-direction:column;gap:1px}
+#suggest li:hover,#suggest li[aria-selected="true"]{background:var(--bg)}
+#suggest li .m{font-weight:600;font-size:15px}
+#suggest li .s{font-size:12.5px;color:var(--muted)}
+.ib.pill{width:auto;height:52px;padding:0 18px 0 14px;gap:8px;border-radius:999px;background:var(--blu);color:#fff;font-weight:700;font-size:15px}
+@media (prefers-color-scheme:dark){.ib.pill{background:var(--giallo);color:var(--giallo-ink)}}
+.ib.pill .ico{width:22px;height:22px;stroke-width:2.6}
+.chk{display:flex;align-items:center;gap:6px;margin-left:auto;cursor:pointer;color:var(--fg)}
+.chk input{width:18px;height:18px;accent-color:var(--blu-2)}
+.st{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.03em}
+.st.libero{background:#d9f3e2;color:#145c2e} .st.occupato{background:#fde0d8;color:#8a2a12}
+@media (prefers-color-scheme:dark){.st.libero{background:#153d25;color:#8fe3ad} .st.occupato{background:#4a1d12;color:#ffb39c}}
+#sheet{max-height:52vh}
+#sheet.min{transform:translateY(calc(100% - 96px - var(--sab)))}
+
+/* desktop e tablet: pannello laterale a sinistra, mappa a destra */
+@media (min-width:900px){
+  :root{--panelw:420px}
+  #sheet,.card{left:0;top:0;bottom:0;right:auto;width:var(--panelw);max-height:none;border-radius:0;box-shadow:4px 0 30px rgba(0,0,0,.12);padding-top:84px;transform:none!important}
+  #sheet.min{transform:none!important}
+  .grip,#cardgrip{display:none}
+  .head{cursor:default}
+  #top{left:0;width:var(--panelw);padding:16px 16px 0;right:auto}
+  #toast{left:calc(var(--panelw) + (100% - var(--panelw))/2)}
+  #side{bottom:24px;right:24px}
+  #crosshair{left:calc(var(--panelw) + (100% - var(--panelw))/2)}
+  #addbar{left:calc(var(--panelw) + 24px);right:auto;width:360px;bottom:24px}
+  .leaflet-control-attribution{margin-right:0}
+  body{font-size:15px}
+  .card{z-index:1003}
+  .card-body{padding-right:4px}
+}
+@media (min-width:900px){
+  #map{left:var(--panelw)}
+  #toast,#crosshair{left:calc(var(--panelw) + (100% - var(--panelw))/2)}
+}

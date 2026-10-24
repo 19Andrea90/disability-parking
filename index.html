@@ -23,6 +23,7 @@
     <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
     <input id="q" type="search" placeholder="Dove vai? Indirizzo o luogo" aria-label="Cerca destinazione" enterkeyhint="search">
     <button type="button" id="qclear" class="xbtn" aria-label="Cancella ricerca" hidden>×</button>
+    <ul id="suggest" role="listbox" hidden></ul>
   </form>
   <button class="ib" id="loc" aria-label="La mia posizione"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg></button>
 </header>
@@ -39,11 +40,11 @@
 <!-- pulsanti mappa -->
 <div id="side">
   <button class="ib" id="layers" aria-label="Cambia mappa"><svg class="ico" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></button>
-  <button class="ib big" id="add" aria-label="Segnala uno stallo mancante"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="ib pill" id="add" aria-label="Segnala uno stallo mancante"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Segnala stallo</span></button>
 </div>
 
-<!-- pannello inferiore -->
-<section id="sheet" class="min" aria-label="Elenco stalli">
+<!-- pannello elenco -->
+<section id="sheet" aria-label="Elenco stalli">
   <div class="grip" id="grip"></div>
   <div class="head" id="head">
     <div class="ttl">
@@ -56,6 +57,7 @@
     <span><i class="dot generico"></i>Generico</span>
     <span><i class="dot personalizzato"></i>Personalizzato</span>
     <span><i class="dot proposto"></i>Da verificare</span>
+    <label class="chk"><input type="checkbox" id="onlygen" checked> Solo utilizzabili</label>
   </div>
   <div class="body" id="list"></div>
   <footer class="foot">
