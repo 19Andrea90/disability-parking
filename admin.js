@@ -411,16 +411,24 @@
   function thresholds(sens) {
     const ref = (() => { try { return JSON.parse(localStorage.getItem('dp.yellow') || 'null'); } catch (e) { return null; } })();
     const base = [0.085, 0.07, 0.055, 0.045, 0.038][sens - 1];
-    if (ref && ref.yel != null) return { yelMin: Math.max(0.03, ref.yel * [0.95, 0.85, 0.75, 0.65, 0.55][sens - 1]), valMin: 0.6, ref: true };
-    return { yelMin: base, valMin: 0.6, ref: false };
+    const contrast = [0.16, 0.13, 0.10, 0.08, 0.06][sens - 1];
+    if (ref && ref.yel != null) return { yelMin: Math.max(0.03, ref.yel * [0.95, 0.85, 0.75, 0.65, 0.55][sens - 1]), valMin: 0.6, contrast, ref: true };
+    return { yelMin: base, valMin: 0.6, contrast, ref: false };
   }
-  function yellowMask(ctx, px, sens) {
+  function yellowMask(ctx, px, sens, res) {
     const d = ctx.getImageData(0, 0, px, px).data; const mask = new Uint8Array(px * px); const th = thresholds(sens); let count = 0;
+    // luminosità e sua media locale (raggio ~2.5 m) tramite immagine integrale
+    const V = new Float32Array(px * px); for (let i = 0; i < px * px; i++) V[i] = Math.max(d[i * 4], d[i * 4 + 1], d[i * 4 + 2]) / 255;
+    const I = new Float64Array((px + 1) * (px + 1));
+    for (let y = 1; y <= px; y++) { let rs = 0; for (let x = 1; x <= px; x++) { rs += V[(y - 1) * px + (x - 1)]; I[y * (px + 1) + x] = I[(y - 1) * (px + 1) + x] + rs; } }
+    const R_ = Math.max(4, Math.round(2.5 / (res || 0.2)));
+    const bg = (x, y) => { const x0 = Math.max(0, x - R_), x1 = Math.min(px, x + R_ + 1), y0 = Math.max(0, y - R_), y1 = Math.min(px, y + R_ + 1); const W = px + 1; return (I[y1 * W + x1] - I[y0 * W + x1] - I[y1 * W + x0] + I[y0 * W + x0]) / ((x1 - x0) * (y1 - y0)); };
     for (let i = 0; i < px * px; i++) {
       const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255;
-      const v = Math.max(r, g, b); if (v < th.valMin) continue;
+      const v = V[i]; if (v < th.valMin) continue;
       if (((r + g) / 2 - b) < th.yelMin) continue;      // deficit di blu
-      if (r < 0.98 * g || r > 1.12 * g) continue;        // giallo: rosso ≈ verde (esclude verde dei cespugli e rosa degli attraversamenti)
+      if (r < 0.98 * g || r > 1.07 * g) continue;        // giallo: rosso ≈ verde (esclude verde, rosa e terreno)
+      if (v - bg(i % px, (i / px) | 0) < th.contrast) continue; // la vernice è più chiara dell'asfalto intorno; campi e ghiaia no
       mask[i] = 1; count++;
     }
     return { mask, count, th };
@@ -480,6 +488,18 @@
       if (span < 4 || span > 18) return;
       const areas = grp.map((g) => g.area); const mean = areas.reduce((x, y) => x + y, 0) / areas.length; const sd = Math.sqrt(areas.reduce((x, y) => x + (y - mean) ** 2, 0) / areas.length);
       if (sd > mean * 1.2) return; // macchie troppo diverse tra loro: rumore
+      // allineamento: almeno 3 macchie su una stessa retta (entro 0.9 m) a passo regolare 1.8–3.5 m (simboli o tratteggi a intervalli fissi)
+      let bestLine = null;
+      for (let i1 = 0; i1 < grp.length; i1++) for (let i2 = i1 + 1; i2 < grp.length; i2++) {
+        const ax = grp[i1].cx, ay = grp[i1].cy; let ux = grp[i2].cx - ax, uy = grp[i2].cy - ay; const ln = Math.hypot(ux, uy); if (!ln) continue; ux /= ln; uy /= ln;
+        const on = grp.filter((g) => Math.abs(-(g.cx - ax) * uy + (g.cy - ay) * ux) * res <= 0.9);
+        if (on.length < 3) continue;
+        const t = on.map((g) => ((g.cx - ax) * ux + (g.cy - ay) * uy) * res).sort((p, q) => p - q);
+        const gaps = t.slice(1).map((v, k) => v - t[k]); const gm = gaps.reduce((p, q) => p + q, 0) / gaps.length;
+        if (gm < 1.8 || gm > 3.5 || gaps.some((g) => Math.abs(g - gm) > 0.35 * gm)) continue;
+        if (!bestLine || on.length > bestLine.length) bestLine = on;
+      }
+      if (!bestLine) return;
       const cx = grp.reduce((x, g) => x + g.cx, 0) / grp.length, cy = grp.reduce((x, g) => x + g.cy, 0) / grp.length;
       if (cands.some((k) => Math.hypot((k.cx - cx) * res, (k.cy - cy) * res) < 9)) return;
       const minx = Math.min(...grp.map((g) => g.cx - g.bw / 2)), maxx = Math.max(...grp.map((g) => g.cx + g.bw / 2)), miny = Math.min(...grp.map((g) => g.cy - g.bh / 2)), maxy = Math.max(...grp.map((g) => g.cy + g.bh / 2));
@@ -531,14 +551,14 @@
   let calib = null; // {cv, px, s,w,n,e}
   function showCalib(sens) {
     const pc = $('#s-canvas'); const px = calib.px; pc.width = px; pc.height = px; const pctx = pc.getContext('2d', { willReadFrequently: true }); pctx.drawImage(calib.cv, 0, 0);
-    const ym = yellowMask(pctx, px, sens);
+    const ym = yellowMask(pctx, px, sens, calib.res);
     if (calib.ctx) { const cm = contextMask(calib.ctx, calib.s, calib.w, calib.n, calib.e, px, calib.res); applyContext(ym.mask, cm.mask); ym.count = ym.mask.reduce((a, b) => a + b, 0); calib.cm = cm.mask; }
     const det = detect(ym.mask, px, calib.res);
     const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) { if (calib.cm && !calib.cm[i]) { im.data[i * 4] = im.data[i * 4] * .45; im.data[i * 4 + 1] = im.data[i * 4 + 1] * .45; im.data[i * 4 + 2] = im.data[i * 4 + 2] * .45 + 60; } if (ym.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } } pctx.putImageData(im, 0, 0);
     pctx.lineWidth = 2; pctx.strokeStyle = '#ffd400'; det.strips.forEach((c) => pctx.strokeRect(c.cx - c.bw / 2, c.cy - c.bh / 2, c.bw, c.bh));
     pctx.lineWidth = 4; pctx.strokeStyle = '#ff2d2d'; det.cands.forEach((c) => pctx.strokeRect(c.cx - c.w / 2, c.cy - c.h / 2, c.w, c.h));
     $('#s-prev').hidden = false;
-    $('#s-prevtxt').textContent = `Riquadro di 100 m al centro, 10 cm/px. Pixel gialli: ${ym.count}. Soglia giallezza ≥ ${ym.th.yelMin.toFixed(3)}${ym.th.ref ? ' (da colore campionato)' : ' (predefinita)'}. In blu scuro le zone escluse (edifici, verde), in magenta i pixel gialli, in giallo le fasce riconosciute, in rosso i candidati. Clicca su una fascia gialla per usarla come riferimento.`;
+    $('#s-prevtxt').textContent = `Riquadro di 100 m al centro, 10 cm/px. Pixel gialli: ${ym.count}. Soglia giallezza ≥ ${ym.th.yelMin.toFixed(3)}, contrasto ≥ ${ym.th.contrast.toFixed(2)}${ym.th.ref ? ' (da colore campionato)' : ' (predefinita)'}. In blu scuro le zone escluse (edifici, verde), in magenta i pixel gialli, in giallo le fasce riconosciute, in rosso i candidati. Clicca su una fascia gialla per usarla come riferimento.`;
     slog(`Taratura: ${ym.count} pixel gialli, ${det.strips.length} fasce, ${det.cands.length} candidati (${det.cands.map((c) => c.kind + ' ×' + c.posti).join(', ') || 'nessuno'}).`);
   }
   $('#s-cal').onclick = async () => {
@@ -601,7 +621,7 @@
         let cm = null;
         if (ctxd) { cm = contextMask(ctxd, cs, cw, cn, ce, px, res); if (cm.frac < 0.01) { skipped++; done++; continue; } }
         let cellImg; try { cellImg = await fetchCell(cs, cw, cn, ce, px, src); } catch (e) { done++; continue; }
-        const ym = yellowMask(cellImg.ctx, px, sens); if (cm) applyContext(ym.mask, cm.mask);
+        const ym = yellowMask(cellImg.ctx, px, sens, res); if (cm) applyContext(ym.mask, cm.mask);
         const det = detect(ym.mask, px, res);
         if (!best || ym.count > best.count) best = { count: ym.count, mask: ym.mask, cv: cellImg.cv };
         for (const c of det.cands) {
@@ -637,6 +657,24 @@
       await loadCands(); cfilter = 'nuovo'; renderCands();
     } catch (e) { slog((sStop ? 'Fermato: ' : 'Errore: ') + (e.message || e)); }
     $('#s-go').disabled = false; $('#s-go').textContent = 'Scansiona area visibile'; $('#s-stop').hidden = true; sStop = false;
+  };
+
+
+  // --- scheda dei candidati: montaggio dei ritagli in un'unica immagine scaricabile (debug / esempi) ---
+  $('#cand-sheet').onclick = async () => {
+    const v = cands.filter((c) => c.stato === cfilter && c.note && /^https?:/.test(c.note)).slice(0, 60);
+    if (!v.length) { alert('Nessun candidato con ritaglio in questo stato.'); return; }
+    const cols = 6, cell = 220, rows = Math.ceil(v.length / cols);
+    const cv = document.createElement('canvas'); cv.width = cols * cell; cv.height = rows * (cell + 22); const c = cv.getContext('2d'); c.fillStyle = '#111'; c.fillRect(0, 0, cv.width, cv.height);
+    c.font = '13px sans-serif'; c.fillStyle = '#fff'; let ok = 0;
+    await Promise.all(v.map((cd, i) => new Promise((res) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => { const x = (i % cols) * cell, y = Math.floor(i / cols) * (cell + 22); c.drawImage(im, x, y, cell, cell); c.fillStyle = '#fff'; c.fillText(`#${i + 1} ${cd.classe || ''}`.slice(0, 34), x + 4, y + cell + 15); ok++; res(); }; im.onerror = () => res(); im.src = cd.note; })));
+    cv.toBlob((blob) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `candidati-${cfilter}-${new Date().toISOString().slice(0, 10)}.jpg`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 3000); }, 'image/jpeg', .85);
+  };
+  $('#cand-clear').onclick = async () => {
+    const n = cands.filter((c) => c.stato === 'nuovo' && c.fonte === 'satellite').length; if (!n) return;
+    if (!confirm(`Scartare tutti i ${n} candidati "nuovi" dello scanner ortofoto? (quelli Mapillary restano)`)) return;
+    const { error } = await sb.from('candidati').update({ stato: 'scartato' }).eq('stato', 'nuovo').eq('fonte', 'satellite');
+    if (error) alert(error.message); else loadCands();
   };
 
   $('#ver').textContent = 'v' + C.VERSION;

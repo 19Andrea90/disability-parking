@@ -77,7 +77,7 @@ body{overflow:auto;background:var(--bg)}
       <div id="s-prev" class="sub" hidden><div id="s-prevtxt">Anteprima del riquadro con più giallo (in magenta i pixel riconosciuti come segnaletica gialla):</div><canvas id="s-canvas" style="width:100%;max-width:900px;border-radius:12px;margin-top:6px;cursor:crosshair"></canvas></div>
       <div class="grid" style="margin-top:12px">
         <div>
-          <div class="tabs" style="margin-bottom:8px"><button class="btn active" data-cf="nuovo">Da verificare</button><button class="btn" data-cf="accettato">Accettati</button><button class="btn" data-cf="scartato">Scartati</button></div>
+          <div class="tabs" style="margin-bottom:8px"><button class="btn active" data-cf="nuovo">Da verificare</button><button class="btn" data-cf="accettato">Accettati</button><button class="btn" data-cf="scartato">Scartati</button><button class="btn" id="cand-sheet" title="Compone i ritagli in un'unica immagine">Scarica scheda</button><button class="btn danger" id="cand-clear">Scarta tutti (scanner)</button></div>
           <div id="cand-rows"></div>
         </div>
         <div id="cand-edit" class="edit"><div class="sub">Seleziona un candidato.</div></div>
