@@ -469,6 +469,22 @@
         else cands.push({ cx: c.cx, cy: c.cy, posti, kind: 'blocco', w: c.bw, h: c.bh, score: 1 });
       }
     });
+    // gruppi di macchie piccole (simboli/tratteggi a intervalli regolari): almeno 3 macchie simili entro 3.2 m l'una dall'altra, estensione 4-18 m
+    const smalls = comps.map((c, i) => Object.assign({ i }, c)).filter((c) => c.area >= 0.2 && c.area <= 3.5 && c.L <= 3 && c.W <= 2);
+    const su = new Set();
+    smalls.forEach((a) => {
+      if (su.has(a.i)) return; const grp = [a]; su.add(a.i); let ch = true;
+      while (ch) { ch = false; smalls.forEach((b) => { if (su.has(b.i)) return; if (grp.some((g) => Math.hypot((g.cx - b.cx) * res, (g.cy - b.cy) * res) <= 3.2)) { grp.push(b); su.add(b.i); ch = true; } }); }
+      if (grp.length < 3) return;
+      let span = 0; for (const p of grp) for (const q of grp) span = Math.max(span, Math.hypot((p.cx - q.cx) * res, (p.cy - q.cy) * res));
+      if (span < 4 || span > 18) return;
+      const areas = grp.map((g) => g.area); const mean = areas.reduce((x, y) => x + y, 0) / areas.length; const sd = Math.sqrt(areas.reduce((x, y) => x + (y - mean) ** 2, 0) / areas.length);
+      if (sd > mean * 1.2) return; // macchie troppo diverse tra loro: rumore
+      const cx = grp.reduce((x, g) => x + g.cx, 0) / grp.length, cy = grp.reduce((x, g) => x + g.cy, 0) / grp.length;
+      if (cands.some((k) => Math.hypot((k.cx - cx) * res, (k.cy - cy) * res) < 9)) return;
+      const minx = Math.min(...grp.map((g) => g.cx - g.bw / 2)), maxx = Math.max(...grp.map((g) => g.cx + g.bw / 2)), miny = Math.min(...grp.map((g) => g.cy - g.bh / 2)), maxy = Math.max(...grp.map((g) => g.cy + g.bh / 2));
+      cands.push({ cx, cy, posti: Math.max(1, Math.round(span / 2.6)), kind: 'gruppo', w: maxx - minx + 16, h: maxy - miny + 16, score: grp.length });
+    });
     return { comps, strips, cands };
   }
 
