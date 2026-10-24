@@ -125,7 +125,7 @@ def featurize(items, bb, rng):
             else:
                 F, cx, cy = bb.windows(np.rot90(img, k))
                 if cf: np.savez(cf, F=F, cx=cx, cy=cy)
-            if k == 0 and not it['id'].startswith('neg-'): it['map'] = (F, cx, cy)
+            if k == 0 and not it['id'].startswith('neg-'): it['map'] = cf  # riletta dal disco in valutazione
             pts = rot_pts(it['pts'], k, S)
             gx, gy = np.meshgrid(cx, cy)
             border = (gx >= 2 * P / 3) & (gx <= S - 2 * P / 3) & (gy >= 2 * P / 3) & (gy <= S - 2 * P / 3)
@@ -140,7 +140,7 @@ def featurize(items, bb, rng):
             if len(idx):
                 it['train'].append((np.array(F[idx[:, 0], idx[:, 1]], dtype=np.float16), np.r_[np.ones(len(pos)), np.zeros(len(neg))]))  # copia: non tiene viva la mappa intera
             del F
-        if it['id'].startswith('neg-'): it['img'] = None
+        it['S'] = S; it['img'] = None  # libero subito la memoria
         if (n + 1) % 50 == 0: print(f'    caratteristiche {n + 1}/{len(items)} · {time.time() - t0:.0f} s', flush=True)
 
 
@@ -173,7 +173,7 @@ def main():
         X, y = stack(tr); sc = StandardScaler().fit(X)
         head = LogisticRegression(C=0.05, class_weight='balanced', max_iter=4000).fit(sc.transform(X), y)
         for it in te:
-            F, cx, cy = it['map']; S = it['img'].shape[0]
+            z = np.load(it['map']); F, cx, cy = z['F'], z['cx'], z['cy']; S = it['S']
             s_ = head.predict_proba(sc.transform(F.reshape(-1, F.shape[-1]).astype(np.float32)))[:, 1].reshape(F.shape[:2])
             for t in thrs:
                 det = [d for d in nms(s_, cx, cy, t) if 2 * P / 3 <= d[1] <= S - 2 * P / 3 and 2 * P / 3 <= d[2] <= S - 2 * P / 3]
