@@ -97,7 +97,7 @@
     Object.assign(sel, patch); $('#e-msg').textContent = 'Salvato ' + new Date().toLocaleTimeString('it-IT'); kpi(); render();
   }
   // ---------- import da OpenStreetMap (dal browser dell'admin) ----------
-  const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://lz4.overpass-api.de/api/interpreter', 'https://z.overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
   const ilog = (m) => { const l = $('#i-log'); l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
   function osmQuery(bb) { // bb = "sud,ovest,nord,est"
     return `[out:json][timeout:60];(
@@ -110,7 +110,7 @@
   // --- suggerimento comuni (Photon, dati OSM) ---
   const cs = $('#i-sug'); let csItems = [], csT, csCtl, chosen = null;
   $('#i-area').addEventListener('input', () => {
-    chosen = null; const v = $('#i-area').value.trim(); clearTimeout(csT);
+    chosen = null; progress = null; $('#i-go').textContent = 'Importa'; const v = $('#i-area').value.trim(); clearTimeout(csT);
     if (v.length < 2) { cs.hidden = true; return; }
     csT = setTimeout(async () => {
       if (csCtl) csCtl.abort(); csCtl = new AbortController();
@@ -159,19 +159,27 @@
     for (let i = 0; i < ny; i++) for (let j = 0; j < nx; j++) out.push(`${(s + (n - s) * i / ny).toFixed(5)},${(w + (e - w) * j / nx).toFixed(5)},${(s + (n - s) * (i + 1) / ny).toFixed(5)},${(w + (e - w) * (j + 1) / nx).toFixed(5)}`);
     return out;
   }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  async function overpassOnce(url, bb, timeoutMs) {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), timeoutMs); const t0 = Date.now();
+    try {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(bb)), signal: ctl.signal });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (j.remark && /timed out|error/i.test(j.remark)) throw new Error('server: ' + j.remark.slice(0, 80));
+      return { els: j.elements, ms: Date.now() - t0 };
+    } catch (e) { if (e.name === 'AbortError') throw new Error(`nessuna risposta entro ${Math.round(timeoutMs / 1000)} s`); throw e; }
+    finally { clearTimeout(to); }
+  }
   async function overpassFetch(bb) {
     let lastErr = null;
-    for (const url of OVERPASS) {
-      const host = new URL(url).host; const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 75000); const t0 = Date.now();
-      try {
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(bb)), signal: ctl.signal });
-        if (!r.ok) throw new Error('HTTP ' + r.status + (r.status === 429 ? ' (troppe richieste: attendo)' : ''));
-        const j = await r.json();
-        if (j.remark && /timed out|error/i.test(j.remark)) throw new Error('server: ' + j.remark.slice(0, 80));
-        ilog(`    ${host}: ${j.elements.length} elementi in ${Math.round((Date.now() - t0) / 1000)} s`);
-        return j.elements;
-      } catch (e) { lastErr = e; ilog(`    ${host}: ${e.name === 'AbortError' ? 'nessuna risposta entro 75 s' : e.message}`); if (/429/.test(e.message)) await new Promise((r) => setTimeout(r, 8000)); }
-      finally { clearTimeout(to); }
+    for (let round = 0; round < 3; round++) {
+      for (const url of OVERPASS) {
+        const host = new URL(url).host;
+        try { const { els, ms } = await overpassOnce(url, bb, round === 0 ? 45000 : 75000); ilog(`    ${host}: ${els.length} elementi in ${Math.round(ms / 1000)} s`); return els; }
+        catch (e) { lastErr = e; ilog(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
+      }
+      const wait = 20 * (round + 1); ilog(`  tutti i server occupati: riprovo tra ${wait} s (tentativo ${round + 2}/3)…`); await sleep(wait * 1000);
     }
     throw lastErr || new Error('Nessun server Overpass ha risposto');
   }
@@ -188,6 +196,7 @@
       comune, note, orari: t.opening_hours || t['access:conditional'] || null, segnale_verticale: t.traffic_sign ? true : null,
       coperto: t.covered === 'yes' || ['multi-storey', 'underground'].includes(t.parking), stato: 'verificato', fonte: 'osm', osm_url: `https://www.openstreetmap.org/${el.type}/${el.id}` };
   }
+  let progress = null;
   $('#i-go').onclick = async () => {
     const area = $('#i-area').value.trim(); if (!area) return; $('#i-log').textContent = ''; $('#i-go').disabled = true; cs.hidden = true;
     try {
@@ -196,14 +205,19 @@
       if (!b) throw new Error(`Comune "${area}" non trovato: scegli un suggerimento dalla tendina.`);
       const [s, w, n, e] = b.bbox.split(',').map(Number);
       ilog(`  confine: ${b.label} (${b.kind}), area ${Math.round((n - s) * 111)} × ${Math.round((e - w) * 111 * Math.cos(s * Math.PI / 180))} km`);
-      const cells = tiles(b.bbox); const byId = new Map();
-      ilog(`Interrogo Overpass in ${cells.length} riquadr${cells.length === 1 ? 'o' : 'i'}…`);
-      for (let i = 0; i < cells.length; i++) {
+      const cells = tiles(b.bbox, 0.08);
+      const resume = progress && progress.key === b.bbox ? progress : { key: b.bbox, done: 0, byId: new Map() };
+      const byId = resume.byId;
+      ilog(`Interrogo Overpass in ${cells.length} riquadr${cells.length === 1 ? 'o' : 'i'}${resume.done ? ` (riprendo dal ${resume.done + 1})` : ''}…`);
+      for (let i = resume.done; i < cells.length; i++) {
         ilog(`  riquadro ${i + 1}/${cells.length}`);
-        const els = await overpassFetch(cells[i]);
-        els.forEach((el) => byId.set(el.type + '/' + el.id, el));
-        if (cells.length > 1) await new Promise((r) => setTimeout(r, 1500));
+        let els;
+        try { els = await overpassFetch(cells[i]); }
+        catch (e) { progress = resume; $('#i-go').textContent = 'Riprendi'; throw new Error(`${e.message}. Premi "Riprendi" tra qualche minuto: ripartirà dal riquadro ${i + 1}.`); }
+        els.forEach((el) => byId.set(el.type + '/' + el.id, el)); resume.done = i + 1;
+        if (cells.length > 1) await sleep(2000);
       }
+      progress = null; $('#i-go').textContent = 'Importa';
       const all = [...byId.values()].map((el) => osmConvert(el, b.label)).filter(Boolean);
       let recs = all.filter((r) => inside(b.geojson, r.lon, r.lat));
       ilog(`Trovati ${all.length} stalli nel rettangolo, ${recs.length} dentro il confine di ${b.label}.`);
