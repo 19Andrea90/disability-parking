@@ -528,6 +528,55 @@
     if (!n) return { ok: false, grey: 0, green: 0 };
     return { ok: grey / n >= 0.5 && green / n <= 0.25, grey: grey / n, green: green / n };
   }
+
+  // ======================================================================
+  // CLASSIFICATORE (addestrato con tools/train_classifier.py): contesto attorno al candidato → probabilità stallo
+  // Le caratteristiche devono restare identiche a features() in Python.
+  // ======================================================================
+  let MODEL = null;
+  fetch('model.json?v=' + C.VERSION).then((r) => r.json()).then((m) => { MODEL = m; const el = $('#clf-info'); if (el) el.textContent = `Classificatore: addestrato su ${m.n_pos} stalli e ${m.n_neg} falsi (AUC ${m.cv_auc.toFixed(2)}, scarta ~${Math.round(m.cv_neg_rejected * 100)}% dei falsi tenendo il 90% dei veri).`; }).catch(() => { MODEL = null; });
+  function clfFeatures(ctx, px, res) {
+    const d = ctx.getImageData(0, 0, px, px).data, N = px * px;
+    const mx = new Float32Array(N); const F = { paint_lo: new Uint8Array(N), paint_hi: new Uint8Array(N), green: new Uint8Array(N), grey: new Uint8Array(N), white: new Uint8Array(N), roof: new Uint8Array(N), dark: new Uint8Array(N) }; const yel = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255; const M = Math.max(r, g, b), m = Math.min(r, g, b); mx[i] = M;
+      const sat = M > 0.01 ? (M - m) / Math.max(M, 0.01) : 0; const y = (r + g) / 2 - b; yel[i] = y; const rg = r >= 0.97 * g && r <= 1.10 * g;
+      F.paint_lo[i] = y >= 0.035 && rg && M >= 0.55 ? 1 : 0; F.paint_hi[i] = y >= 0.07 && rg && M >= 0.55 ? 1 : 0;
+      F.green[i] = g > r * 1.06 && g > b * 1.06 ? 1 : 0; F.grey[i] = sat < 0.22 && M >= 0.22 && M <= 0.82 ? 1 : 0; F.white[i] = sat < 0.15 && M > 0.82 ? 1 : 0;
+      F.roof[i] = r > g * 1.18 && r > b * 1.25 ? 1 : 0; F.dark[i] = M < 0.22 ? 1 : 0;
+    }
+    const edge = new Uint8Array(N);
+    for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) {
+      const gx = x === 0 ? mx[y * px + 1] - mx[y * px] : x === px - 1 ? mx[y * px + x] - mx[y * px + x - 1] : (mx[y * px + x + 1] - mx[y * px + x - 1]) / 2;
+      const gy = y === 0 ? mx[px + x] - mx[x] : y === px - 1 ? mx[y * px + x] - mx[(y - 1) * px + x] : (mx[(y + 1) * px + x] - mx[(y - 1) * px + x]) / 2;
+      edge[y * px + x] = Math.hypot(gx, gy) > 0.08 ? 1 : 0;
+    }
+    const out = {}; const rings = MODEL ? MODEL.rings : [3, 6, 12];
+    for (const R of rings) {
+      let n = 0; const cnt = { paint_lo: 0, paint_hi: 0, green: 0, grey: 0, white: 0, roof: 0, dark: 0, edge: 0 }; let sv = 0, sv2 = 0, sy = 0;
+      for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) {
+        if (Math.hypot((x - px / 2 + 0.5) * res, (y - px / 2 + 0.5) * res) > R) continue;
+        const i = y * px + x; n++; for (const k in F) cnt[k] += F[k][i]; cnt.edge += edge[i]; sv += mx[i]; sv2 += mx[i] * mx[i]; sy += yel[i];
+      }
+      n = Math.max(1, n); const tag = R.toFixed(1) + 'm';
+      for (const k in cnt) out[`${k}_${tag}`] = cnt[k] / n;
+      out[`v_mean_${tag}`] = sv / n; out[`v_std_${tag}`] = Math.sqrt(Math.max(0, sv2 / n - (sv / n) ** 2)); out[`yel_mean_${tag}`] = sy / n;
+    }
+    out.paint_ratio = out['paint_lo_3.0m'] / (out['paint_lo_12.0m'] + 1e-3);
+    return out;
+  }
+  function clfScore(ctx, px, res) {
+    if (!MODEL) return null; const f = clfFeatures(ctx, px, res); let z = MODEL.b;
+    MODEL.names.forEach((nm, i) => { z += MODEL.w[i] * ((f[nm] - MODEL.mu[i]) / MODEL.sd[i]); });
+    return 1 / (1 + Math.exp(-z));
+  }
+  // ritaglio 24x24 m a 10 cm/px centrato sul punto, poi punteggio (ruoto di 90° e faccio la media, come in addestramento)
+  async function clfAt(lat, lon, src) {
+    const { dLat, dLon } = mToDeg(lat); const got = await fetchCell(lat - 12 * dLat, lon - 12 * dLon, lat + 12 * dLat, lon + 12 * dLon, 240, src);
+    let tot = 0; const cv = document.createElement('canvas'); cv.width = cv.height = 240; const c = cv.getContext('2d', { willReadFrequently: true });
+    for (let k = 0; k < 4; k++) { c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, 240, 240); c.translate(120, 120); c.rotate(k * Math.PI / 2); c.drawImage(got.cv, -120, -120); tot += clfScore(c, 240, 0.1); }
+    return tot / 4;
+  }
   // --- contesto OSM: analizzo solo strade e parcheggi, escludo gli edifici ---
   let ctxData = null; // { key, buildings:[[ [lon,lat],... ]], roads:[{pts,w}], parkings:[[...]] }
   async function loadContext(s0, w0, n0, e0, logFn) {
@@ -580,6 +629,10 @@
     const det = detect(ym.mask, px, calib.res);
     const rejected = []; det.cands = det.cands.filter((c) => { const a = asphaltAround(pctx, px, c, calib.res); if (!a.ok) rejected.push(`${c.kind} (asfalto ${Math.round(a.grey * 100)}%, verde ${Math.round(a.green * 100)}%)`); return a.ok; });
     if (rejected.length) slog('  scartati per intorno non asfaltato: ' + rejected.join('; '));
+    if (MODEL && det.cands.length) {
+      Promise.all(det.cands.map((c) => { const lat = calib.n - (c.cy / px) * (calib.n - calib.s), lon = calib.w + (c.cx / px) * (calib.e - calib.w); return clfAt(lat, lon, 'proxy').then((p) => `${c.kind} ×${c.posti}: ${Math.round(p * 100)}%`).catch(() => `${c.kind}: n/d`); }))
+        .then((t) => slog('  punteggio classificatore (soglia ' + Math.round(MODEL.threshold * 100) + '%): ' + t.join('; ')));
+    }
     const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) { if (calib.cm && !calib.cm[i]) { im.data[i * 4] = im.data[i * 4] * .45; im.data[i * 4 + 1] = im.data[i * 4 + 1] * .45; im.data[i * 4 + 2] = im.data[i * 4 + 2] * .45 + 60; } if (ym.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } } pctx.putImageData(im, 0, 0);
     pctx.lineWidth = 2; pctx.strokeStyle = '#ffd400'; det.strips.forEach((c) => pctx.strokeRect(c.cx - c.bw / 2, c.cy - c.bh / 2, c.bw, c.bh));
     pctx.lineWidth = 4; pctx.strokeStyle = '#ff2d2d'; det.cands.forEach((c) => pctx.strokeRect(c.cx - c.w / 2, c.cy - c.h / 2, c.w, c.h));
@@ -638,7 +691,7 @@
       let ctxd = null;
       try { ctxd = await loadContext(s0 - 0.002, w0 - 0.003, n0 + 0.002, e0 + 0.003, slog); } catch (e) { slog('Contesto OSM non disponibile (' + e.message + '): analizzo tutto, aspettati più falsi positivi.'); }
       slog(`Scansiono ${tot} riquadri da ${cellM} m…`);
-      let best = null, skipped = 0; $('#s-prev').hidden = true;
+      let best = null, skipped = 0, asphRej = 0; $('#s-prev').hidden = true;
       const found = []; let done = 0;
       const known = cands.filter((c) => c.stato !== 'scartato');
       for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
@@ -651,6 +704,7 @@
         const det = detect(ym.mask, px, res);
         if (!best || ym.count > best.count) best = { count: ym.count, mask: ym.mask, cv: cellImg.cv };
         for (const c of det.cands) {
+          if (!asphaltAround(cellImg.ctx, px, c, res).ok) { asphRej++; continue; }
           const lat = cn - (c.cy / px) * (cn - cs), lon = cw + (c.cx / px) * (ce - cw);
           if (rows.some((r) => r.stato !== 'rifiutato' && map.distance([r.lat, r.lon], [lat, lon]) <= 12)) continue;
           if (known.some((k) => map.distance([k.lat, k.lon], [lat, lon]) <= 12)) continue;
@@ -660,7 +714,7 @@
           cctx.drawImage(cellImg.cv, cx - half, cy - half, half * 2, half * 2, 0, 0, half * 2, half * 2);
           cctx.strokeStyle = '#ff2d2d'; cctx.lineWidth = 3; cctx.strokeRect(half - c.w / 2, half - c.h / 2, c.w, c.h);
           const blob = await new Promise((r) => crop.toBlob(r, 'image/jpeg', .85));
-          found.push({ lat: +lat.toFixed(6), lon: +lon.toFixed(6), blob, posti: c.posti, kind: c.kind });
+          found.push({ lat: +lat.toFixed(6), lon: +lon.toFixed(6), blob, posti: c.posti, kind: c.kind, score: null });
         }
         done++; if (done % 10 === 0 || done === tot) slog(`  ${done}/${tot} riquadri · candidati finora: ${found.length}`);
       }
@@ -670,13 +724,27 @@
         $('#s-prev').hidden = false; slog(`Pixel gialli nel riquadro più ricco: ${best.count} (su ${px * px}).`);
       }
       if (skipped) slog(`Riquadri saltati perché senza strade/parcheggi: ${skipped}.`);
-      slog(`Trovati ${found.length} candidati. Salvo…`);
+      if (asphRej) slog(`Scartati perché non circondati da asfalto: ${asphRej}.`);
+      let keep = found;
+      if (MODEL && $('#clf-on').checked && found.length) {
+        const thr = MODEL.threshold * (1 - (+$('#s-sens').value - 3) * 0.12);
+        slog(`Classificatore: valuto ${found.length} candidati (soglia ${Math.round(thr * 100)}%)…`); keep = []; let k = 0;
+        for (const f of found) {
+          if (sStop) throw new Error('Interrotto');
+          try { f.score = await clfAt(f.lat, f.lon, src); } catch (e) { f.score = null; }
+          if (f.score == null || f.score >= thr) keep.push(f);
+          if (++k % 10 === 0) slog(`  ${k}/${found.length} · tenuti ${keep.length}`);
+        }
+        slog(`Classificatore: tenuti ${keep.length} su ${found.length}.`);
+      }
+      keep = keep.slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0)); found.length = 0; keep.forEach((f) => found.push(f));
+      slog(`Candidati finali: ${found.length}. Salvo…`);
       let saved = 0;
       for (const f of found) {
         const path = `sat/${f.lat}_${f.lon}.jpg`;
         const { error: ue } = await sb.storage.from('foto').upload(path, f.blob, { contentType: 'image/jpeg', upsert: true });
         const url = ue ? null : sb.storage.from('foto').getPublicUrl(path).data.publicUrl;
-        const { error } = await sb.from('candidati').upsert({ ext_id: `sat/${f.lat},${f.lon}`, fonte: 'satellite', classe: `segnaletica gialla (${f.kind}, ~${f.posti} posti)`, lat: f.lat, lon: f.lon, comune: null, note: url, stato: 'nuovo' }, { onConflict: 'ext_id', ignoreDuplicates: true });
+        const { error } = await sb.from('candidati').upsert({ ext_id: `sat/${f.lat},${f.lon}`, fonte: 'satellite', classe: `segnaletica gialla (${f.kind}, ~${f.posti} posti${f.score != null ? `, punteggio ${Math.round(f.score * 100)}%` : ''})`, lat: f.lat, lon: f.lon, comune: null, note: url, stato: 'nuovo' }, { onConflict: 'ext_id', ignoreDuplicates: true });
         if (!error) saved++;
       }
       slog(`Salvati ${saved} candidati. Ora rivedili uno per uno: "Da verificare".`);
