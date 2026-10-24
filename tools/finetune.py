@@ -99,11 +99,13 @@ def evaluate(net, te, thrs=(0.5, 0.7, 0.8, 0.9, 0.95)):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('crops'); ap.add_argument('out'); ap.add_argument('--steps', type=int, default=2500); ap.add_argument('--holdout-only', action='store_true')
+    ap = argparse.ArgumentParser(); ap.add_argument('crops'); ap.add_argument('out'); ap.add_argument('--steps', type=int, default=2500); ap.add_argument('--holdout-only', action='store_true'); ap.add_argument('--final-only', action='store_true')
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); log = lambda m: print(m, flush=True)
     items = T.load_items(a.crops, os.environ['SUPABASE_SERVICE_KEY'], 0)
     rng = np.random.default_rng(0); zones = sorted({T.zone(i) for i in items}); rng.shuffle(zones); hold = set(zones[0::4])
     tr = [i for i in items if T.zone(i) not in hold]; te = [i for i in items if T.zone(i) in hold and not i['id'].startswith('neg-')]
+    if a.final_only:
+        log('Addestro su tutti i dati…'); net = train(items, a.steps, 1, log); torch.save(net.state_dict(), os.path.join(a.out, 'final.pt')); log('Fatto.'); return
     log(f"Zone tenute fuori: {len(hold)} · valutazione su {sum(i['kind'] == 'label' for i in te)} ritagli con stalli e {sum(i['kind'] == 'empty' for i in te)} senza")
     net = train(tr, a.steps, 0, log)
     agg = evaluate(net, te); best = None
