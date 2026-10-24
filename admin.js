@@ -404,8 +404,8 @@
   function thresholds(sens) {
     const ref = (() => { try { return JSON.parse(localStorage.getItem('dp.yellow') || 'null'); } catch (e) { return null; } })();
     const base = [0.085, 0.07, 0.055, 0.045, 0.038][sens - 1];
-    if (ref && ref.yel != null) return { yelMin: Math.max(0.03, ref.yel * [0.95, 0.85, 0.75, 0.65, 0.55][sens - 1]), valMin: 0.5, ref: true };
-    return { yelMin: base, valMin: 0.5, ref: false };
+    if (ref && ref.yel != null) return { yelMin: Math.max(0.03, ref.yel * [0.95, 0.85, 0.75, 0.65, 0.55][sens - 1]), valMin: 0.6, ref: true };
+    return { yelMin: base, valMin: 0.6, ref: false };
   }
   function yellowMask(ctx, px, sens) {
     const d = ctx.getImageData(0, 0, px, px).data; const mask = new Uint8Array(px * px); const th = thresholds(sens); let count = 0;
@@ -413,7 +413,7 @@
       const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255;
       const v = Math.max(r, g, b); if (v < th.valMin) continue;
       if (((r + g) / 2 - b) < th.yelMin) continue;      // deficit di blu
-      if (r < 0.92 * g || g < 0.80 * r) continue;        // giallo, non verde/arancio
+      if (r < 0.98 * g || r > 1.12 * g) continue;        // giallo: rosso ≈ verde (esclude verde dei cespugli e rosa degli attraversamenti)
       mask[i] = 1; count++;
     }
     return { mask, count, th };
@@ -454,8 +454,8 @@
       if (grp.length >= 2) { const cx = grp.reduce((a, k) => a + strips[k].cx, 0) / grp.length, cy = grp.reduce((a, k) => a + strips[k].cy, 0) / grp.length; cands.push({ cx, cy, posti: grp.length, kind: 'fasce', w: Math.max(...grp.map((k) => strips[k].bw)) + 20, h: Math.max(...grp.map((k) => strips[k].bh)) + 20, score: grp.length }); }
     });
     comps.forEach((c) => {
-      const fill = c.area / (c.bw * res * c.bh * res);
-      if (c.L >= 3.5 && c.L <= 16 && c.W >= 1.8 && c.W <= 8 && c.area >= 2 && c.area <= 60 && fill >= 0.1 && fill <= 0.7 && c.L / c.W <= 5) {
+      const fill = c.area / Math.max(0.1, c.L * c.W); // riempimento lungo gli assi reali: un'auto è piena, uno stallo tratteggiato no
+      if (c.L >= 3.5 && c.L <= 16 && c.W >= 1.8 && c.W <= 8 && c.area >= 2 && c.area <= 60 && fill >= 0.1 && fill <= 0.6 && c.L / c.W <= 5) {
         if (!cands.some((k) => Math.hypot((k.cx - c.cx) * res, (k.cy - c.cy) * res) < 6)) cands.push({ cx: c.cx, cy: c.cy, posti: Math.max(1, Math.round(c.L / 2.6)), kind: 'blocco', w: c.bw, h: c.bh, score: 1 });
       }
     });
