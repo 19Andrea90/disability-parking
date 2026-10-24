@@ -15,6 +15,10 @@ import train_torch as T
 torch.set_num_threads(max(1, os.cpu_count() or 1))
 
 
+def dihedral(p, k):
+    p = np.rot90(p, k % 4); return p[:, ::-1] if k >= 4 else p
+
+
 class Net(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -53,7 +57,7 @@ def sampler(items, rng):
 
 
 def to_batch(ps, rng):
-    b = np.stack([T.dihedral(p, int(rng.integers(8))) for p in ps]).astype(np.float32)
+    b = np.stack([dihedral(p, int(rng.integers(8))) for p in ps]).astype(np.float32)
     m = b.mean(axis=(1, 2, 3), keepdims=True); b = np.clip((b - m) * rng.uniform(.85, 1.15, (len(b), 1, 1, 1)) + m + rng.uniform(-.06, .06, (len(b), 1, 1, 1)), 0, 1)
     x = torch.from_numpy(b).permute(0, 3, 1, 2)
     return torch.nn.functional.interpolate(x, scale_factor=T.UP, mode='bilinear', align_corners=False)
