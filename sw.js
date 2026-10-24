@@ -1,5 +1,5 @@
 /* Service worker: app shell offline + cache delle tile già viste */
-const VERSION = 'dp-v0.1.0';
+const VERSION = 'dp-v0.1.1';
 const SHELL = ['./', './index.html', './admin.html', './app.css', './app.js', './admin.js', './config.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'];
 const TILE_CACHE = 'dp-tiles'; const TILE_MAX = 1500;

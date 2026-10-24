@@ -99,12 +99,27 @@
   // ---------- import da OpenStreetMap (dal browser dell'admin) ----------
   const OVERPASS = ['https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass-api.de/api/interpreter'];
   const ilog = (m) => { $('#i-log').textContent += m + '\n'; };
-  function osmQuery(area) {
-    return `[out:json][timeout:90];area["name"="${area.replace(/"/g, '')}"]["boundary"="administrative"]["admin_level"="8"]->.a;(
-      nwr["amenity"="parking_space"]["parking_space"="disabled"](area.a);
-      nwr["amenity"="parking_space"]["disabled"~"^(yes|designated)$"](area.a);
-      nwr["amenity"="parking"]["capacity:disabled"](area.a);
-      nwr["amenity"="parking"]["disabled"~"^(yes|designated)$"](area.a););out center tags;`;
+  function osmQuery(bb) { // bb = "sud,ovest,nord,est"
+    return `[out:json][timeout:90];(
+      nwr["amenity"="parking_space"]["parking_space"="disabled"](${bb});
+      nwr["amenity"="parking_space"]["disabled"~"^(yes|designated)$"](${bb});
+      nwr["amenity"="parking"]["capacity:disabled"](${bb});
+      nwr["amenity"="parking"]["disabled"~"^(yes|designated)$"](${bb}););out center tags;`;
+  }
+  // confine del comune da Nominatim (rettangolo + poligono)
+  async function comuneBoundary(name) {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=it&polygon_geojson=1&q=${encodeURIComponent(name)}`, { headers: { 'Accept-Language': 'it' } });
+    const j = await r.json();
+    const hit = j.find((x) => x.class === 'boundary' && x.type === 'administrative') || j.find((x) => x.geojson && /Polygon/.test(x.geojson.type));
+    if (!hit) return null;
+    const bb = hit.boundingbox.map(Number); // [sud, nord, ovest, est]
+    return { bbox: `${bb[0]},${bb[2]},${bb[1]},${bb[3]}`, geojson: hit.geojson, label: hit.display_name.split(',')[0] };
+  }
+  function inRing(ring, lon, lat) { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, yi] = ring[i], [xj, yj] = ring[j]; if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) c = !c; } return c; }
+  function inside(geo, lon, lat) {
+    if (!geo) return true;
+    const polys = geo.type === 'Polygon' ? [geo.coordinates] : geo.type === 'MultiPolygon' ? geo.coordinates : null; if (!polys) return true;
+    return polys.some((p) => inRing(p[0], lon, lat) && !p.slice(1).some((h) => inRing(h, lon, lat)));
   }
   function osmConvert(el, comune) {
     const t = el.tags || {}; const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon; if (lat == null) return null;
@@ -122,18 +137,23 @@
   $('#i-go').onclick = async () => {
     const area = $('#i-area').value.trim(); if (!area) return; $('#i-log').textContent = ''; $('#i-go').disabled = true;
     try {
+      ilog(`Cerco il confine di "${area}"…`);
+      const b = await comuneBoundary(area);
+      if (!b) throw new Error(`Comune "${area}" non trovato: prova con il nome esatto (es. "Udine")`);
+      ilog(`  confine trovato: ${b.label}`);
       let json = null;
       for (const url of OVERPASS) {
         ilog(`Interrogo ${new URL(url).host}…`);
         const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 95000); const t0 = Date.now();
-        try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(area)), signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); json = await r.json(); ilog(`  risposta in ${Math.round((Date.now() - t0) / 1000)} s`); break; }
+        try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(b.bbox)), signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); json = await r.json(); ilog(`  risposta in ${Math.round((Date.now() - t0) / 1000)} s`); break; }
         catch (e) { ilog('  non disponibile: ' + (e.name === 'AbortError' ? 'nessuna risposta entro 95 s' : e.message)); }
         finally { clearTimeout(to); }
       }
       if (!json) throw new Error('Nessun server Overpass ha risposto: riprova tra qualche minuto.');
-      const recs = json.elements.map((el) => osmConvert(el, area)).filter(Boolean);
-      ilog(`Trovati ${recs.length} stalli per "${area}".`);
-      if (!recs.length) { ilog('Controlla che il nome del comune sia scritto come su OpenStreetMap.'); return; }
+      const all = json.elements.map((el) => osmConvert(el, b.label)).filter(Boolean);
+      const recs = all.filter((r) => inside(b.geojson, r.lon, r.lat));
+      ilog(`Trovati ${all.length} stalli nel rettangolo, ${recs.length} dentro il confine di ${b.label}.`);
+      if (!recs.length) { ilog('Nessuno stallo mappato su OpenStreetMap in questo comune.'); return; }
       for (let i = 0; i < recs.length; i += 200) {
         const { error } = await sb.from('stalli').upsert(recs.slice(i, i + 200), { onConflict: 'osm_id' });
         if (error) throw error; ilog(`  salvati ${Math.min(i + 200, recs.length)}/${recs.length}`);
