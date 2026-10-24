@@ -125,7 +125,7 @@ def featurize(items, bb, rng):
             else:
                 F, cx, cy = bb.windows(np.rot90(img, k))
                 if cf: np.savez(cf, F=F, cx=cx, cy=cy)
-            if k == 0: it['map'] = (F, cx, cy)
+            if k == 0 and not it['id'].startswith('neg-'): it['map'] = (F, cx, cy)
             pts = rot_pts(it['pts'], k, S)
             gx, gy = np.meshgrid(cx, cy)
             border = (gx >= 2 * P / 3) & (gx <= S - 2 * P / 3) & (gy >= 2 * P / 3) & (gy <= S - 2 * P / 3)
@@ -136,12 +136,16 @@ def featurize(items, bb, rng):
             pos = np.argwhere((d <= 1.0)); neg = np.argwhere((d >= NEG_MIN) & border)
             want = 25 if it['kind'] == 'label' else (25 if not it['id'].startswith('neg-') else 6)
             if len(neg) > want: neg = neg[rng.choice(len(neg), want, replace=False)]
-            it['train'] += [(F[i, j], 1) for i, j in pos] + [(F[i, j], 0) for i, j in neg]
+            idx = np.concatenate([pos, neg]) if len(pos) else neg
+            if len(idx):
+                it['train'].append((np.array(F[idx[:, 0], idx[:, 1]], dtype=np.float16), np.r_[np.ones(len(pos)), np.zeros(len(neg))]))  # copia: non tiene viva la mappa intera
+            del F
+        if it['id'].startswith('neg-'): it['img'] = None
         if (n + 1) % 50 == 0: print(f'    caratteristiche {n + 1}/{len(items)} · {time.time() - t0:.0f} s', flush=True)
 
 
 def stack(items):
-    X = np.stack([f for it in items for f, _ in it['train']]).astype(np.float32); y = np.array([l for it in items for _, l in it['train']]); return X, y
+    X = np.concatenate([f for it in items for f, _ in it['train']]).astype(np.float32); y = np.concatenate([l for it in items for _, l in it['train']]).astype(int); return X, y
 
 
 def nms(s, cx, cy, thr):
