@@ -179,11 +179,11 @@
   let stopReq = false, activeCtl = null;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const checkStop = () => { if (stopReq) throw new Error('Interrotto dall\'utente'); };
-  async function overpassOnce(url, bb, timeoutMs) {
+  async function overpassOnce(url, bb, timeoutMs, query) {
     const ctl = new AbortController(); activeCtl = ctl; const to = setTimeout(() => ctl.abort(), timeoutMs); const t0 = Date.now();
     try {
       checkStop();
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(bb)), signal: ctl.signal });
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(query || osmQuery(bb)), signal: ctl.signal });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();
       if (j.remark && /timed out|error/i.test(j.remark)) throw new Error('server: ' + j.remark.slice(0, 80));
@@ -191,8 +191,8 @@
     } catch (e) { if (stopReq) throw new Error('Interrotto dall\'utente'); if (e.name === 'AbortError') throw new Error(`nessuna risposta entro ${Math.round(timeoutMs / 1000)} s`); throw e; }
     finally { clearTimeout(to); activeCtl = null; }
   }
-  async function overpassFetch(bb) {
-    let lastErr = null;
+  async function overpassFetch(bb, query, logFn) {
+    const L_ = logFn || ilog; let lastErr = null;
     for (let round = 0; round < 3; round++) {
       for (const url of OVERPASS) {
         const host = new URL(url).host;
@@ -200,7 +200,7 @@
         catch (e) { if (stopReq) throw e; lastErr = e; ilog(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
       }
       checkStop();
-      const wait = 20 * (round + 1); ilog(`  tutti i server occupati: riprovo tra ${wait} s (tentativo ${round + 2}/3)…`); for (let t = 0; t < wait; t++) { checkStop(); await sleep(1000); }
+      const wait = 20 * (round + 1); L_(`  tutti i server occupati: riprovo tra ${wait} s (tentativo ${round + 2}/3)…`); for (let t = 0; t < wait; t++) { checkStop(); await sleep(1000); }
     }
     throw lastErr || new Error('Nessun server Overpass ha risposto');
   }
@@ -471,16 +471,56 @@
     });
     return { comps, strips, cands };
   }
+
+  // --- contesto OSM: analizzo solo strade e parcheggi, escludo gli edifici ---
+  let ctxData = null; // { key, buildings:[[ [lon,lat],... ]], roads:[{pts,w}], parkings:[[...]] }
+  async function loadContext(s0, w0, n0, e0, logFn) {
+    const key = [s0, w0, n0, e0].map((x) => x.toFixed(4)).join(',');
+    if (ctxData && ctxData.key === key) return ctxData;
+    const bb = `${s0},${w0},${n0},${e0}`;
+    const q = `[out:json][timeout:60];(way["building"](${bb});way["highway"~"^(primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|road)$"](${bb});way["amenity"="parking"](${bb});relation["amenity"="parking"](${bb}););out geom;`;
+    logFn('Scarico contesto da OpenStreetMap (edifici, strade, parcheggi)…');
+    const els = await overpassFetch(bb, q, logFn);
+    const d = { key, buildings: [], roads: [], parkings: [] };
+    for (const el of els) {
+      const pts = (el.geometry || []).map((p) => [p.lon, p.lat]);
+      if (el.type === 'way' && el.tags) {
+        if (el.tags.building) d.buildings.push(pts);
+        else if (el.tags.amenity === 'parking') d.parkings.push(pts);
+        else if (el.tags.highway) d.roads.push({ pts, w: /^(primary|secondary)$/.test(el.tags.highway) ? 22 : /^(tertiary|unclassified|residential|road)$/.test(el.tags.highway) ? 16 : 12 });
+      } else if (el.type === 'relation' && el.members) {
+        el.members.forEach((m) => { if (m.role === 'outer' && m.geometry) d.parkings.push(m.geometry.map((p) => [p.lon, p.lat])); });
+      }
+    }
+    logFn(`  contesto: ${d.buildings.length} edifici, ${d.roads.length} strade, ${d.parkings.length} parcheggi`);
+    ctxData = d; return d;
+  }
+  // maschera di contesto per un riquadro: 1 = analizzabile
+  function contextMask(d, s, w, n, e, px, res) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = px; const c = cv.getContext('2d', { willReadFrequently: true });
+    const X = (lon) => (lon - w) / (e - w) * px, Y = (lat) => (n - lat) / (n - s) * px;
+    c.fillStyle = '#000'; c.fillRect(0, 0, px, px);
+    c.fillStyle = '#fff'; c.strokeStyle = '#fff'; c.lineCap = 'round'; c.lineJoin = 'round';
+    d.parkings.forEach((poly) => { c.beginPath(); poly.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.closePath(); c.fill(); c.lineWidth = 8 / res; c.stroke(); });
+    d.roads.forEach((r) => { c.lineWidth = r.w / res; c.beginPath(); r.pts.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.stroke(); });
+    c.fillStyle = '#000'; d.buildings.forEach((poly) => { c.beginPath(); poly.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.closePath(); c.fill(); });
+    const im = c.getImageData(0, 0, px, px).data; const m = new Uint8Array(px * px); let n1 = 0;
+    for (let i = 0; i < px * px; i++) if (im[i * 4] > 127) { m[i] = 1; n1++; }
+    return { mask: m, frac: n1 / (px * px) };
+  }
+  function applyContext(mask, cm) { for (let i = 0; i < mask.length; i++) if (!cm[i]) mask[i] = 0; }
   // --- taratura del colore giallo sul riquadro al centro ---
   let calib = null; // {cv, px, s,w,n,e}
   function showCalib(sens) {
     const pc = $('#s-canvas'); const px = calib.px; pc.width = px; pc.height = px; const pctx = pc.getContext('2d', { willReadFrequently: true }); pctx.drawImage(calib.cv, 0, 0);
-    const ym = yellowMask(pctx, px, sens); const det = detect(ym.mask, px, calib.res);
-    const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) if (ym.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } pctx.putImageData(im, 0, 0);
+    const ym = yellowMask(pctx, px, sens);
+    if (calib.ctx) { const cm = contextMask(calib.ctx, calib.s, calib.w, calib.n, calib.e, px, calib.res); applyContext(ym.mask, cm.mask); ym.count = ym.mask.reduce((a, b) => a + b, 0); calib.cm = cm.mask; }
+    const det = detect(ym.mask, px, calib.res);
+    const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) { if (calib.cm && !calib.cm[i]) { im.data[i * 4] = im.data[i * 4] * .45; im.data[i * 4 + 1] = im.data[i * 4 + 1] * .45; im.data[i * 4 + 2] = im.data[i * 4 + 2] * .45 + 60; } if (ym.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } } pctx.putImageData(im, 0, 0);
     pctx.lineWidth = 2; pctx.strokeStyle = '#ffd400'; det.strips.forEach((c) => pctx.strokeRect(c.cx - c.bw / 2, c.cy - c.bh / 2, c.bw, c.bh));
     pctx.lineWidth = 4; pctx.strokeStyle = '#ff2d2d'; det.cands.forEach((c) => pctx.strokeRect(c.cx - c.w / 2, c.cy - c.h / 2, c.w, c.h));
     $('#s-prev').hidden = false;
-    $('#s-prevtxt').textContent = `Riquadro di 100 m al centro, 10 cm/px. Pixel gialli: ${ym.count}. Soglia giallezza ≥ ${ym.th.yelMin.toFixed(3)}${ym.th.ref ? ' (da colore campionato)' : ' (predefinita)'}. In magenta i pixel gialli, in giallo le fasce riconosciute, in rosso i candidati. Clicca su una fascia gialla per usarla come riferimento.`;
+    $('#s-prevtxt').textContent = `Riquadro di 100 m al centro, 10 cm/px. Pixel gialli: ${ym.count}. Soglia giallezza ≥ ${ym.th.yelMin.toFixed(3)}${ym.th.ref ? ' (da colore campionato)' : ' (predefinita)'}. In blu scuro le zone escluse (edifici, verde), in magenta i pixel gialli, in giallo le fasce riconosciute, in rosso i candidati. Clicca su una fascia gialla per usarla come riferimento.`;
     slog(`Taratura: ${ym.count} pixel gialli, ${det.strips.length} fasce, ${det.cands.length} candidati (${det.cands.map((c) => c.kind + ' ×' + c.posti).join(', ') || 'nessuno'}).`);
   }
   $('#s-cal').onclick = async () => {
@@ -491,7 +531,8 @@
       let got = null;
       for (const src of ['fvg', 'proxy', 'esri']) { try { got = await fetchCell(s0, w0, n0, e0, px, src); got.ctx.getImageData(0, 0, 1, 1); slog('Taratura: sorgente ' + src); break; } catch (e) { got = null; slog(`  ${src}: ${e.message}`); } }
       if (!got) throw new Error('immagine non disponibile');
-      calib = { cv: got.cv, px, res, s: s0, w: w0, n: n0, e: e0 };
+      calib = { cv: got.cv, px, res, s: s0, w: w0, n: n0, e: e0, ctx: null };
+      try { calib.ctx = await loadContext(s0 - 0.002, w0 - 0.003, n0 + 0.002, e0 + 0.003, slog); } catch (e) { slog('Contesto OSM non disponibile (' + e.message + '): analizzo tutto il riquadro.'); }
       showCalib(+$('#s-sens').value);
     } catch (e) { slog('Errore taratura: ' + e.message); }
     $('#s-cal').disabled = false;
@@ -530,15 +571,20 @@
         catch (e) { slog(`  ${cand[1]}: non disponibile (${e.message})`); }
       }
       if (!src) throw new Error('Nessuna sorgente immagini disponibile');
+      let ctxd = null;
+      try { ctxd = await loadContext(s0 - 0.002, w0 - 0.003, n0 + 0.002, e0 + 0.003, slog); } catch (e) { slog('Contesto OSM non disponibile (' + e.message + '): analizzo tutto, aspettati più falsi positivi.'); }
       slog(`Scansiono ${tot} riquadri da ${cellM} m…`);
-      let best = null; $('#s-prev').hidden = true;
+      let best = null, skipped = 0; $('#s-prev').hidden = true;
       const found = []; let done = 0;
       const known = cands.filter((c) => c.stato !== 'scartato');
       for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
         if (sStop) throw new Error('Interrotto');
         const cs = s0 + iy * cellM * dLat, cw = w0 + ix * cellM * dLon, cn = cs + cellM * dLat, ce = cw + cellM * dLon;
+        let cm = null;
+        if (ctxd) { cm = contextMask(ctxd, cs, cw, cn, ce, px, res); if (cm.frac < 0.01) { skipped++; done++; continue; } }
         let cellImg; try { cellImg = await fetchCell(cs, cw, cn, ce, px, src); } catch (e) { done++; continue; }
-        const ym = yellowMask(cellImg.ctx, px, sens); const det = detect(ym.mask, px, res);
+        const ym = yellowMask(cellImg.ctx, px, sens); if (cm) applyContext(ym.mask, cm.mask);
+        const det = detect(ym.mask, px, res);
         if (!best || ym.count > best.count) best = { count: ym.count, mask: ym.mask, cv: cellImg.cv };
         for (const c of det.cands) {
           const lat = cn - (c.cy / px) * (cn - cs), lon = cw + (c.cx / px) * (ce - cw);
@@ -559,6 +605,7 @@
         const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) if (best.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } pctx.putImageData(im, 0, 0);
         $('#s-prev').hidden = false; slog(`Pixel gialli nel riquadro più ricco: ${best.count} (su ${px * px}).`);
       }
+      if (skipped) slog(`Riquadri saltati perché senza strade/parcheggi: ${skipped}.`);
       slog(`Trovati ${found.length} candidati. Salvo…`);
       let saved = 0;
       for (const f of found) {
