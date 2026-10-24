@@ -57,7 +57,19 @@ body{overflow:auto;background:var(--bg)}
       <div class="sub" style="margin:8px 0">Scarica da OpenStreetMap gli stalli riservati di un comune e li inserisce come "verificati" (fonte OSM). Rilanciarlo aggiorna, non duplica.</div>
       <div class="actions" style="position:relative"><input type="text" id="i-area" value="" placeholder="Nome del comune (es. Trieste)" style="flex:1" autocomplete="off"><button class="btn primary" id="i-go">Importa</button><button class="btn danger" id="i-stop" hidden>Ferma</button>
         <ul id="i-sug" role="listbox" hidden style="position:absolute;left:0;right:110px;top:100%;margin:4px 0 0;padding:6px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:50;max-height:260px;overflow:auto"></ul></div>
+      <div class="actions" style="margin-top:8px"><button class="btn" id="i-region">Importa tutto il Friuli Venezia Giulia</button><span class="sub">Una sola richiesta per tutta la regione; aggiunge solo gli stalli non ancora presenti.</span></div>
       <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
+    </details>
+
+    <details class="edit" style="margin-bottom:12px" id="lab-box">
+      <summary style="cursor:pointer;font-weight:600">Etichetta per l'addestramento <span class="sub" id="lab-count"></span></summary>
+      <div class="sub" style="margin:8px 0">Per ogni stallo noto vedi l'ortofoto di 40 × 40 m attorno. <b>Clicca al centro di ogni posto riservato visibile nell'immagine</b> (anche più di uno), poi Invio. Se non se ne vede nessuno, premi N. Tasti: <b>Invio</b> salva e avanti · <b>N</b> non visibile · <b>S</b> salta · <b>Backspace</b> annulla l'ultimo clic · <b>←</b> indietro. Il segnaposto blu è la posizione registrata (spesso spostata di qualche metro).</div>
+      <div class="actions" style="flex-wrap:wrap"><button class="btn primary" id="lab-start">Inizia / riprendi</button><label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="lab-redo"> Rivedi anche quelli già etichettati</label><span class="sub" id="lab-status"></span></div>
+      <div id="lab-area" hidden style="margin-top:10px">
+        <div class="sub" id="lab-title" style="font-weight:600;color:var(--fg)"></div>
+        <canvas id="lab-canvas" width="400" height="400" style="width:100%;max-width:640px;border-radius:12px;margin-top:6px;cursor:crosshair;touch-action:none"></canvas>
+        <div class="actions" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="lab-back">← Indietro</button><button class="btn" id="lab-undo">Annulla clic</button><button class="btn danger" id="lab-none">Non visibile (N)</button><button class="btn" id="lab-skip">Salta (S)</button><button class="btn primary" id="lab-save">Salva e avanti (Invio)</button></div>
+      </div>
     </details>
 
     <details class="edit" style="margin-bottom:12px" id="cand-box">
@@ -75,7 +87,7 @@ body{overflow:auto;background:var(--bg)}
         <label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="clf-on" checked> Filtra con classificatore</label><label class="sub" style="display:flex;align-items:center;gap:6px">Sensibilità <input type="range" id="s-sens" min="1" max="5" value="3" style="width:110px"></label></div>
       <div class="sub" id="clf-info" style="margin-top:6px">Classificatore: caricamento…</div>
       <pre id="s-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:160px;overflow:auto"></pre>
-      <div class="actions" style="margin-top:10px"><button class="btn" id="ds-export">Esporta dataset (zip)</button><span class="sub">Ritagli di ortofoto degli stalli verificati e dei candidati scartati, per addestrare il classificatore.</span></div><pre id="ds-log" class="sub" style="white-space:pre-wrap;margin:6px 0 0"></pre>
+      <div class="actions" style="margin-top:10px"><button class="btn" id="ds-export">Esporta dataset (zip)</button><span class="sub">Ritagli 40 × 40 m degli stalli etichettati (con le posizioni cliccate) e dei candidati scartati, per addestrare il rilevatore.</span></div><pre id="ds-log" class="sub" style="white-space:pre-wrap;margin:6px 0 0"></pre>
       <div id="s-prev" class="sub" hidden><div id="s-prevtxt">Anteprima del riquadro con più giallo (in magenta i pixel riconosciuti come segnaletica gialla):</div><canvas id="s-canvas" style="width:100%;max-width:900px;border-radius:12px;margin-top:6px;cursor:crosshair"></canvas></div>
       <div class="grid" style="margin-top:12px">
         <div>

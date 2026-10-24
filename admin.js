@@ -8,7 +8,7 @@
 
   // ---------- auth ----------
   async function session() { const { data } = await sb.auth.getSession(); return data.session; }
-  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); loadCands(); } }
+  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); loadCands(); setTimeout(() => loadLabels(), 1500); } }
   $('#l-in').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signInWithPassword({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : ''; if (!error) boot(); };
   $('#l-up').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signUp({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : 'Registrazione inviata: se Supabase richiede la conferma, controlla la posta e poi premi "Entra".'; };
   $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
@@ -44,7 +44,7 @@
   async function load() {
     const { data, error } = await sb.from('stalli_con_conferme').select('*').order('created_at', { ascending: false }).limit(5000);
     if (error) { $('#rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} (sei registrato come admin? controlla la tabella admins)</div>`; return; }
-    rows = data; kpi(); render();
+    rows = data; kpi(); render(); if (labDone.size) labCount();
   }
   function kpi() {
     const n = (st) => rows.filter((r) => r.stato === st).length;
@@ -772,37 +772,134 @@
   };
 
 
-  // --- esporta dataset per l'addestramento: ritagli 24x24 m a 10 cm/px di stalli verificati (positivi) e candidati scartati (negativi) ---
+  // --- esporta dataset v2: ritagli degli stalli etichettati (con i punti cliccati) + candidati scartati ---
+  async function loadJSZip() { if (!window.JSZip) await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+  async function cropBox(lat, lon, sideM, px) {
+    const { dLat, dLon } = mToDeg(lat); const h = sideM / 2;
+    const b = { s: lat - h * dLat, n: lat + h * dLat, w: lon - h * dLon, e: lon + h * dLon };
+    const got = await fetchCell(b.s, b.w, b.n, b.e, px, 'proxy'); return Object.assign(b, { cv: got.cv, px });
+  }
   $('#ds-export').onclick = async () => {
-    const btn = $('#ds-export'); btn.disabled = true; const log = (m) => { $('#ds-log').textContent += m + '\n'; };
-    $('#ds-log').textContent = '';
+    const btn = $('#ds-export'); btn.disabled = true; const log = (m) => { $('#ds-log').textContent += m + '\n'; }; $('#ds-log').textContent = '';
     try {
-      if (!window.JSZip) { await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
-      const zip = new JSZip(); const meta = [];
-      const half = 12; // metri
-      async function cropAt(lat, lon) {
-        const { dLat, dLon } = mToDeg(lat);
-        const s0 = lat - half * dLat, n0 = lat + half * dLat, w0 = lon - half * dLon, e0 = lon + half * dLon;
-        const got = await fetchCell(s0, w0, n0, e0, 240, 'proxy');
-        return new Promise((r) => got.cv.toBlob(r, 'image/jpeg', .9));
-      }
-      // positivi: stalli verificati/ufficiali (escludo i parcheggi "area" OSM, il cui punto non è sullo stallo)
-      const pos = rows.filter((r) => ['verificato', 'ufficiale'].includes(r.stato) && !(r.fonte === 'osm' && /Parcheggio con posti/.test(r.nome || '')));
-      log(`Positivi: ${pos.length} stalli verificati`);
+      await loadJSZip(); const zip = new JSZip(); const items = [];
+      const { data: labs, error } = await sb.from('etichette').select('*'); if (error) throw new Error(error.message + ' — hai eseguito 04_etichette.sql?');
+      const good = labs.filter((l) => l.esito === 'stalli' && l.punti.length);
+      log(`Etichette con stalli: ${good.length} (punti totali ${good.reduce((a, l) => a + l.punti.length, 0)}) · non visibili: ${labs.length - good.length}`);
       let i = 0;
-      for (const r of pos) { try { zip.file(`pos/${r.id}.jpg`, await cropAt(r.lat, r.lon)); meta.push({ id: r.id, label: 'pos', lat: r.lat, lon: r.lon, fonte: r.fonte, tipo: r.tipo, posti: r.posti }); } catch (e) { /* salto */ } if (++i % 20 === 0) log(`  ${i}/${pos.length}`); }
-      // positivi aggiuntivi: candidati accettati; negativi: candidati scartati (ritaglio rifatto alla stessa scala)
-      const acc = cands.filter((c) => c.stato === 'accettato'), neg = cands.filter((c) => c.stato === 'scartato');
-      log(`Candidati accettati: ${acc.length} · scartati (negativi): ${neg.length}`);
-      i = 0;
-      for (const c of acc) { try { zip.file(`pos/cand-${c.id}.jpg`, await cropAt(c.lat, c.lon)); meta.push({ id: c.id, label: 'pos', lat: c.lat, lon: c.lon, fonte: c.fonte }); } catch (e) { /* salto */ } }
-      for (const c of neg) { try { zip.file(`neg/${c.id}.jpg`, await cropAt(c.lat, c.lon)); meta.push({ id: c.id, label: 'neg', lat: c.lat, lon: c.lon, fonte: c.fonte, classe: c.classe }); } catch (e) { /* salto */ } if (++i % 20 === 0) log(`  ${i}/${neg.length}`); }
-      zip.file('meta.json', JSON.stringify({ exported: new Date().toISOString(), crop_m: half * 2, px: 240, items: meta }, null, 1));
-      log('Comprimo…');
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `dataset-stalli-${new Date().toISOString().slice(0, 10)}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-      log(`Fatto: ${meta.filter((m) => m.label === 'pos').length} positivi, ${meta.filter((m) => m.label === 'neg').length} negativi.`);
+      for (const l of good) {
+        try {
+          const px = Math.round(l.crop_m * 10); const c = await cropBox(l.centro_lat, l.centro_lon, l.crop_m, px);
+          const pts = l.punti.map(([la, lo]) => [Math.round((lo - c.w) / (c.e - c.w) * px * 10) / 10, Math.round((c.n - la) / (c.n - c.s) * px * 10) / 10]);
+          zip.file(`img/lab-${l.ref_id}.jpg`, await new Promise((r) => c.cv.toBlob(r, 'image/jpeg', .92)));
+          items.push({ id: `lab-${l.ref_id}`, kind: 'label', crop_m: l.crop_m, px, points: pts, lat: l.centro_lat, lon: l.centro_lon });
+        } catch (e) { log('  salto ' + l.ref_id + ': ' + e.message); }
+        if (++i % 20 === 0) log(`  ${i}/${good.length}`);
+      }
+      const neg = cands.filter((c) => c.stato === 'scartato'); log(`Candidati scartati (negativi puri): ${neg.length}`); i = 0;
+      for (const c of neg) {
+        try { const cb = await cropBox(c.lat, c.lon, 24, 240); zip.file(`img/neg-${c.id}.jpg`, await new Promise((r) => cb.cv.toBlob(r, 'image/jpeg', .9))); items.push({ id: `neg-${c.id}`, kind: 'neg', crop_m: 24, px: 240, points: [], lat: c.lat, lon: c.lon, fonte: c.fonte }); } catch (e) { /* salto */ }
+        if (++i % 40 === 0) log(`  ${i}/${neg.length}`);
+      }
+      zip.file('meta.json', JSON.stringify({ version: 2, exported: new Date().toISOString(), res_m: 0.1, items }, null, 1));
+      log('Comprimo…'); const blob = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `dataset-v2-${new Date().toISOString().slice(0, 10)}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      log(`Fatto: ${items.filter((x) => x.kind === 'label').length} ritagli etichettati, ${items.filter((x) => x.kind === 'neg').length} negativi.`);
     } catch (e) { log('Errore: ' + (e.message || e)); }
+    btn.disabled = false;
+  };
+
+  // ======================================================================
+  // ETICHETTATURA: posizione esatta dei posti riservati sull'ortofoto
+  // ======================================================================
+  let labQueue = [], labIdx = 0, labCur = null, labPts = [], labBox = null, labDone = new Map(); const labCache = new Map();
+  const isLabTarget = (r) => ['verificato', 'ufficiale'].includes(r.stato);
+  const labSide = (r) => (/Parcheggio con posti/.test(r.nome || '') ? 60 : 40);
+  async function loadLabels() {
+    const { data, error } = await sb.from('etichette').select('ref_id,esito,punti');
+    if (error) { $('#lab-status').textContent = 'Errore: ' + error.message + ' — esegui supabase/04_etichette.sql'; return false; }
+    labDone = new Map(data.map((e) => [e.ref_id, e])); labCount(); return true;
+  }
+  function labCount() {
+    const t = rows.filter(isLabTarget); const d = t.filter((r) => labDone.has(r.id));
+    const pts = [...labDone.values()].reduce((a, e) => a + (e.punti ? e.punti.length : 0), 0);
+    $('#lab-count').textContent = `· ${d.length}/${t.length} etichettati · ${pts} posti cliccati`;
+  }
+  function labFetch(r) {
+    if (!labCache.has(r.id)) { const side = labSide(r); labCache.set(r.id, cropBox(r.lat, r.lon, side, 400).then((b) => Object.assign(b, { side })).catch((e) => { labCache.delete(r.id); throw e; })); }
+    return labCache.get(r.id);
+  }
+  function labDraw() {
+    const cv = $('#lab-canvas'), c = cv.getContext('2d'); c.clearRect(0, 0, 400, 400);
+    if (labBox) c.drawImage(labBox.cv, 0, 0, 400, 400);
+    c.lineWidth = 2; c.strokeStyle = '#2d7bff'; c.fillStyle = 'rgba(45,123,255,.9)'; c.beginPath(); c.arc(200, 200, 4, 0, 7); c.fill();
+    labPts.forEach(([x, y], i) => { c.strokeStyle = '#ff2d2d'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, 11, 0, 7); c.stroke(); c.fillStyle = '#ff2d2d'; c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); c.font = 'bold 13px sans-serif'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 3; c.strokeText(String(i + 1), x + 12, y - 8); c.fillText(String(i + 1), x + 12, y - 8); });
+    if (labBox) { c.font = '12px sans-serif'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 3; const t = `${labBox.side} m · ${labPts.length} posti`; c.strokeText(t, 8, 392); c.fillText(t, 8, 392); }
+  }
+  const toLL = ([x, y]) => [+(labBox.n - (y / 400) * (labBox.n - labBox.s)).toFixed(7), +(labBox.w + (x / 400) * (labBox.e - labBox.w)).toFixed(7)];
+  const toPx = ([la, lo]) => [(lo - labBox.w) / (labBox.e - labBox.w) * 400, (labBox.n - la) / (labBox.n - labBox.s) * 400];
+  async function labShow() {
+    if (labIdx >= labQueue.length) { $('#lab-area').hidden = true; $('#lab-status').textContent = `Finito: ${labQueue.length} stalli rivisti. Ora puoi esportare il dataset.`; labCount(); return; }
+    labCur = labQueue[labIdx]; labBox = null; labPts = []; labDraw();
+    $('#lab-title').textContent = `${labIdx + 1} / ${labQueue.length} · ${labCur.nome || labCur.indirizzo || labCur.tipo} · ${labCur.comune || ''} · fonte ${labCur.fonte} · carico l'ortofoto…`;
+    try { labBox = await labFetch(labCur); } catch (e) { $('#lab-title').textContent += ' errore: ' + e.message + ' (premi S per saltare)'; return; }
+    const prev = labDone.get(labCur.id); if (prev && prev.punti) labPts = prev.punti.map(toPx);
+    $('#lab-title').textContent = `${labIdx + 1} / ${labQueue.length} · ${labCur.nome || labCur.indirizzo || labCur.tipo} · ${labCur.comune || ''} · fonte ${labCur.fonte}${prev ? ' · già etichettato: ' + prev.esito : ''}`;
+    labDraw();
+    for (let k = 1; k <= 3; k++) if (labQueue[labIdx + k]) labFetch(labQueue[labIdx + k]).catch(() => {});
+  }
+  async function labSave(esito) {
+    if (!labCur || !labBox) return;
+    const rec = { ref_id: labCur.id, centro_lat: labCur.lat, centro_lon: labCur.lon, crop_m: labBox.side, esito: esito || (labPts.length ? 'stalli' : 'non_visibile'), punti: (esito === 'non_visibile' ? [] : labPts).map(toLL) };
+    const { error } = await sb.from('etichette').upsert(rec, { onConflict: 'ref_id' });
+    if (error) { $('#lab-status').textContent = 'Errore nel salvataggio: ' + error.message; return; }
+    labDone.set(labCur.id, rec); labCount(); labCache.delete(labCur.id); labIdx++; labShow();
+  }
+  $('#lab-start').onclick = async () => {
+    if (!(await loadLabels())) return; const redo = $('#lab-redo').checked;
+    labQueue = rows.filter(isLabTarget).filter((r) => redo || !labDone.has(r.id)).sort((a, b) => (a.comune || '').localeCompare(b.comune || '') || b.lat - a.lat);
+    labIdx = 0; if (!labQueue.length) { $('#lab-status').textContent = 'Tutti gli stalli sono già etichettati.'; return; }
+    $('#lab-status').textContent = ''; $('#lab-area').hidden = false; $('#lab-box').open = true; labShow();
+  };
+  $('#lab-canvas').addEventListener('click', (e) => { if (!labBox) return; const r = e.currentTarget.getBoundingClientRect(); labPts.push([(e.clientX - r.left) * 400 / r.width, (e.clientY - r.top) * 400 / r.height]); labDraw(); });
+  $('#lab-canvas').addEventListener('contextmenu', (e) => { e.preventDefault(); if (!labPts.length) return; const r = e.currentTarget.getBoundingClientRect(); const x = (e.clientX - r.left) * 400 / r.width, y = (e.clientY - r.top) * 400 / r.height; let bi = 0, bd = 1e9; labPts.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bi = i; } }); labPts.splice(bi, 1); labDraw(); });
+  $('#lab-undo').onclick = () => { labPts.pop(); labDraw(); };
+  $('#lab-save').onclick = () => labSave();
+  $('#lab-none').onclick = () => labSave('non_visibile');
+  $('#lab-skip').onclick = () => { labIdx++; labShow(); };
+  $('#lab-back').onclick = () => { if (labIdx > 0) { labIdx--; labShow(); } };
+  document.addEventListener('keydown', (e) => {
+    if ($('#lab-area').hidden || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (e.key === 'Enter') { e.preventDefault(); labSave(); }
+    else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); labSave('non_visibile'); }
+    else if (e.key === 's' || e.key === 'S') { e.preventDefault(); labIdx++; labShow(); }
+    else if (e.key === 'Backspace') { e.preventDefault(); labPts.pop(); labDraw(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); if (labIdx > 0) { labIdx--; labShow(); } }
+  });
+
+  // ======================================================================
+  // IMPORT DI TUTTO IL FVG (una sola richiesta Overpass per area regionale)
+  // ======================================================================
+  $('#i-region').onclick = async () => {
+    const btn = $('#i-region'); btn.disabled = true; $('#i-log').textContent = '';
+    const q = `[out:json][timeout:170];area["ISO3166-2"="IT-36"]->.a;(
+      nwr["amenity"="parking_space"]["parking_space"="disabled"](area.a);
+      nwr["amenity"="parking_space"]["disabled"~"^(yes|designated)$"](area.a);
+      nwr["amenity"="parking"]["capacity:disabled"](area.a);
+      nwr["amenity"="parking"]["disabled"~"^(yes|designated)$"](area.a););out center tags;`;
+    try {
+      let els = null;
+      for (const url of ['https://overpass-api.de/api/interpreter', 'https://lz4.overpass-api.de/api/interpreter', 'https://z.overpass-api.de/api/interpreter']) {
+        ilog(`Interrogo ${new URL(url).host} per tutta la regione (può richiedere 1–3 minuti)…`);
+        try { const r = await overpassOnce(url, null, 180000, q); els = r.els; ilog(`  ${els.length} elementi in ${Math.round(r.ms / 1000)} s`); break; } catch (e) { ilog('  ' + e.message); }
+      }
+      if (!els) throw new Error('Overpass non ha risposto: riprova più tardi.');
+      const have = new Set(rows.map((r) => r.osm_id).filter(Boolean));
+      const recs = els.map((el) => osmConvert(el, (el.tags && (el.tags['addr:city'] || el.tags['is_in:city'])) || null)).filter((r) => r && !have.has(r.osm_id));
+      ilog(`Nuovi stalli da aggiungere: ${recs.length} (già presenti: ${els.length - recs.length}).`);
+      for (let i = 0; i < recs.length; i += 200) { const { error } = await sb.from('stalli').upsert(recs.slice(i, i + 200), { onConflict: 'osm_id', ignoreDuplicates: true }); if (error) throw error; ilog(`  salvati ${Math.min(i + 200, recs.length)}/${recs.length}`); }
+      ilog('Fatto.'); load();
+    } catch (e) { ilog('Errore: ' + (e.message || e)); }
     btn.disabled = false;
   };
 
