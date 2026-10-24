@@ -86,6 +86,7 @@ def patch(img, cx, cy):
     return img[y0:y0 + P, x0:x0 + P]
 
 
+CACHE = None            # cartella per le caratteristiche già calcolate
 CELL = 32 // UP * RES    # 1.6 m: passo della mappa di caratteristiche sul terreno
 WIN = 4                  # finestra 4x4 celle = 6.4 m
 
@@ -118,7 +119,12 @@ def featurize(items, bb, rng):
     for n, it in enumerate(items):
         img = it['img']; S = img.shape[0]; it['train'] = []
         for k in range(4):
-            F, cx, cy = bb.windows(np.rot90(img, k))
+            cf = os.path.join(CACHE, f"{it['id']}_{S}_{k}.npz") if CACHE else None
+            if cf and os.path.exists(cf):
+                z = np.load(cf); F, cx, cy = z['F'], z['cx'], z['cy']
+            else:
+                F, cx, cy = bb.windows(np.rot90(img, k))
+                if cf: np.savez(cf, F=F, cx=cx, cy=cy)
             if k == 0: it['map'] = (F, cx, cy)
             pts = rot_pts(it['pts'], k, S)
             gx, gy = np.meshgrid(cx, cy)
@@ -151,6 +157,7 @@ def main():
     items = load_items(a.crops, key, a.fake)
     L = [i for i in items if i['kind'] == 'label']
     print(f"Ritagli: {len(L)} con stalli ({sum(len(i['pts']) for i in L)} posti) · {sum(i['kind'] == 'empty' and not i['id'].startswith('neg-') for i in items)} senza stalli visibili · {sum(i['id'].startswith('neg-') for i in items)} candidati scartati", flush=True)
+    global CACHE; CACHE = os.path.join(a.crops, 'feat'); os.makedirs(CACHE, exist_ok=True)
     bb = Backbone(); rng = np.random.default_rng(0)
     print('Calcolo le caratteristiche (una passata per ritaglio e rotazione)…', flush=True)
     featurize(items, bb, rng)
