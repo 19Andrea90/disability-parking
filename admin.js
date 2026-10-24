@@ -389,6 +389,8 @@
     if (src === 'fvg') {
       // WMS 1.1.1 in EPSG:4326: bbox = minLon,minLat,maxLon,maxLat
       url = `${FVG_WMS}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=trueorto_FVG_1720&STYLES=&SRS=EPSG:4326&BBOX=${w},${s},${e},${n}&WIDTH=${px}&HEIGHT=${px}&FORMAT=image/jpeg`;
+    } else if (src === 'proxy') {
+      url = `${C.SUPABASE_URL}/functions/v1/wms-proxy?bbox=${w},${s},${e},${n}&w=${px}&h=${px}`;
     } else {
       // Esri: esporto via export API (consente CORS)
       url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${w},${s},${e},${n}&bboxSR=4326&imageSR=4326&size=${px},${px}&format=jpg&f=image`;
@@ -422,29 +424,36 @@
       }
       comps.push({ n, cx: (sx / n) * 2, cy: (sy / n) * 2, w: (maxx - minx + 1) * 2, h: (maxy - miny + 1) * 2 });
     }
-    return comps;
+    return { comps, mask, count: mask.reduce((a, b) => a + b, 0) };
   }
   $('#s-go').onclick = async () => {
     $('#s-log').textContent = ''; $('#s-go').disabled = true; $('#s-stop').hidden = false; sStop = false;
     const sens = +$('#s-sens').value;
     try {
-      const b = map.getBounds(); const s0 = b.getSouth(), w0 = b.getWest(), n0 = b.getNorth(), e0 = b.getEast();
+      const b = map.getBounds(); let s0 = b.getSouth(), w0 = b.getWest(), n0 = b.getNorth(), e0 = b.getEast();
       const { dLat, dLon } = mToDeg((s0 + n0) / 2);
       const cellM = 120, res = 0.2, px = Math.round(cellM / res); // 120 m a 20 cm/px = 600 px
+      const minSide = 720; // se la vista è più piccola, scansiono comunque 720 m attorno al centro
+      if ((n0 - s0) < minSide * dLat || (e0 - w0) < minSide * dLon) { const c = map.getCenter(); s0 = c.lat - minSide / 2 * dLat; n0 = c.lat + minSide / 2 * dLat; w0 = c.lng - minSide / 2 * dLon; e0 = c.lng + minSide / 2 * dLon; slog(`Vista piccola: scansiono ${minSide} m attorno al centro.`); }
       const ny = Math.ceil((n0 - s0) / (cellM * dLat)), nx = Math.ceil((e0 - w0) / (cellM * dLon)); const tot = nx * ny;
       if (tot > 900) throw new Error(`Area troppo grande (${tot} riquadri): avvicina la mappa (zoom 15-16).`);
-      // scelgo la sorgente: provo FVG (10-20 cm), se i pixel non sono leggibili passo a Esri
-      let src = 'fvg';
-      try { const t = await fetchCell(s0, w0, s0 + cellM * dLat, w0 + cellM * dLon, 64, 'fvg'); t.ctx.getImageData(0, 0, 1, 1); slog('Sorgente: TrueOrtofoto FVG 2020'); }
-      catch (e) { src = 'esri'; slog('Ortofoto FVG non analizzabile dal browser (' + e.message + '): uso satellite Esri'); }
+      // sorgente: 1) ortofoto FVG diretta, 2) ortofoto FVG via proxy Supabase, 3) satellite Esri
+      let src = null;
+      for (const cand of [['fvg', 'TrueOrtofoto FVG 2020 (diretta)'], ['proxy', 'TrueOrtofoto FVG 2020 (via proxy Supabase)'], ['esri', 'satellite Esri (meno nitido)']]) {
+        try { const t = await fetchCell(s0, w0, s0 + cellM * dLat, w0 + cellM * dLon, 64, cand[0]); t.ctx.getImageData(0, 0, 1, 1); src = cand[0]; slog('Sorgente: ' + cand[1]); break; }
+        catch (e) { slog(`  ${cand[1]}: non disponibile (${e.message})`); }
+      }
+      if (!src) throw new Error('Nessuna sorgente immagini disponibile');
       slog(`Scansiono ${tot} riquadri da ${cellM} m…`);
+      let best = null; $('#s-prev').hidden = true;
       const found = []; let done = 0;
       const known = cands.filter((c) => c.stato !== 'scartato');
       for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
         if (sStop) throw new Error('Interrotto');
         const cs = s0 + iy * cellM * dLat, cw = w0 + ix * cellM * dLon, cn = cs + cellM * dLat, ce = cw + cellM * dLon;
         let cellImg; try { cellImg = await fetchCell(cs, cw, cn, ce, px, src); } catch (e) { done++; continue; }
-        const comps = yellowComponents(cellImg.ctx, px, sens);
+        const yc = yellowComponents(cellImg.ctx, px, sens); const comps = yc.comps;
+        if (!best || yc.count > best.count) best = { count: yc.count, mask: yc.mask, cv: cellImg.cv };
         for (const c of comps) {
           const wM = c.w * res, hM = c.h * res, areaM = c.n * 4 * res * res; // n è in celle 2x2
           // stallo disabili: ingombro 1.5–9 m per lato, strisce (non un blocco pieno), non una linea lunghissima
@@ -464,6 +473,11 @@
           found.push({ lat: +lat.toFixed(6), lon: +lon.toFixed(6), blob, score: Math.round(areaM * 10) / 10 });
         }
         done++; if (done % 10 === 0 || done === tot) slog(`  ${done}/${tot} riquadri · candidati finora: ${found.length}`);
+      }
+      if (best) {
+        const pc = $('#s-canvas'); pc.width = px; pc.height = px; const pctx = pc.getContext('2d'); pctx.drawImage(best.cv, 0, 0);
+        const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) if (best.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } pctx.putImageData(im, 0, 0);
+        $('#s-prev').hidden = false; slog(`Pixel gialli nel riquadro più ricco: ${best.count} (su ${px * px}).`);
       }
       slog(`Trovati ${found.length} candidati. Salvo…`);
       let saved = 0;

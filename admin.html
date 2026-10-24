@@ -74,6 +74,7 @@ body{overflow:auto;background:var(--bg)}
       <div class="actions" style="margin-top:8px"><button class="btn primary" id="s-go">Scansiona area visibile</button><button class="btn danger" id="s-stop" hidden>Ferma</button>
         <label class="sub" style="display:flex;align-items:center;gap:6px">Sensibilità <input type="range" id="s-sens" min="1" max="5" value="3" style="width:110px"></label></div>
       <pre id="s-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:160px;overflow:auto"></pre>
+      <div id="s-prev" class="sub" hidden><div>Anteprima del riquadro con più giallo (in magenta i pixel riconosciuti come segnaletica gialla):</div><canvas id="s-canvas" style="width:100%;max-width:600px;border-radius:12px;margin-top:6px"></canvas></div>
       <div class="grid" style="margin-top:12px">
         <div>
           <div class="tabs" style="margin-bottom:8px"><button class="btn active" data-cf="nuovo">Da verificare</button><button class="btn" data-cf="accettato">Accettati</button><button class="btn" data-cf="scartato">Scartati</button></div>
