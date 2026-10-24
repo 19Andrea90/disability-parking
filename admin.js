@@ -100,7 +100,7 @@
   const OVERPASS = ['https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass-api.de/api/interpreter'];
   const ilog = (m) => { $('#i-log').textContent += m + '\n'; };
   function osmQuery(area) {
-    return `[out:json][timeout:120];area["name"="${area.replace(/"/g, '')}"]["boundary"="administrative"]["admin_level"~"^(8|6)$"]->.a;(
+    return `[out:json][timeout:90];area["name"="${area.replace(/"/g, '')}"]["boundary"="administrative"]["admin_level"="8"]->.a;(
       nwr["amenity"="parking_space"]["parking_space"="disabled"](area.a);
       nwr["amenity"="parking_space"]["disabled"~"^(yes|designated)$"](area.a);
       nwr["amenity"="parking"]["capacity:disabled"](area.a);
@@ -125,8 +125,10 @@
       let json = null;
       for (const url of OVERPASS) {
         ilog(`Interrogo ${new URL(url).host}…`);
-        try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(area)) }); if (!r.ok) throw new Error('HTTP ' + r.status); json = await r.json(); break; }
-        catch (e) { ilog('  non disponibile: ' + e.message); }
+        const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 95000); const t0 = Date.now();
+        try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(area)), signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); json = await r.json(); ilog(`  risposta in ${Math.round((Date.now() - t0) / 1000)} s`); break; }
+        catch (e) { ilog('  non disponibile: ' + (e.name === 'AbortError' ? 'nessuna risposta entro 95 s' : e.message)); }
+        finally { clearTimeout(to); }
       }
       if (!json) throw new Error('Nessun server Overpass ha risposto: riprova tra qualche minuto.');
       const recs = json.elements.map((el) => osmConvert(el, area)).filter(Boolean);
