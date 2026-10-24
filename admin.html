@@ -51,6 +51,12 @@ body{overflow:auto;background:var(--bg)}
 
   <div id="panel" hidden>
     <div class="kpi" id="kpi"></div>
+    <details class="edit" style="margin-bottom:12px">
+      <summary style="cursor:pointer;font-weight:600">Importa stalli da OpenStreetMap</summary>
+      <div class="sub" style="margin:8px 0">Scarica da OpenStreetMap gli stalli riservati di un comune e li inserisce come "verificati" (fonte OSM). Rilanciarlo aggiorna, non duplica.</div>
+      <div class="actions"><input type="text" id="i-area" value="Udine" placeholder="Nome comune (es. Udine)" style="flex:1"><button class="btn primary" id="i-go">Importa</button></div>
+      <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0"></pre>
+    </details>
     <div class="tabs">
       <button class="btn active" data-f="proposto">Da approvare</button>
       <button class="btn" data-f="verificato">Verificati</button>

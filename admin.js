@@ -96,5 +96,50 @@
     if (error) { $('#e-msg').textContent = 'Errore: ' + error.message; return; }
     Object.assign(sel, patch); $('#e-msg').textContent = 'Salvato ' + new Date().toLocaleTimeString('it-IT'); kpi(); render();
   }
+  // ---------- import da OpenStreetMap (dal browser dell'admin) ----------
+  const OVERPASS = ['https://overpass.kumi.systems/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass-api.de/api/interpreter'];
+  const ilog = (m) => { $('#i-log').textContent += m + '\n'; };
+  function osmQuery(area) {
+    return `[out:json][timeout:120];area["name"="${area.replace(/"/g, '')}"]["boundary"="administrative"]["admin_level"~"^(8|6)$"]->.a;(
+      nwr["amenity"="parking_space"]["parking_space"="disabled"](area.a);
+      nwr["amenity"="parking_space"]["disabled"~"^(yes|designated)$"](area.a);
+      nwr["amenity"="parking"]["capacity:disabled"](area.a);
+      nwr["amenity"="parking"]["disabled"~"^(yes|designated)$"](area.a););out center tags;`;
+  }
+  function osmConvert(el, comune) {
+    const t = el.tags || {}; const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon; if (lat == null) return null;
+    const capDis = parseInt(t['capacity:disabled']); let posti, nome, note = null;
+    if (t.amenity === 'parking') {
+      if (t['capacity:disabled'] != null && !(capDis > 0)) return null;
+      posti = capDis || 1; nome = t.name || 'Parcheggio con posti riservati'; note = 'Area di parcheggio: i posti riservati sono all\'interno.';
+    } else { posti = capDis || parseInt(t.capacity) || 1; nome = t.name || null; note = t.description || t.note || null; }
+    const desc = [t.description, t.note, t['access:note'], t.ref].join(' ').toLowerCase();
+    const tipo = /contrassegno|personalizz|nominativ|ad personam/.test(desc) ? 'personalizzato' : 'generico';
+    return { osm_id: `${el.type}/${el.id}`, lat, lon, tipo, posti: Math.max(1, posti), nome, indirizzo: [t['addr:street'], t['addr:housenumber']].filter(Boolean).join(' ') || null,
+      comune, note, orari: t.opening_hours || t['access:conditional'] || null, segnale_verticale: t.traffic_sign ? true : null,
+      coperto: t.covered === 'yes' || ['multi-storey', 'underground'].includes(t.parking), stato: 'verificato', fonte: 'osm', osm_url: `https://www.openstreetmap.org/${el.type}/${el.id}` };
+  }
+  $('#i-go').onclick = async () => {
+    const area = $('#i-area').value.trim(); if (!area) return; $('#i-log').textContent = ''; $('#i-go').disabled = true;
+    try {
+      let json = null;
+      for (const url of OVERPASS) {
+        ilog(`Interrogo ${new URL(url).host}…`);
+        try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(area)) }); if (!r.ok) throw new Error('HTTP ' + r.status); json = await r.json(); break; }
+        catch (e) { ilog('  non disponibile: ' + e.message); }
+      }
+      if (!json) throw new Error('Nessun server Overpass ha risposto: riprova tra qualche minuto.');
+      const recs = json.elements.map((el) => osmConvert(el, area)).filter(Boolean);
+      ilog(`Trovati ${recs.length} stalli per "${area}".`);
+      if (!recs.length) { ilog('Controlla che il nome del comune sia scritto come su OpenStreetMap.'); return; }
+      for (let i = 0; i < recs.length; i += 200) {
+        const { error } = await sb.from('stalli').upsert(recs.slice(i, i + 200), { onConflict: 'osm_id' });
+        if (error) throw error; ilog(`  salvati ${Math.min(i + 200, recs.length)}/${recs.length}`);
+      }
+      ilog('Fatto.'); load();
+    } catch (e) { ilog('Errore: ' + (e.message || e)); }
+    $('#i-go').disabled = false;
+  };
+
   boot();
 })();
