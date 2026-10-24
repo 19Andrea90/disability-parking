@@ -98,28 +98,79 @@
   }
   // ---------- import da OpenStreetMap (dal browser dell'admin) ----------
   const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
-  const ilog = (m) => { $('#i-log').textContent += m + '\n'; };
+  const ilog = (m) => { const l = $('#i-log'); l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
   function osmQuery(bb) { // bb = "sud,ovest,nord,est"
-    return `[out:json][timeout:90];(
+    return `[out:json][timeout:60];(
       nwr["amenity"="parking_space"]["parking_space"="disabled"](${bb});
       nwr["amenity"="parking_space"]["disabled"~"^(yes|designated)$"](${bb});
       nwr["amenity"="parking"]["capacity:disabled"](${bb});
       nwr["amenity"="parking"]["disabled"~"^(yes|designated)$"](${bb}););out center tags;`;
   }
-  // confine del comune da Nominatim (rettangolo + poligono)
-  async function comuneBoundary(name) {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=it&polygon_geojson=1&q=${encodeURIComponent(name)}`, { headers: { 'Accept-Language': 'it' } });
+
+  // --- suggerimento comuni (Photon, dati OSM) ---
+  const cs = $('#i-sug'); let csItems = [], csT, csCtl, chosen = null;
+  $('#i-area').addEventListener('input', () => {
+    chosen = null; const v = $('#i-area').value.trim(); clearTimeout(csT);
+    if (v.length < 2) { cs.hidden = true; return; }
+    csT = setTimeout(async () => {
+      if (csCtl) csCtl.abort(); csCtl = new AbortController();
+      try {
+        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(v)}&lang=it&limit=8&osm_tag=place:city&osm_tag=place:town&osm_tag=place:village&osm_tag=boundary:administrative`, { signal: csCtl.signal });
+        const j = await r.json();
+        const seen = new Set();
+        csItems = j.features.filter((f) => f.properties.countrycode === 'IT' && f.properties.name).filter((f) => { const k = f.properties.name + '|' + (f.properties.county || f.properties.state); if (seen.has(k)) return false; seen.add(k); return true; })
+          .map((f) => ({ name: f.properties.name, where: [f.properties.county, f.properties.state].filter(Boolean).join(', '), extent: f.properties.extent, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }));
+        cs.innerHTML = csItems.map((c, i) => `<li data-i="${i}"><span class="m">${esc(c.name)}</span><span class="s">${esc(c.where)}</span></li>`).join('');
+        cs.hidden = !csItems.length;
+      } catch (e) { /* ignora */ }
+    }, 250);
+  });
+  cs.addEventListener('mousedown', (e) => { const li = e.target.closest('li'); if (!li) return; e.preventDefault(); chosen = csItems[+li.dataset.i]; $('#i-area').value = chosen.name; cs.hidden = true; });
+  $('#i-area').addEventListener('blur', () => setTimeout(() => { cs.hidden = true; }, 150));
+  $('#i-area').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (!cs.hidden && csItems.length) { chosen = csItems[0]; $('#i-area').value = chosen.name; cs.hidden = true; } $('#i-go').click(); } });
+
+  // --- confine del comune da Nominatim (rettangolo + poligono) ---
+  async function comuneBoundary(name, hint) {
+    const q = hint && hint.where ? `${name}, ${hint.where.split(',')[0]}` : name;
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=8&countrycodes=it&polygon_geojson=1&q=${encodeURIComponent(q)}`, { headers: { 'Accept-Language': 'it' } });
     const j = await r.json();
-    const hit = j.find((x) => x.class === 'boundary' && x.type === 'administrative') || j.find((x) => x.geojson && /Polygon/.test(x.geojson.type));
+    // preferisco il confine comunale (admin_level 8 = city/town/village/municipality), poi un qualsiasi confine amministrativo
+    const isComune = (x) => x.class === 'boundary' && x.type === 'administrative' && ['city', 'town', 'village', 'municipality', 'hamlet'].includes(x.addresstype);
+    let hit = j.find(isComune) || j.find((x) => x.class === 'boundary' && x.type === 'administrative') || j.find((x) => x.geojson && /Polygon/.test(x.geojson.type));
+    if (!hit && hint && hint.extent) { const e = hint.extent; return { bbox: `${e[3]},${e[0]},${e[1]},${e[2]}`, geojson: null, label: hint.name, kind: 'rettangolo (Photon)' }; }
     if (!hit) return null;
     const bb = hit.boundingbox.map(Number); // [sud, nord, ovest, est]
-    return { bbox: `${bb[0]},${bb[2]},${bb[1]},${bb[3]}`, geojson: hit.geojson, label: hit.display_name.split(',')[0] };
+    const geo = hit.geojson && /Polygon/.test(hit.geojson.type) ? hit.geojson : null;
+    return { bbox: `${bb[0]},${bb[2]},${bb[1]},${bb[3]}`, geojson: geo, label: hit.display_name.split(',')[0], kind: `${hit.addresstype || hit.type}${geo ? ', poligono' : ', solo rettangolo'}`, bb };
   }
   function inRing(ring, lon, lat) { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, yi] = ring[i], [xj, yj] = ring[j]; if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) c = !c; } return c; }
   function inside(geo, lon, lat) {
     if (!geo) return true;
     const polys = geo.type === 'Polygon' ? [geo.coordinates] : geo.type === 'MultiPolygon' ? geo.coordinates : null; if (!polys) return true;
     return polys.some((p) => inRing(p[0], lon, lat) && !p.slice(1).some((h) => inRing(h, lon, lat)));
+  }
+  // spezza il rettangolo in celle di max ~0.06° (~5-7 km) per non far scadere Overpass
+  function tiles(bboxStr, max = 0.06) {
+    const [s, w, n, e] = bboxStr.split(',').map(Number); const out = [];
+    const ny = Math.max(1, Math.ceil((n - s) / max)), nx = Math.max(1, Math.ceil((e - w) / max));
+    for (let i = 0; i < ny; i++) for (let j = 0; j < nx; j++) out.push(`${(s + (n - s) * i / ny).toFixed(5)},${(w + (e - w) * j / nx).toFixed(5)},${(s + (n - s) * (i + 1) / ny).toFixed(5)},${(w + (e - w) * (j + 1) / nx).toFixed(5)}`);
+    return out;
+  }
+  async function overpassFetch(bb) {
+    let lastErr = null;
+    for (const url of OVERPASS) {
+      const host = new URL(url).host; const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 75000); const t0 = Date.now();
+      try {
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(bb)), signal: ctl.signal });
+        if (!r.ok) throw new Error('HTTP ' + r.status + (r.status === 429 ? ' (troppe richieste: attendo)' : ''));
+        const j = await r.json();
+        if (j.remark && /timed out|error/i.test(j.remark)) throw new Error('server: ' + j.remark.slice(0, 80));
+        ilog(`    ${host}: ${j.elements.length} elementi in ${Math.round((Date.now() - t0) / 1000)} s`);
+        return j.elements;
+      } catch (e) { lastErr = e; ilog(`    ${host}: ${e.name === 'AbortError' ? 'nessuna risposta entro 75 s' : e.message}`); if (/429/.test(e.message)) await new Promise((r) => setTimeout(r, 8000)); }
+      finally { clearTimeout(to); }
+    }
+    throw lastErr || new Error('Nessun server Overpass ha risposto');
   }
   function osmConvert(el, comune) {
     const t = el.tags || {}; const lat = el.lat ?? el.center?.lat, lon = el.lon ?? el.center?.lon; if (lat == null) return null;
@@ -135,25 +186,26 @@
       coperto: t.covered === 'yes' || ['multi-storey', 'underground'].includes(t.parking), stato: 'verificato', fonte: 'osm', osm_url: `https://www.openstreetmap.org/${el.type}/${el.id}` };
   }
   $('#i-go').onclick = async () => {
-    const area = $('#i-area').value.trim(); if (!area) return; $('#i-log').textContent = ''; $('#i-go').disabled = true;
+    const area = $('#i-area').value.trim(); if (!area) return; $('#i-log').textContent = ''; $('#i-go').disabled = true; cs.hidden = true;
     try {
       ilog(`Cerco il confine di "${area}"…`);
-      const b = await comuneBoundary(area);
-      if (!b) throw new Error(`Comune "${area}" non trovato: prova con il nome esatto (es. "Udine")`);
-      ilog(`  confine trovato: ${b.label}`);
-      let json = null;
-      for (const url of OVERPASS) {
-        ilog(`Interrogo ${new URL(url).host}…`);
-        const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 95000); const t0 = Date.now();
-        try { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(b.bbox)), signal: ctl.signal }); if (!r.ok) throw new Error('HTTP ' + r.status); json = await r.json(); ilog(`  risposta in ${Math.round((Date.now() - t0) / 1000)} s`); break; }
-        catch (e) { ilog('  non disponibile: ' + (e.name === 'AbortError' ? 'nessuna risposta entro 95 s' : e.message)); }
-        finally { clearTimeout(to); }
+      const b = await comuneBoundary(area, chosen);
+      if (!b) throw new Error(`Comune "${area}" non trovato: scegli un suggerimento dalla tendina.`);
+      const [s, w, n, e] = b.bbox.split(',').map(Number);
+      ilog(`  confine: ${b.label} (${b.kind}), area ${Math.round((n - s) * 111)} × ${Math.round((e - w) * 111 * Math.cos(s * Math.PI / 180))} km`);
+      const cells = tiles(b.bbox); const byId = new Map();
+      ilog(`Interrogo Overpass in ${cells.length} riquadr${cells.length === 1 ? 'o' : 'i'}…`);
+      for (let i = 0; i < cells.length; i++) {
+        ilog(`  riquadro ${i + 1}/${cells.length}`);
+        const els = await overpassFetch(cells[i]);
+        els.forEach((el) => byId.set(el.type + '/' + el.id, el));
+        if (cells.length > 1) await new Promise((r) => setTimeout(r, 1500));
       }
-      if (!json) throw new Error('Nessun server Overpass ha risposto: riprova tra qualche minuto.');
-      const all = json.elements.map((el) => osmConvert(el, b.label)).filter(Boolean);
-      const recs = all.filter((r) => inside(b.geojson, r.lon, r.lat));
+      const all = [...byId.values()].map((el) => osmConvert(el, b.label)).filter(Boolean);
+      let recs = all.filter((r) => inside(b.geojson, r.lon, r.lat));
       ilog(`Trovati ${all.length} stalli nel rettangolo, ${recs.length} dentro il confine di ${b.label}.`);
-      if (!recs.length) { ilog('Nessuno stallo mappato su OpenStreetMap in questo comune.'); return; }
+      if (!recs.length && all.length) { ilog('  Il filtro sul confine ha scartato tutto: uso il rettangolo intero (controlla poi sulla mappa).'); recs = all; }
+      if (!recs.length) { ilog('Nessuno stallo mappato su OpenStreetMap in questo comune: qui si parte dalle segnalazioni.'); return; }
       for (let i = 0; i < recs.length; i += 200) {
         const { error } = await sb.from('stalli').upsert(recs.slice(i, i + 200), { onConflict: 'osm_id' });
         if (error) throw error; ilog(`  salvati ${Math.min(i + 200, recs.length)}/${recs.length}`);
