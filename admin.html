@@ -63,11 +63,12 @@ body{overflow:auto;background:var(--bg)}
 
     <details class="edit" style="margin-bottom:12px" id="lab-box">
       <summary style="cursor:pointer;font-weight:600">Etichetta per l'addestramento <span class="sub" id="lab-count"></span></summary>
-      <div class="sub" style="margin:8px 0">Per ogni stallo noto vedi l'ortofoto di 40 × 40 m attorno. <b>Clicca al centro di ogni posto riservato visibile nell'immagine</b> (anche più di uno), poi Invio. Se non se ne vede nessuno, premi N. Tasti: <b>Invio</b> salva e avanti · <b>N</b> non visibile · <b>S</b> salta · <b>Backspace</b> annulla l'ultimo clic · <b>←</b> indietro. Il segnaposto blu è la posizione registrata (spesso spostata di qualche metro).</div>
+      <div class="sub" style="margin:8px 0">Per ogni stallo noto vedi l'ortofoto di 40 × 40 m attorno. <b>Clicca al centro di ogni posto riservato visibile nell'immagine</b> (anche più di uno), poi Invio. Se non se ne vede nessuno, premi N. Tasti: <b>V</b> apre Street View · <b>G</b> satellite Google (più recente) · <b>Z</b> zoom 2× · <b>Invio</b> salva e avanti · <b>N</b> non visibile · <b>S</b> salta · <b>Backspace</b> annulla l'ultimo clic · <b>←</b> indietro. Il segnaposto blu è la posizione registrata (spesso spostata di qualche metro).</div>
       <div class="actions" style="flex-wrap:wrap"><button class="btn primary" id="lab-start">Inizia / riprendi</button><label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="lab-redo"> Rivedi anche quelli già etichettati</label><span class="sub" id="lab-status"></span></div>
       <div id="lab-area" hidden style="margin-top:10px">
         <div class="sub" id="lab-title" style="font-weight:600;color:var(--fg)"></div>
         <canvas id="lab-canvas" width="400" height="400" style="width:100%;max-width:640px;border-radius:12px;margin-top:6px;cursor:crosshair;touch-action:none"></canvas>
+        <div class="actions" style="margin-top:8px;flex-wrap:wrap"><a class="btn" id="lab-sv" target="_blank" rel="noopener">Street View (V)</a><a class="btn" id="lab-gs" target="_blank" rel="noopener">Satellite Google (G)</a><button class="btn" id="lab-zoom">Zoom 2× (Z)</button></div>
         <div class="actions" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="lab-back">← Indietro</button><button class="btn" id="lab-undo">Annulla clic</button><button class="btn danger" id="lab-none">Non visibile (N)</button><button class="btn" id="lab-skip">Salta (S)</button><button class="btn primary" id="lab-save">Salva e avanti (Invio)</button></div>
       </div>
     </details>

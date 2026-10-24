@@ -812,7 +812,10 @@
   // ======================================================================
   // ETICHETTATURA: posizione esatta dei posti riservati sull'ortofoto
   // ======================================================================
-  let labQueue = [], labIdx = 0, labCur = null, labPts = [], labBox = null, labDone = new Map(); const labCache = new Map();
+  let labQueue = [], labIdx = 0, labCur = null, labPts = [], labBox = null, labDone = new Map(), labZoom = false; const labCache = new Map();
+  // vista: in zoom mostro i 20 m centrali; i punti restano in coordinate del ritaglio intero (0-400)
+  const v2c = ([x, y]) => (labZoom ? [(x - 100) * 2, (y - 100) * 2] : [x, y]);
+  const c2v = (x, y) => (labZoom ? [100 + x / 2, 100 + y / 2] : [x, y]);
   const isLabTarget = (r) => ['verificato', 'ufficiale'].includes(r.stato);
   const labSide = (r) => (/Parcheggio con posti/.test(r.nome || '') ? 60 : 40);
   async function loadLabels() {
@@ -831,16 +834,18 @@
   }
   function labDraw() {
     const cv = $('#lab-canvas'), c = cv.getContext('2d'); c.clearRect(0, 0, 400, 400);
-    if (labBox) c.drawImage(labBox.cv, 0, 0, 400, 400);
+    if (labBox) { if (labZoom) c.drawImage(labBox.cv, 100, 100, 200, 200, 0, 0, 400, 400); else c.drawImage(labBox.cv, 0, 0, 400, 400); }
     c.lineWidth = 2; c.strokeStyle = '#2d7bff'; c.fillStyle = 'rgba(45,123,255,.9)'; c.beginPath(); c.arc(200, 200, 4, 0, 7); c.fill();
-    labPts.forEach(([x, y], i) => { c.strokeStyle = '#ff2d2d'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, 11, 0, 7); c.stroke(); c.fillStyle = '#ff2d2d'; c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); c.font = 'bold 13px sans-serif'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 3; c.strokeText(String(i + 1), x + 12, y - 8); c.fillText(String(i + 1), x + 12, y - 8); });
-    if (labBox) { c.font = '12px sans-serif'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 3; const t = `${labBox.side} m · ${labPts.length} posti`; c.strokeText(t, 8, 392); c.fillText(t, 8, 392); }
+    labPts.map(v2c).forEach(([x, y], i) => { c.strokeStyle = '#ff2d2d'; c.lineWidth = 3; c.beginPath(); c.arc(x, y, 11, 0, 7); c.stroke(); c.fillStyle = '#ff2d2d'; c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); c.font = 'bold 13px sans-serif'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 3; c.strokeText(String(i + 1), x + 12, y - 8); c.fillText(String(i + 1), x + 12, y - 8); });
+    if (labBox) { c.font = '12px sans-serif'; c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 3; const t = `${labZoom ? labBox.side / 2 : labBox.side} m${labZoom ? ' (zoom 2×)' : ''} · ${labPts.length} posti`; c.strokeText(t, 8, 392); c.fillText(t, 8, 392); }
   }
   const toLL = ([x, y]) => [+(labBox.n - (y / 400) * (labBox.n - labBox.s)).toFixed(7), +(labBox.w + (x / 400) * (labBox.e - labBox.w)).toFixed(7)];
   const toPx = ([la, lo]) => [(lo - labBox.w) / (labBox.e - labBox.w) * 400, (labBox.n - la) / (labBox.n - labBox.s) * 400];
   async function labShow() {
     if (labIdx >= labQueue.length) { $('#lab-area').hidden = true; $('#lab-status').textContent = `Finito: ${labQueue.length} stalli rivisti. Ora puoi esportare il dataset.`; labCount(); return; }
     labCur = labQueue[labIdx]; labBox = null; labPts = []; labDraw();
+    $('#lab-sv').href = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${labCur.lat},${labCur.lon}`;
+    $('#lab-gs').href = `https://www.google.com/maps/@${labCur.lat},${labCur.lon},45m/data=!3m1!1e3`;
     $('#lab-title').textContent = `${labIdx + 1} / ${labQueue.length} · ${labCur.nome || labCur.indirizzo || labCur.tipo} · ${labCur.comune || ''} · fonte ${labCur.fonte} · carico l'ortofoto…`;
     try { labBox = await labFetch(labCur); } catch (e) { $('#lab-title').textContent += ' errore: ' + e.message + ' (premi S per saltare)'; return; }
     const prev = labDone.get(labCur.id); if (prev && prev.punti) labPts = prev.punti.map(toPx);
@@ -861,9 +866,10 @@
     labIdx = 0; if (!labQueue.length) { $('#lab-status').textContent = 'Tutti gli stalli sono già etichettati.'; return; }
     $('#lab-status').textContent = ''; $('#lab-area').hidden = false; $('#lab-box').open = true; labShow();
   };
-  $('#lab-canvas').addEventListener('click', (e) => { if (!labBox) return; const r = e.currentTarget.getBoundingClientRect(); labPts.push([(e.clientX - r.left) * 400 / r.width, (e.clientY - r.top) * 400 / r.height]); labDraw(); });
-  $('#lab-canvas').addEventListener('contextmenu', (e) => { e.preventDefault(); if (!labPts.length) return; const r = e.currentTarget.getBoundingClientRect(); const x = (e.clientX - r.left) * 400 / r.width, y = (e.clientY - r.top) * 400 / r.height; let bi = 0, bd = 1e9; labPts.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bi = i; } }); labPts.splice(bi, 1); labDraw(); });
+  $('#lab-canvas').addEventListener('click', (e) => { if (!labBox) return; const r = e.currentTarget.getBoundingClientRect(); labPts.push(c2v((e.clientX - r.left) * 400 / r.width, (e.clientY - r.top) * 400 / r.height)); labDraw(); });
+  $('#lab-canvas').addEventListener('contextmenu', (e) => { e.preventDefault(); if (!labPts.length) return; const r = e.currentTarget.getBoundingClientRect(); const [x, y] = c2v((e.clientX - r.left) * 400 / r.width, (e.clientY - r.top) * 400 / r.height); let bi = 0, bd = 1e9; labPts.forEach((p, i) => { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; bi = i; } }); labPts.splice(bi, 1); labDraw(); });
   $('#lab-undo').onclick = () => { labPts.pop(); labDraw(); };
+  $('#lab-zoom').onclick = () => { labZoom = !labZoom; $('#lab-zoom').classList.toggle('active', labZoom); labDraw(); };
   $('#lab-save').onclick = () => labSave();
   $('#lab-none').onclick = () => labSave('non_visibile');
   $('#lab-skip').onclick = () => { labIdx++; labShow(); };
@@ -875,6 +881,9 @@
     else if (e.key === 's' || e.key === 'S') { e.preventDefault(); labIdx++; labShow(); }
     else if (e.key === 'Backspace') { e.preventDefault(); labPts.pop(); labDraw(); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); if (labIdx > 0) { labIdx--; labShow(); } }
+    else if (e.key === 'v' || e.key === 'V') { e.preventDefault(); $('#lab-sv').click(); }
+    else if (e.key === 'g' || e.key === 'G') { e.preventDefault(); $('#lab-gs').click(); }
+    else if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); $('#lab-zoom').click(); }
   });
 
   // ======================================================================
