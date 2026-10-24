@@ -703,6 +703,41 @@
     if (error) alert(error.message); else loadCands();
   };
 
+
+  // --- esporta dataset per l'addestramento: ritagli 24x24 m a 10 cm/px di stalli verificati (positivi) e candidati scartati (negativi) ---
+  $('#ds-export').onclick = async () => {
+    const btn = $('#ds-export'); btn.disabled = true; const log = (m) => { $('#ds-log').textContent += m + '\n'; };
+    $('#ds-log').textContent = '';
+    try {
+      if (!window.JSZip) { await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }); }
+      const zip = new JSZip(); const meta = [];
+      const half = 12; // metri
+      async function cropAt(lat, lon) {
+        const { dLat, dLon } = mToDeg(lat);
+        const s0 = lat - half * dLat, n0 = lat + half * dLat, w0 = lon - half * dLon, e0 = lon + half * dLon;
+        const got = await fetchCell(s0, w0, n0, e0, 240, 'proxy');
+        return new Promise((r) => got.cv.toBlob(r, 'image/jpeg', .9));
+      }
+      // positivi: stalli verificati/ufficiali (escludo i parcheggi "area" OSM, il cui punto non è sullo stallo)
+      const pos = rows.filter((r) => ['verificato', 'ufficiale'].includes(r.stato) && !(r.fonte === 'osm' && /Parcheggio con posti/.test(r.nome || '')));
+      log(`Positivi: ${pos.length} stalli verificati`);
+      let i = 0;
+      for (const r of pos) { try { zip.file(`pos/${r.id}.jpg`, await cropAt(r.lat, r.lon)); meta.push({ id: r.id, label: 'pos', lat: r.lat, lon: r.lon, fonte: r.fonte, tipo: r.tipo, posti: r.posti }); } catch (e) { /* salto */ } if (++i % 20 === 0) log(`  ${i}/${pos.length}`); }
+      // positivi aggiuntivi: candidati accettati; negativi: candidati scartati (ritaglio rifatto alla stessa scala)
+      const acc = cands.filter((c) => c.stato === 'accettato'), neg = cands.filter((c) => c.stato === 'scartato');
+      log(`Candidati accettati: ${acc.length} · scartati (negativi): ${neg.length}`);
+      i = 0;
+      for (const c of acc) { try { zip.file(`pos/cand-${c.id}.jpg`, await cropAt(c.lat, c.lon)); meta.push({ id: c.id, label: 'pos', lat: c.lat, lon: c.lon, fonte: c.fonte }); } catch (e) { /* salto */ } }
+      for (const c of neg) { try { zip.file(`neg/${c.id}.jpg`, await cropAt(c.lat, c.lon)); meta.push({ id: c.id, label: 'neg', lat: c.lat, lon: c.lon, fonte: c.fonte, classe: c.classe }); } catch (e) { /* salto */ } if (++i % 20 === 0) log(`  ${i}/${neg.length}`); }
+      zip.file('meta.json', JSON.stringify({ exported: new Date().toISOString(), crop_m: half * 2, px: 240, items: meta }, null, 1));
+      log('Comprimo…');
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `dataset-stalli-${new Date().toISOString().slice(0, 10)}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      log(`Fatto: ${meta.filter((m) => m.label === 'pos').length} positivi, ${meta.filter((m) => m.label === 'neg').length} negativi.`);
+    } catch (e) { log('Errore: ' + (e.message || e)); }
+    btn.disabled = false;
+  };
+
   $('#ver').textContent = 'v' + C.VERSION;
   boot();
 })();
