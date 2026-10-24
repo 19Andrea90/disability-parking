@@ -159,17 +159,20 @@
     for (let i = 0; i < ny; i++) for (let j = 0; j < nx; j++) out.push(`${(s + (n - s) * i / ny).toFixed(5)},${(w + (e - w) * j / nx).toFixed(5)},${(s + (n - s) * (i + 1) / ny).toFixed(5)},${(w + (e - w) * (j + 1) / nx).toFixed(5)}`);
     return out;
   }
+  let stopReq = false, activeCtl = null;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const checkStop = () => { if (stopReq) throw new Error('Interrotto dall\'utente'); };
   async function overpassOnce(url, bb, timeoutMs) {
-    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), timeoutMs); const t0 = Date.now();
+    const ctl = new AbortController(); activeCtl = ctl; const to = setTimeout(() => ctl.abort(), timeoutMs); const t0 = Date.now();
     try {
+      checkStop();
       const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(osmQuery(bb)), signal: ctl.signal });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();
       if (j.remark && /timed out|error/i.test(j.remark)) throw new Error('server: ' + j.remark.slice(0, 80));
       return { els: j.elements, ms: Date.now() - t0 };
-    } catch (e) { if (e.name === 'AbortError') throw new Error(`nessuna risposta entro ${Math.round(timeoutMs / 1000)} s`); throw e; }
-    finally { clearTimeout(to); }
+    } catch (e) { if (stopReq) throw new Error('Interrotto dall\'utente'); if (e.name === 'AbortError') throw new Error(`nessuna risposta entro ${Math.round(timeoutMs / 1000)} s`); throw e; }
+    finally { clearTimeout(to); activeCtl = null; }
   }
   async function overpassFetch(bb) {
     let lastErr = null;
@@ -177,9 +180,10 @@
       for (const url of OVERPASS) {
         const host = new URL(url).host;
         try { const { els, ms } = await overpassOnce(url, bb, round === 0 ? 45000 : 75000); ilog(`    ${host}: ${els.length} elementi in ${Math.round(ms / 1000)} s`); return els; }
-        catch (e) { lastErr = e; ilog(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
+        catch (e) { if (stopReq) throw e; lastErr = e; ilog(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
       }
-      const wait = 20 * (round + 1); ilog(`  tutti i server occupati: riprovo tra ${wait} s (tentativo ${round + 2}/3)…`); await sleep(wait * 1000);
+      checkStop();
+      const wait = 20 * (round + 1); ilog(`  tutti i server occupati: riprovo tra ${wait} s (tentativo ${round + 2}/3)…`); for (let t = 0; t < wait; t++) { checkStop(); await sleep(1000); }
     }
     throw lastErr || new Error('Nessun server Overpass ha risposto');
   }
@@ -198,7 +202,7 @@
   }
   let progress = null;
   $('#i-go').onclick = async () => {
-    const area = $('#i-area').value.trim(); if (!area) return; $('#i-log').textContent = ''; $('#i-go').disabled = true; cs.hidden = true;
+    const area = $('#i-area').value.trim(); if (!area) return; $('#i-log').textContent = ''; $('#i-go').disabled = true; $('#i-stop').hidden = false; stopReq = false; cs.hidden = true;
     try {
       ilog(`Cerco il confine di "${area}"…`);
       const b = await comuneBoundary(area, chosen);
@@ -213,7 +217,7 @@
         ilog(`  riquadro ${i + 1}/${cells.length}`);
         let els;
         try { els = await overpassFetch(cells[i]); }
-        catch (e) { progress = resume; $('#i-go').textContent = 'Riprendi'; throw new Error(`${e.message}. Premi "Riprendi" tra qualche minuto: ripartirà dal riquadro ${i + 1}.`); }
+        catch (e) { progress = resume; $('#i-go').textContent = 'Riprendi'; throw new Error(`${e.message}. Premi "Riprendi" ${stopReq ? 'quando vuoi' : 'tra qualche minuto'}: ripartirà dal riquadro ${i + 1}.`); }
         els.forEach((el) => byId.set(el.type + '/' + el.id, el)); resume.done = i + 1;
         if (cells.length > 1) await sleep(2000);
       }
@@ -228,9 +232,10 @@
         if (error) throw error; ilog(`  salvati ${Math.min(i + 200, recs.length)}/${recs.length}`);
       }
       ilog('Fatto.'); load();
-    } catch (e) { ilog('Errore: ' + (e.message || e)); }
-    $('#i-go').disabled = false;
+    } catch (e) { ilog((stopReq ? 'Fermato: ' : 'Errore: ') + (e.message || e)); }
+    $('#i-go').disabled = false; $('#i-stop').hidden = true;
   };
+  $('#i-stop').onclick = () => { stopReq = true; if (activeCtl) activeCtl.abort(); $('#i-stop').disabled = true; setTimeout(() => { $('#i-stop').disabled = false; }, 1500); ilog('Interrompo…'); };
 
   $('#ver').textContent = 'v' + C.VERSION;
   boot();

@@ -55,7 +55,7 @@ body{overflow:auto;background:var(--bg)}
     <details class="edit" style="margin-bottom:12px">
       <summary style="cursor:pointer;font-weight:600">Importa stalli da OpenStreetMap</summary>
       <div class="sub" style="margin:8px 0">Scarica da OpenStreetMap gli stalli riservati di un comune e li inserisce come "verificati" (fonte OSM). Rilanciarlo aggiorna, non duplica.</div>
-      <div class="actions" style="position:relative"><input type="text" id="i-area" value="" placeholder="Nome del comune (es. Trieste)" style="flex:1" autocomplete="off"><button class="btn primary" id="i-go">Importa</button>
+      <div class="actions" style="position:relative"><input type="text" id="i-area" value="" placeholder="Nome del comune (es. Trieste)" style="flex:1" autocomplete="off"><button class="btn primary" id="i-go">Importa</button><button class="btn danger" id="i-stop" hidden>Ferma</button>
         <ul id="i-sug" role="listbox" hidden style="position:absolute;left:0;right:110px;top:100%;margin:4px 0 0;padding:6px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:50;max-height:260px;overflow:auto"></ul></div>
       <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
     </details>
