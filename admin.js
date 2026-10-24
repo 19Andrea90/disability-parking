@@ -400,15 +400,21 @@
     return { cv, ctx };
   }
   // maschera "giallo segnaletico" e componenti connesse
+  function thresholds(sens) {
+    const ref = (() => { try { return JSON.parse(localStorage.getItem('dp.yellow') || 'null'); } catch (e) { return null; } })();
+    const k = [0.85, 0.75, 0.65, 0.55, 0.45][sens - 1];
+    if (ref) return { hMin: ref.h - 14, hMax: ref.h + 14, satMin: Math.max(0.12, ref.s * k), valMin: Math.max(0.3, ref.v * k), ref: true };
+    return { hMin: 38, hMax: 68, satMin: [0.55, 0.48, 0.40, 0.33, 0.27][sens - 1], valMin: [0.62, 0.58, 0.52, 0.47, 0.42][sens - 1], ref: false };
+  }
   function yellowComponents(ctx, px, sens) {
     const d = ctx.getImageData(0, 0, px, px).data; const mask = new Uint8Array(px * px);
-    const satMin = [0.55, 0.48, 0.40, 0.33, 0.27][sens - 1], valMin = [0.62, 0.58, 0.52, 0.47, 0.42][sens - 1];
+    const th = thresholds(sens); const satMin = th.satMin, valMin = th.valMin;
     for (let i = 0; i < px * px; i++) {
       const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255;
       const mx = Math.max(r, g, b), mn = Math.min(r, g, b), v = mx, sat = mx ? (mx - mn) / mx : 0;
       if (sat < satMin || v < valMin) continue;
       let h = 0; if (mx === r) h = 60 * (((g - b) / (mx - mn)) % 6); else if (mx === g) h = 60 * ((b - r) / (mx - mn) + 2); else h = 60 * ((r - g) / (mx - mn) + 4); if (h < 0) h += 360;
-      if (h >= 38 && h <= 68) mask[i] = 1;
+      if (h >= th.hMin && h <= th.hMax) mask[i] = 1;
     }
     // componenti connesse (4-vicini) con dilatazione leggera tramite griglia 2x2
     const g = Math.ceil(px / 2), cell = new Uint8Array(g * g);
@@ -426,6 +432,48 @@
     }
     return { comps, mask, count: mask.reduce((a, b) => a + b, 0) };
   }
+
+  // --- taratura del colore giallo sul riquadro al centro ---
+  let calib = null; // {cv, px, s,w,n,e}
+  function showCalib(sens) {
+    const pc = $('#s-canvas'); const px = calib.px; pc.width = px; pc.height = px; const pctx = pc.getContext('2d', { willReadFrequently: true }); pctx.drawImage(calib.cv, 0, 0);
+    const yc = yellowComponents(pctx, px, sens);
+    const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) if (yc.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } pctx.putImageData(im, 0, 0);
+    const th = thresholds(sens);
+    $('#s-prev').hidden = false;
+    $('#s-prevtxt').textContent = `Riquadro al centro, 10 cm/px. Pixel gialli: ${yc.count}. Soglie: tonalità ${Math.round(th.hMin)}–${Math.round(th.hMax)}°, saturazione ≥ ${th.satMin.toFixed(2)}, luminosità ≥ ${th.valMin.toFixed(2)}${th.ref ? ' (da colore campionato)' : ' (predefinite)'}. Clicca su una striscia gialla per usarla come riferimento.`;
+    const okComps = yc.comps.filter((c) => { const wM = c.w * calib.res, hM = c.h * calib.res, aM = c.n * 4 * calib.res * calib.res; return wM >= 1.5 && hM >= 1.5 && wM <= 9 && hM <= 9 && aM >= 0.4 && aM <= 25 && Math.max(wM, hM) / Math.min(wM, hM) <= 4; });
+    pctx.strokeStyle = '#ff2d2d'; pctx.lineWidth = 3; okComps.forEach((c) => pctx.strokeRect(c.cx - c.w / 2 - 4, c.cy - c.h / 2 - 4, c.w + 8, c.h + 8));
+    slog(`Taratura: ${yc.count} pixel gialli, ${okComps.length} forme compatibili con uno stallo (in rosso).`);
+  }
+  $('#s-cal').onclick = async () => {
+    $('#s-cal').disabled = true;
+    try {
+      const c = map.getCenter(); const { dLat, dLon } = mToDeg(c.lat); const cellM = 120, res = 0.1, px = 1200;
+      const s0 = c.lat - cellM / 2 * dLat, n0 = c.lat + cellM / 2 * dLat, w0 = c.lng - cellM / 2 * dLon, e0 = c.lng + cellM / 2 * dLon;
+      let got = null;
+      for (const src of ['fvg', 'proxy', 'esri']) { try { got = await fetchCell(s0, w0, n0, e0, px, src); got.ctx.getImageData(0, 0, 1, 1); slog('Taratura: sorgente ' + src); break; } catch (e) { got = null; } }
+      if (!got) throw new Error('immagine non disponibile');
+      calib = { cv: got.cv, px, res, s: s0, w: w0, n: n0, e: e0 };
+      showCalib(+$('#s-sens').value);
+    } catch (e) { slog('Errore taratura: ' + e.message); }
+    $('#s-cal').disabled = false;
+  };
+  $('#s-canvas').addEventListener('click', (ev) => {
+    if (!calib) return;
+    const pc = $('#s-canvas'); const r = pc.getBoundingClientRect(); const x = Math.round((ev.clientX - r.left) * pc.width / r.width), y = Math.round((ev.clientY - r.top) * pc.height / r.height);
+    const ctx = calib.cv.getContext('2d', { willReadFrequently: true }); const d = ctx.getImageData(Math.max(0, x - 1), Math.max(0, y - 1), 3, 3).data;
+    let R = 0, G = 0, B = 0, n = 0; for (let i = 0; i < d.length; i += 4) { R += d[i]; G += d[i + 1]; B += d[i + 2]; n++; }
+    const rr = R / n / 255, gg = G / n / 255, bb = B / n / 255; const mx = Math.max(rr, gg, bb), mn = Math.min(rr, gg, bb); const v = mx, sat = mx ? (mx - mn) / mx : 0;
+    let h = 0; if (mx === mn) h = 0; else if (mx === rr) h = 60 * (((gg - bb) / (mx - mn)) % 6); else if (mx === gg) h = 60 * ((bb - rr) / (mx - mn) + 2); else h = 60 * ((rr - gg) / (mx - mn) + 4); if (h < 0) h += 360;
+    slog(`Colore campionato: RGB(${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)}) → tonalità ${Math.round(h)}°, saturazione ${sat.toFixed(2)}, luminosità ${v.toFixed(2)}`);
+    if (h < 20 || h > 85) { slog('  Non sembra giallo: campiona esattamente sopra la striscia.'); return; }
+    try { localStorage.setItem('dp.yellow', JSON.stringify({ h, s: sat, v })); } catch (e) { /* ignora */ }
+    slog('  Riferimento salvato: le soglie ora seguono questo colore. Rilancio l\'analisi…');
+    showCalib(+$('#s-sens').value);
+  });
+  $('#s-reset').onclick = () => { try { localStorage.removeItem('dp.yellow'); } catch (e) { /* ignora */ } slog('Soglie riportate alle predefinite.'); if (calib) showCalib(+$('#s-sens').value); };
+  $('#s-sens').addEventListener('input', () => { if (calib) showCalib(+$('#s-sens').value); });
   $('#s-go').onclick = async () => {
     $('#s-log').textContent = ''; $('#s-go').disabled = true; $('#s-stop').hidden = false; sStop = false;
     const sens = +$('#s-sens').value;
