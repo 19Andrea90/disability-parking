@@ -514,22 +514,25 @@
     const key = [s0, w0, n0, e0].map((x) => x.toFixed(4)).join(',');
     if (ctxData && ctxData.key === key) return ctxData;
     const bb = `${s0},${w0},${n0},${e0}`;
-    const q = `[out:json][timeout:60];(way["building"](${bb});way["highway"~"^(primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|road)$"](${bb});way["amenity"="parking"](${bb});relation["amenity"="parking"](${bb}););out geom;`;
+    const GREEN = '["landuse"~"^(grass|farmland|meadow|orchard|vineyard|forest|farmyard|greenhouse_horticulture|cemetery|allotments)$"]';
+    const q = `[out:json][timeout:60];(way["building"](${bb});way["highway"~"^(primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|road)$"](${bb});way["amenity"="parking"](${bb});relation["amenity"="parking"](${bb});way${GREEN}(${bb});relation${GREEN}(${bb});way["natural"~"^(wood|scrub|grassland|water|wetland|heath)$"](${bb});way["leisure"~"^(park|garden|pitch|playground)$"](${bb}););out geom;`;
     logFn(`Scarico contesto da OpenStreetMap (edifici, strade, parcheggi) per ${bb}…`);
     const els = await overpassFetch(bb, q, logFn);
     logFn(`  risposta: ${els.length} elementi` + (els.length ? ` (primo: ${els[0].type} ${Object.keys(els[0].tags || {}).slice(0, 3).join(',')}, geometria ${els[0].geometry ? els[0].geometry.length + ' punti' : 'assente'})` : ''));
-    const d = { key, buildings: [], roads: [], parkings: [] };
+    const d = { key, buildings: [], roads: [], parkings: [], green: [] };
     for (const el of els) {
       const pts = (el.geometry || []).map((p) => [p.lon, p.lat]);
       if (el.type === 'way' && el.tags) {
         if (el.tags.building) d.buildings.push(pts);
         else if (el.tags.amenity === 'parking') d.parkings.push(pts);
+        else if (el.tags.landuse || el.tags.natural || el.tags.leisure) d.green.push(pts);
         else if (el.tags.highway) d.roads.push({ pts, w: /^(primary|secondary)$/.test(el.tags.highway) ? 22 : /^(tertiary|unclassified|residential|road)$/.test(el.tags.highway) ? 16 : 12 });
       } else if (el.type === 'relation' && el.members) {
-        el.members.forEach((m) => { if (m.role === 'outer' && m.geometry) d.parkings.push(m.geometry.map((p) => [p.lon, p.lat])); });
+        const isPark = el.tags && el.tags.amenity === 'parking';
+        el.members.forEach((m) => { if (m.role === 'outer' && m.geometry) (isPark ? d.parkings : d.green).push(m.geometry.map((p) => [p.lon, p.lat])); });
       }
     }
-    logFn(`  contesto: ${d.buildings.length} edifici, ${d.roads.length} strade, ${d.parkings.length} parcheggi`);
+    logFn(`  contesto: ${d.buildings.length} edifici, ${d.roads.length} strade, ${d.parkings.length} parcheggi, ${d.green.length} aree verdi/campi`);
     if (!d.roads.length && !d.parkings.length) { logFn('  contesto vuoto: lo ignoro e analizzo tutto il riquadro.'); return null; }
     ctxData = d; return d;
   }
@@ -541,7 +544,8 @@
     c.fillStyle = '#fff'; c.strokeStyle = '#fff'; c.lineCap = 'round'; c.lineJoin = 'round';
     d.parkings.forEach((poly) => { c.beginPath(); poly.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.closePath(); c.fill(); c.lineWidth = 8 / res; c.stroke(); });
     d.roads.forEach((r) => { c.lineWidth = r.w / res; c.beginPath(); r.pts.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.stroke(); });
-    c.fillStyle = '#000'; d.buildings.forEach((poly) => { c.beginPath(); poly.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.closePath(); c.fill(); });
+    c.fillStyle = '#000'; d.green.forEach((poly) => { c.beginPath(); poly.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.closePath(); c.fill(); });
+    d.buildings.forEach((poly) => { c.beginPath(); poly.forEach((p, i) => i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))); c.closePath(); c.fill(); });
     const im = c.getImageData(0, 0, px, px).data; const m = new Uint8Array(px * px); let n1 = 0;
     for (let i = 0; i < px * px; i++) if (im[i * 4] > 127) { m[i] = 1; n1++; }
     return { mask: m, frac: n1 / (px * px) };
