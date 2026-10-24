@@ -196,8 +196,8 @@
     for (let round = 0; round < 3; round++) {
       for (const url of OVERPASS) {
         const host = new URL(url).host;
-        try { const { els, ms } = await overpassOnce(url, bb, round === 0 ? 45000 : 75000); ilog(`    ${host}: ${els.length} elementi in ${Math.round(ms / 1000)} s`); return els; }
-        catch (e) { if (stopReq) throw e; lastErr = e; ilog(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
+        try { const { els, ms } = await overpassOnce(url, bb, round === 0 ? 45000 : 75000, query); L_(`    ${host}: ${els.length} elementi in ${Math.round(ms / 1000)} s`); return els; }
+        catch (e) { if (stopReq) throw e; lastErr = e; L_(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
       }
       checkStop();
       const wait = 20 * (round + 1); L_(`  tutti i server occupati: riprovo tra ${wait} s (tentativo ${round + 2}/3)…`); for (let t = 0; t < wait; t++) { checkStop(); await sleep(1000); }
@@ -479,8 +479,9 @@
     if (ctxData && ctxData.key === key) return ctxData;
     const bb = `${s0},${w0},${n0},${e0}`;
     const q = `[out:json][timeout:60];(way["building"](${bb});way["highway"~"^(primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|road)$"](${bb});way["amenity"="parking"](${bb});relation["amenity"="parking"](${bb}););out geom;`;
-    logFn('Scarico contesto da OpenStreetMap (edifici, strade, parcheggi)…');
+    logFn(`Scarico contesto da OpenStreetMap (edifici, strade, parcheggi) per ${bb}…`);
     const els = await overpassFetch(bb, q, logFn);
+    logFn(`  risposta: ${els.length} elementi` + (els.length ? ` (primo: ${els[0].type} ${Object.keys(els[0].tags || {}).slice(0, 3).join(',')}, geometria ${els[0].geometry ? els[0].geometry.length + ' punti' : 'assente'})` : ''));
     const d = { key, buildings: [], roads: [], parkings: [] };
     for (const el of els) {
       const pts = (el.geometry || []).map((p) => [p.lon, p.lat]);
@@ -493,6 +494,7 @@
       }
     }
     logFn(`  contesto: ${d.buildings.length} edifici, ${d.roads.length} strade, ${d.parkings.length} parcheggi`);
+    if (!d.roads.length && !d.parkings.length) { logFn('  contesto vuoto: lo ignoro e analizzo tutto il riquadro.'); return null; }
     ctxData = d; return d;
   }
   // maschera di contesto per un riquadro: 1 = analizzabile
