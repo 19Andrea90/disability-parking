@@ -252,7 +252,7 @@
   // CANDIDATI AUTOMATICI — Mapillary (cartelli riconosciuti) + ortofoto
   // ======================================================================
   const MLY_CLASSES = ['information--disabled-persons--g1', 'information--disabled-persons--g2', 'information--disabled-persons--g3', 'complementary--disabled-persons--g1', 'regulatory--reserved-parking--g1'];
-  const CLASSE_LABEL = { 'segnaletica gialla': 'Segnaletica gialla (ortofoto)', 'information--disabled-persons--g1': 'Pannello "disabili"', 'information--disabled-persons--g2': 'Pannello "disabili"', 'information--disabled-persons--g3': 'Pannello "disabili"', 'complementary--disabled-persons--g1': 'Pannello integrativo "disabili"', 'regulatory--reserved-parking--g1': 'Parcheggio riservato' };
+  const CLASSE_LABEL = { 'information--disabled-persons--g1': 'Pannello "disabili"', 'information--disabled-persons--g2': 'Pannello "disabili"', 'information--disabled-persons--g3': 'Pannello "disabili"', 'complementary--disabled-persons--g1': 'Pannello integrativo "disabili"', 'regulatory--reserved-parking--g1': 'Parcheggio riservato' };
   const mlog = (m) => { const l = $('#m-log'); l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
   let cands = [], cfilter = 'nuovo', csel = null, cmarker = null, mStop = false;
   $('#m-token').value = (() => { try { return localStorage.getItem('dp.mly') || ''; } catch (e) { return ''; } })();
@@ -400,51 +400,78 @@
     return { cv, ctx };
   }
   // maschera "giallo segnaletico" e componenti connesse
+  // soglie: "giallezza" = quanto il pixel è meno blu di rosso/verde (la vernice gialla sull'ortofoto è pallida: saturazione bassa, ma blu sempre più basso)
   function thresholds(sens) {
     const ref = (() => { try { return JSON.parse(localStorage.getItem('dp.yellow') || 'null'); } catch (e) { return null; } })();
-    const k = [0.85, 0.75, 0.65, 0.55, 0.45][sens - 1];
-    if (ref) return { hMin: ref.h - 14, hMax: ref.h + 14, satMin: Math.max(0.12, ref.s * k), valMin: Math.max(0.3, ref.v * k), ref: true };
-    return { hMin: 38, hMax: 68, satMin: [0.55, 0.48, 0.40, 0.33, 0.27][sens - 1], valMin: [0.62, 0.58, 0.52, 0.47, 0.42][sens - 1], ref: false };
+    const base = [0.085, 0.07, 0.055, 0.045, 0.038][sens - 1];
+    if (ref && ref.yel != null) return { yelMin: Math.max(0.03, ref.yel * [0.95, 0.85, 0.75, 0.65, 0.55][sens - 1]), valMin: 0.5, ref: true };
+    return { yelMin: base, valMin: 0.5, ref: false };
   }
-  function yellowComponents(ctx, px, sens) {
-    const d = ctx.getImageData(0, 0, px, px).data; const mask = new Uint8Array(px * px);
-    const th = thresholds(sens); const satMin = th.satMin, valMin = th.valMin;
+  function yellowMask(ctx, px, sens) {
+    const d = ctx.getImageData(0, 0, px, px).data; const mask = new Uint8Array(px * px); const th = thresholds(sens); let count = 0;
     for (let i = 0; i < px * px; i++) {
       const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255;
-      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), v = mx, sat = mx ? (mx - mn) / mx : 0;
-      if (sat < satMin || v < valMin) continue;
-      let h = 0; if (mx === r) h = 60 * (((g - b) / (mx - mn)) % 6); else if (mx === g) h = 60 * ((b - r) / (mx - mn) + 2); else h = 60 * ((r - g) / (mx - mn) + 4); if (h < 0) h += 360;
-      if (h >= th.hMin && h <= th.hMax) mask[i] = 1;
+      const v = Math.max(r, g, b); if (v < th.valMin) continue;
+      if (((r + g) / 2 - b) < th.yelMin) continue;      // deficit di blu
+      if (r < 0.92 * g || g < 0.80 * r) continue;        // giallo, non verde/arancio
+      mask[i] = 1; count++;
     }
-    // componenti connesse (4-vicini) con dilatazione leggera tramite griglia 2x2
+    return { mask, count, th };
+  }
+  // componenti connesse su griglia 2x2 con orientamento (PCA): lunghezza, larghezza, angolo
+  function components(mask, px, res) {
     const g = Math.ceil(px / 2), cell = new Uint8Array(g * g);
     for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) if (mask[y * px + x]) cell[(y >> 1) * g + (x >> 1)] = 1;
-    const seen = new Uint8Array(g * g); const comps = [];
+    const seen = new Uint8Array(g * g); const out = []; const r2 = res * 2;
     for (let i = 0; i < g * g; i++) {
       if (!cell[i] || seen[i]) continue;
-      const stack = [i]; seen[i] = 1; let n = 0, minx = g, maxx = 0, miny = g, maxy = 0, sx = 0, sy = 0;
+      const stack = [i]; seen[i] = 1; const xs = [], ys = [];
       while (stack.length) {
-        const k = stack.pop(); const x = k % g, y = (k / g) | 0; n++; sx += x; sy += y;
-        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
-        for (const nb of [k - 1, k + 1, k - g, k + g, k - g - 1, k - g + 1, k + g - 1, k + g + 1]) { if (nb < 0 || nb >= g * g) continue; const nx = nb % g; if (Math.abs(nx - x) > 1) continue; if (cell[nb] && !seen[nb]) { seen[nb] = 1; stack.push(nb); } }
+        const k = stack.pop(); const x = k % g, y = (k / g) | 0; xs.push(x); ys.push(y);
+        for (const nb of [k - 1, k + 1, k - g, k + g, k - g - 1, k - g + 1, k + g - 1, k + g + 1]) { if (nb < 0 || nb >= g * g) continue; if (Math.abs((nb % g) - x) > 1) continue; if (cell[nb] && !seen[nb]) { seen[nb] = 1; stack.push(nb); } }
       }
-      comps.push({ n, cx: (sx / n) * 2, cy: (sy / n) * 2, w: (maxx - minx + 1) * 2, h: (maxy - miny + 1) * 2 });
+      const n = xs.length; if (n < 5) continue;
+      let mx = 0, my = 0; for (let k = 0; k < n; k++) { mx += xs[k]; my += ys[k]; } mx /= n; my /= n;
+      let sxx = 0, syy = 0, sxy = 0; for (let k = 0; k < n; k++) { const dx = xs[k] - mx, dy = ys[k] - my; sxx += dx * dx; syy += dy * dy; sxy += dx * dy; } sxx /= n; syy /= n; sxy /= n;
+      const tr = sxx + syy, det = sxx * syy - sxy * sxy; const disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+      const l1 = tr / 2 + disc, l2 = Math.max(0, tr / 2 - disc);
+      const ang = (Math.atan2(l1 - sxx, sxy) * 180 / Math.PI + 180) % 180;
+      let minx = g, maxx = 0, miny = g, maxy = 0; for (let k = 0; k < n; k++) { if (xs[k] < minx) minx = xs[k]; if (xs[k] > maxx) maxx = xs[k]; if (ys[k] < miny) miny = ys[k]; if (ys[k] > maxy) maxy = ys[k]; }
+      out.push({ n, cx: mx * 2, cy: my * 2, L: 4 * Math.sqrt(l1) * r2, W: 4 * Math.sqrt(l2) * r2, area: n * r2 * r2, ang, bw: (maxx - minx + 1) * 2, bh: (maxy - miny + 1) * 2 });
     }
-    return { comps, mask, count: mask.reduce((a, b) => a + b, 0) };
+    return out;
   }
-
+  // dalle componenti ai candidati: gruppi di fasce parallele (zone tratteggiate accanto ai posti) o blocchi compatti
+  function detect(mask, px, res) {
+    const comps = components(mask, px, res);
+    const strips = comps.filter((c) => c.L >= 2.2 && c.L <= 7.5 && c.W >= 0.3 && c.W <= 2.2 && c.area >= 0.6);
+    const used = new Set(); const cands = [];
+    const dM = (a, b) => Math.hypot((a.cx - b.cx) * res, (a.cy - b.cy) * res);
+    const par = (a, b) => Math.abs((((a.ang - b.ang) + 90) % 180) - 90) < 22;
+    strips.forEach((s, i) => {
+      if (used.has(i)) return; const grp = [i]; used.add(i); let changed = true;
+      while (changed) { changed = false; strips.forEach((t, j) => { if (used.has(j)) return; if (grp.some((k) => par(strips[k], t) && dM(strips[k], t) <= 4.5)) { grp.push(j); used.add(j); changed = true; } }); }
+      if (grp.length >= 2) { const cx = grp.reduce((a, k) => a + strips[k].cx, 0) / grp.length, cy = grp.reduce((a, k) => a + strips[k].cy, 0) / grp.length; cands.push({ cx, cy, posti: grp.length, kind: 'fasce', w: Math.max(...grp.map((k) => strips[k].bw)) + 20, h: Math.max(...grp.map((k) => strips[k].bh)) + 20, score: grp.length }); }
+    });
+    comps.forEach((c) => {
+      const fill = c.area / (c.bw * res * c.bh * res);
+      if (c.L >= 3.5 && c.L <= 16 && c.W >= 1.8 && c.W <= 8 && c.area >= 2 && c.area <= 60 && fill >= 0.1 && fill <= 0.7 && c.L / c.W <= 5) {
+        if (!cands.some((k) => Math.hypot((k.cx - c.cx) * res, (k.cy - c.cy) * res) < 6)) cands.push({ cx: c.cx, cy: c.cy, posti: Math.max(1, Math.round(c.L / 2.6)), kind: 'blocco', w: c.bw, h: c.bh, score: 1 });
+      }
+    });
+    return { comps, strips, cands };
+  }
   // --- taratura del colore giallo sul riquadro al centro ---
   let calib = null; // {cv, px, s,w,n,e}
   function showCalib(sens) {
     const pc = $('#s-canvas'); const px = calib.px; pc.width = px; pc.height = px; const pctx = pc.getContext('2d', { willReadFrequently: true }); pctx.drawImage(calib.cv, 0, 0);
-    const yc = yellowComponents(pctx, px, sens);
-    const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) if (yc.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } pctx.putImageData(im, 0, 0);
-    const th = thresholds(sens);
+    const ym = yellowMask(pctx, px, sens); const det = detect(ym.mask, px, calib.res);
+    const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) if (ym.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } pctx.putImageData(im, 0, 0);
+    pctx.lineWidth = 2; pctx.strokeStyle = '#ffd400'; det.strips.forEach((c) => pctx.strokeRect(c.cx - c.bw / 2, c.cy - c.bh / 2, c.bw, c.bh));
+    pctx.lineWidth = 4; pctx.strokeStyle = '#ff2d2d'; det.cands.forEach((c) => pctx.strokeRect(c.cx - c.w / 2, c.cy - c.h / 2, c.w, c.h));
     $('#s-prev').hidden = false;
-    $('#s-prevtxt').textContent = `Riquadro di 100 m al centro, 10 cm/px. Pixel gialli: ${yc.count}. Soglie: tonalità ${Math.round(th.hMin)}–${Math.round(th.hMax)}°, saturazione ≥ ${th.satMin.toFixed(2)}, luminosità ≥ ${th.valMin.toFixed(2)}${th.ref ? ' (da colore campionato)' : ' (predefinite)'}. Clicca su una striscia gialla per usarla come riferimento.`;
-    const okComps = yc.comps.filter((c) => { const wM = c.w * calib.res, hM = c.h * calib.res, aM = c.n * 4 * calib.res * calib.res; return wM >= 1.5 && hM >= 1.5 && wM <= 9 && hM <= 9 && aM >= 0.4 && aM <= 25 && Math.max(wM, hM) / Math.min(wM, hM) <= 4; });
-    pctx.strokeStyle = '#ff2d2d'; pctx.lineWidth = 3; okComps.forEach((c) => pctx.strokeRect(c.cx - c.w / 2 - 4, c.cy - c.h / 2 - 4, c.w + 8, c.h + 8));
-    slog(`Taratura: ${yc.count} pixel gialli, ${okComps.length} forme compatibili con uno stallo (in rosso).`);
+    $('#s-prevtxt').textContent = `Riquadro di 100 m al centro, 10 cm/px. Pixel gialli: ${ym.count}. Soglia giallezza ≥ ${ym.th.yelMin.toFixed(3)}${ym.th.ref ? ' (da colore campionato)' : ' (predefinita)'}. In magenta i pixel gialli, in giallo le fasce riconosciute, in rosso i candidati. Clicca su una fascia gialla per usarla come riferimento.`;
+    slog(`Taratura: ${ym.count} pixel gialli, ${det.strips.length} fasce, ${det.cands.length} candidati (${det.cands.map((c) => c.kind + ' ×' + c.posti).join(', ') || 'nessuno'}).`);
   }
   $('#s-cal').onclick = async () => {
     $('#s-cal').disabled = true;
@@ -466,9 +493,10 @@
     let R = 0, G = 0, B = 0, n = 0; for (let i = 0; i < d.length; i += 4) { R += d[i]; G += d[i + 1]; B += d[i + 2]; n++; }
     const rr = R / n / 255, gg = G / n / 255, bb = B / n / 255; const mx = Math.max(rr, gg, bb), mn = Math.min(rr, gg, bb); const v = mx, sat = mx ? (mx - mn) / mx : 0;
     let h = 0; if (mx === mn) h = 0; else if (mx === rr) h = 60 * (((gg - bb) / (mx - mn)) % 6); else if (mx === gg) h = 60 * ((bb - rr) / (mx - mn) + 2); else h = 60 * ((rr - gg) / (mx - mn) + 4); if (h < 0) h += 360;
-    slog(`Colore campionato: RGB(${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)}) → tonalità ${Math.round(h)}°, saturazione ${sat.toFixed(2)}, luminosità ${v.toFixed(2)}`);
-    if (h < 20 || h > 85) { slog('  Non sembra giallo: campiona esattamente sopra la striscia.'); return; }
-    try { localStorage.setItem('dp.yellow', JSON.stringify({ h, s: sat, v })); } catch (e) { /* ignora */ }
+    const yel = (rr + gg) / 2 - bb;
+    slog(`Colore campionato: RGB(${Math.round(R / n)},${Math.round(G / n)},${Math.round(B / n)}) → giallezza ${yel.toFixed(3)}, luminosità ${v.toFixed(2)}`);
+    if (yel < 0.025 || rr < 0.9 * gg || gg < 0.75 * rr) { slog('  Non sembra vernice gialla: campiona esattamente sopra la fascia gialla.'); return; }
+    try { localStorage.setItem('dp.yellow', JSON.stringify({ yel, v })); } catch (e) { /* ignora */ }
     slog('  Riferimento salvato: le soglie ora seguono questo colore. Rilancio l\'analisi…');
     showCalib(+$('#s-sens').value);
   });
@@ -500,25 +528,19 @@
         if (sStop) throw new Error('Interrotto');
         const cs = s0 + iy * cellM * dLat, cw = w0 + ix * cellM * dLon, cn = cs + cellM * dLat, ce = cw + cellM * dLon;
         let cellImg; try { cellImg = await fetchCell(cs, cw, cn, ce, px, src); } catch (e) { done++; continue; }
-        const yc = yellowComponents(cellImg.ctx, px, sens); const comps = yc.comps;
-        if (!best || yc.count > best.count) best = { count: yc.count, mask: yc.mask, cv: cellImg.cv };
-        for (const c of comps) {
-          const wM = c.w * res, hM = c.h * res, areaM = c.n * 4 * res * res; // n è in celle 2x2
-          // stallo disabili: ingombro 1.5–9 m per lato, strisce (non un blocco pieno), non una linea lunghissima
-          if (wM < 1.5 || hM < 1.5 || wM > 9 || hM > 9) continue;
-          if (areaM < 0.4 || areaM > 25) continue;
-          if (Math.max(wM, hM) / Math.min(wM, hM) > 4) continue;
+        const ym = yellowMask(cellImg.ctx, px, sens); const det = detect(ym.mask, px, res);
+        if (!best || ym.count > best.count) best = { count: ym.count, mask: ym.mask, cv: cellImg.cv };
+        for (const c of det.cands) {
           const lat = cn - (c.cy / px) * (cn - cs), lon = cw + (c.cx / px) * (ce - cw);
           if (rows.some((r) => r.stato !== 'rifiutato' && map.distance([r.lat, r.lon], [lat, lon]) <= 12)) continue;
           if (known.some((k) => map.distance([k.lat, k.lon], [lat, lon]) <= 12)) continue;
           if (found.some((k) => map.distance([k.lat, k.lon], [lat, lon]) <= 8)) continue;
-          // ritaglio di prova (24 m attorno)
-          const half = Math.round(12 / res); const cx = Math.round(c.cx), cy = Math.round(c.cy);
-          const crop = document.createElement('canvas'); crop.width = crop.height = half * 2;
-          crop.getContext('2d').drawImage(cellImg.cv, cx - half, cy - half, half * 2, half * 2, 0, 0, half * 2, half * 2);
-          const cctx = crop.getContext('2d'); cctx.strokeStyle = '#ff2d2d'; cctx.lineWidth = 3; cctx.strokeRect(half - c.w / 2 - 4, half - c.h / 2 - 4, c.w + 8, c.h + 8);
+          const half = Math.round(14 / res); const cx = Math.round(c.cx), cy = Math.round(c.cy);
+          const crop = document.createElement('canvas'); crop.width = crop.height = half * 2; const cctx = crop.getContext('2d');
+          cctx.drawImage(cellImg.cv, cx - half, cy - half, half * 2, half * 2, 0, 0, half * 2, half * 2);
+          cctx.strokeStyle = '#ff2d2d'; cctx.lineWidth = 3; cctx.strokeRect(half - c.w / 2, half - c.h / 2, c.w, c.h);
           const blob = await new Promise((r) => crop.toBlob(r, 'image/jpeg', .85));
-          found.push({ lat: +lat.toFixed(6), lon: +lon.toFixed(6), blob, score: Math.round(areaM * 10) / 10 });
+          found.push({ lat: +lat.toFixed(6), lon: +lon.toFixed(6), blob, posti: c.posti, kind: c.kind });
         }
         done++; if (done % 10 === 0 || done === tot) slog(`  ${done}/${tot} riquadri · candidati finora: ${found.length}`);
       }
@@ -533,7 +555,7 @@
         const path = `sat/${f.lat}_${f.lon}.jpg`;
         const { error: ue } = await sb.storage.from('foto').upload(path, f.blob, { contentType: 'image/jpeg', upsert: true });
         const url = ue ? null : sb.storage.from('foto').getPublicUrl(path).data.publicUrl;
-        const { error } = await sb.from('candidati').upsert({ ext_id: `sat/${f.lat},${f.lon}`, fonte: 'satellite', classe: 'segnaletica gialla', lat: f.lat, lon: f.lon, comune: null, note: url, stato: 'nuovo' }, { onConflict: 'ext_id', ignoreDuplicates: true });
+        const { error } = await sb.from('candidati').upsert({ ext_id: `sat/${f.lat},${f.lon}`, fonte: 'satellite', classe: `segnaletica gialla (${f.kind}, ~${f.posti} posti)`, lat: f.lat, lon: f.lon, comune: null, note: url, stato: 'nuovo' }, { onConflict: 'ext_id', ignoreDuplicates: true });
         if (!error) saved++;
       }
       slog(`Salvati ${saved} candidati. Ora rivedili uno per uno: "Da verificare".`);
