@@ -24,12 +24,17 @@
   // ---------- mappa ----------
   const view = ls.get('dp.view', { c: [C.HOME.lat, C.HOME.lon], z: C.HOME.zoom });
   const map = L.map('map', { zoomControl: false }).setView(view.c, view.z);
-  const baseStreet = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' });
-  const baseSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics' });
-  let satOn = ls.get('dp.sat', false);
-  (satOn ? baseSat : baseStreet).addTo(map);
-  $('#layers').onclick = () => { satOn = !satOn; ls.set('dp.sat', satOn); map.removeLayer(satOn ? baseStreet : baseSat); map.addLayer(satOn ? baseSat : baseStreet); $('#layers').classList.toggle('on', satOn); };
-  $('#layers').classList.toggle('on', satOn);
+  const CRS900913 = L.extend({}, L.CRS.EPSG3857, { code: 'EPSG:900913' });
+  const bases = {
+    osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, maxNativeZoom: 19, attribution: '© OpenStreetMap' }),
+    esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 19, attribution: 'Esri, Maxar' }),
+    fvg: L.tileLayer.wms('https://irdat-ortofoto.regione.fvg.it/geoserver/ortofoto/ows', { layers: 'trueorto_FVG_1720', format: 'image/jpeg', version: '1.1.1', crs: CRS900913, maxZoom: 21, tileSize: 512, attribution: 'TrueOrtofoto 2020 © Regione FVG' })
+  };
+  const BASE_ORDER = ['osm', 'esri', 'fvg'], BASE_LABEL = { osm: 'Mappa stradale', esri: 'Satellite', fvg: 'Ortofoto Regione FVG (2020)' };
+  let base = ls.get('dp.base', 'osm'); if (!bases[base]) base = 'osm';
+  bases[base].addTo(map);
+  $('#layers').onclick = () => { const next = BASE_ORDER[(BASE_ORDER.indexOf(base) + 1) % BASE_ORDER.length]; map.removeLayer(bases[base]); base = next; bases[base].addTo(map).bringToBack(); ls.set('dp.base', base); $('#layers').classList.toggle('on', base !== 'osm'); toast(BASE_LABEL[base], 1500); };
+  $('#layers').classList.toggle('on', base !== 'osm');
   map.attributionControl.setPosition('topright');
 
   // ---------- dati ----------

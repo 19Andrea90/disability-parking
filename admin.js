@@ -8,7 +8,7 @@
 
   // ---------- auth ----------
   async function session() { const { data } = await sb.auth.getSession(); return data.session; }
-  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); } }
+  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); loadCands(); } }
   $('#l-in').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signInWithPassword({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : ''; if (!error) boot(); };
   $('#l-up').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signUp({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : 'Registrazione inviata: se Supabase richiede la conferma, controlla la posta e poi premi "Entra".'; };
   $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
@@ -17,9 +17,19 @@
   function initMap() {
     if (map) return;
     map = L.map('amap').setView([C.HOME.lat, C.HOME.lon], 13);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
-    layer = L.layerGroup().addTo(map);
+    bases.osm.addTo(map); curBase = 'osm';
+    layer = L.layerGroup().addTo(map); candLayer = L.layerGroup().addTo(map);
+    document.querySelectorAll('input[name=base]').forEach((r) => r.onchange = () => setBase(r.value));
   }
+  // livelli di base: strade, satellite Esri, TrueOrtofoto FVG 2020 (WMS regionale, 10-20 cm/px)
+  const CRS900913 = L.extend({}, L.CRS.EPSG3857, { code: 'EPSG:900913' });
+  const bases = {
+    osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 21, maxNativeZoom: 19, attribution: '© OpenStreetMap' }),
+    esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19, attribution: 'Esri, Maxar' }),
+    fvg: L.tileLayer.wms('https://irdat-ortofoto.regione.fvg.it/geoserver/ortofoto/ows', { layers: 'trueorto_FVG_1720', format: 'image/jpeg', version: '1.1.1', crs: CRS900913, maxZoom: 22, tileSize: 512, attribution: 'TrueOrtofoto 2020 © Regione FVG / Insiel' })
+  };
+  let curBase = 'osm', candLayer;
+  function setBase(k) { if (k === curBase || !bases[k]) return; map.removeLayer(bases[curBase]); bases[k].addTo(map).bringToBack(); curBase = k; document.querySelectorAll('input[name=base]').forEach((r) => r.checked = r.value === k); }
   function pinClass(s) { return s.stato === 'proposto' ? 'proposto' : s.tipo; }
   function icon(s, on) { return L.divIcon({ className: '', html: `<div class="pin ${pinClass(s)}${on ? ' sel' : ''}"><b>${s.posti > 1 ? s.posti : '♿'}</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] }); }
 
@@ -236,6 +246,132 @@
     $('#i-go').disabled = false; $('#i-stop').hidden = true;
   };
   $('#i-stop').onclick = () => { stopReq = true; if (activeCtl) activeCtl.abort(); $('#i-stop').disabled = true; setTimeout(() => { $('#i-stop').disabled = false; }, 1500); ilog('Interrompo…'); };
+
+
+  // ======================================================================
+  // CANDIDATI AUTOMATICI — Mapillary (cartelli riconosciuti) + ortofoto
+  // ======================================================================
+  const MLY_CLASSES = ['information--disabled-persons--g1', 'information--disabled-persons--g2', 'information--disabled-persons--g3', 'complementary--disabled-persons--g1', 'regulatory--reserved-parking--g1'];
+  const CLASSE_LABEL = { 'information--disabled-persons--g1': 'Pannello "disabili"', 'information--disabled-persons--g2': 'Pannello "disabili"', 'information--disabled-persons--g3': 'Pannello "disabili"', 'complementary--disabled-persons--g1': 'Pannello integrativo "disabili"', 'regulatory--reserved-parking--g1': 'Parcheggio riservato' };
+  const mlog = (m) => { const l = $('#m-log'); l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
+  let cands = [], cfilter = 'nuovo', csel = null, cmarker = null, mStop = false;
+  $('#m-token').value = (() => { try { return localStorage.getItem('dp.mly') || ''; } catch (e) { return ''; } })();
+  $('#m-token').addEventListener('change', () => { try { localStorage.setItem('dp.mly', $('#m-token').value.trim()); } catch (e) { /* ignora */ } });
+  const distM = (a, b) => map.distance([a.lat, a.lon], [b.lat, b.lon]);
+
+  async function loadCands() {
+    const { data, error } = await sb.from('candidati').select('*').order('created_at', { ascending: false }).limit(5000);
+    if (error) { $('#cand-rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} — hai eseguito supabase/03_candidati.sql?</div>`; return; }
+    cands = data; renderCands();
+  }
+  document.querySelectorAll('[data-cf]').forEach((b) => b.onclick = () => { document.querySelectorAll('[data-cf]').forEach((x) => x.classList.remove('active')); b.classList.add('active'); cfilter = b.dataset.cf; renderCands(); });
+  function cicon(c, on) { return L.divIcon({ className: '', html: `<div class="pin proposto${on ? ' sel' : ''}" style="background:#7c3aed"><b>?</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] }); }
+  function renderCands() {
+    const v = cands.filter((c) => c.stato === cfilter);
+    $('#cand-count').textContent = `· ${cands.filter((c) => c.stato === 'nuovo').length} da verificare`;
+    $('#cand-rows').innerHTML = v.length ? v.slice(0, 300).map((c) => `<div class="row-item${csel && csel.id === c.id ? ' sel' : ''}" data-cid="${c.id}">
+      <div><div class="n">${esc(CLASSE_LABEL[c.classe] || c.classe)}</div><div class="s">${esc(c.comune || '')} · visto ${c.last_seen ? new Date(c.last_seen).toLocaleDateString('it-IT') : '—'} · ${c.fonte}</div></div><div class="s">${c.stato}</div></div>`).join('') : '<div class="empty">Nessun candidato in questo stato.</div>';
+    candLayer.clearLayers();
+    v.forEach((c) => { const m = L.marker([c.lat, c.lon], { icon: cicon(c, csel && csel.id === c.id) }); m.on('click', () => selectCand(c.id)); candLayer.addLayer(m); });
+  }
+  $('#cand-rows').addEventListener('click', (e) => { const it = e.target.closest('[data-cid]'); if (it) selectCand(it.dataset.cid); });
+
+  async function selectCand(id) {
+    csel = cands.find((c) => c.id === id); if (!csel) return; const c = csel;
+    renderCands(); $('#cand-box').open = true;
+    if (cmarker) map.removeLayer(cmarker);
+    cmarker = L.marker([c.lat, c.lon], { draggable: true, icon: L.divIcon({ className: '', html: '<div class="pin generico sel"><b>♿</b></div>', iconSize: [30, 30], iconAnchor: [15, 30] }), zIndexOffset: 2000 }).addTo(map);
+    map.setView([c.lat, c.lon], 20); setBase('fvg');
+    const near = rows.filter((r) => r.stato !== 'rifiutato' && distM(r, c) <= 40);
+    $('#cand-edit').innerHTML = `
+      <div class="badges"><span class="badge proposto" style="background:#7c3aed">${esc(CLASSE_LABEL[c.classe] || c.classe)}</span><span class="badge osm">${c.fonte}</span><span class="badge osm">${c.stato}</span></div>
+      <div class="sub">${c.lat.toFixed(6)}, ${c.lon.toFixed(6)} · visto dal ${c.first_seen ? new Date(c.first_seen).toLocaleDateString('it-IT') : '—'} al ${c.last_seen ? new Date(c.last_seen).toLocaleDateString('it-IT') : '—'}
+        · <a target="_blank" href="https://www.mapillary.com/app/?lat=${c.lat}&lng=${c.lon}&z=18${c.image_id ? '&pKey=' + c.image_id : ''}">Apri in Mapillary</a>
+        · <a target="_blank" href="https://www.google.com/maps?q=${c.lat},${c.lon}&layer=c&cbll=${c.lat},${c.lon}">Street View</a></div>
+      ${near.length ? `<div class="warn">Attenzione: ${near.length} stallo/i già presenti entro 40 m (${near.map((n) => esc(n.nome || n.indirizzo || n.tipo)).join(', ')}). Forse è lo stesso.</div>` : ''}
+      <div id="cand-photo" class="sub">Carico la foto…</div>
+      <div class="sub">Sulla mappa (ortofoto) trascina il segnaposto esattamente sullo stallo prima di accettare: il cartello è di solito a pochi metri dallo stallo.</div>
+      <div class="field two">
+        <label>Tipo<select id="c-tipo"><option value="generico">Generico</option><option value="personalizzato">Personalizzato</option><option value="sconosciuto">Sconosciuto</option></select></label>
+        <label>Posti<input type="number" id="c-posti" min="1" value="1"></label>
+      </div>
+      <label class="field">Note<input type="text" id="c-note" placeholder="es. davanti al civico 12"></label>
+      <div class="acts">
+        <button class="btn primary" id="c-accept">✓ Accetta: crea stallo qui</button>
+        <button class="btn danger" id="c-reject">✗ Scarta</button>
+        <button class="btn" id="c-reset">Torna "nuovo"</button>
+      </div>
+      <div class="sub" id="c-msg"></div>`;
+    $('#c-accept').onclick = async () => {
+      const p = cmarker.getLatLng();
+      const rec = { lat: +p.lat.toFixed(6), lon: +p.lng.toFixed(6), tipo: $('#c-tipo').value, posti: +$('#c-posti').value || 1, note: $('#c-note').value.trim() || null, comune: c.comune, stato: 'verificato', fonte: 'mapillary', segnale_verticale: true, nome: null };
+      $('#c-msg').textContent = 'Creo lo stallo…';
+      const { data, error } = await sb.from('stalli').insert(rec).select().single();
+      if (error) { $('#c-msg').textContent = 'Errore: ' + error.message; return; }
+      await sb.from('candidati').update({ stato: 'accettato', stallo_id: data.id }).eq('id', c.id);
+      c.stato = 'accettato'; c.stallo_id = data.id; $('#c-msg').textContent = 'Stallo creato.'; load(); renderCands();
+    };
+    $('#c-reject').onclick = async () => { await sb.from('candidati').update({ stato: 'scartato' }).eq('id', c.id); c.stato = 'scartato'; $('#c-msg').textContent = 'Scartato.'; renderCands(); };
+    $('#c-reset').onclick = async () => { await sb.from('candidati').update({ stato: 'nuovo' }).eq('id', c.id); c.stato = 'nuovo'; renderCands(); };
+    // foto Mapillary
+    const tok = $('#m-token').value.trim();
+    if (c.image_id && tok) {
+      try {
+        const r = await fetch(`https://graph.mapillary.com/${c.image_id}?access_token=${encodeURIComponent(tok)}&fields=thumb_1024_url,captured_at,compass_angle`);
+        const j = await r.json();
+        $('#cand-photo').innerHTML = j.thumb_1024_url ? `<a href="${j.thumb_1024_url}" target="_blank"><img src="${j.thumb_1024_url}" alt="foto Mapillary" style="width:100%;border-radius:12px"></a><div class="sub">Foto del ${j.captured_at ? new Date(j.captured_at).toLocaleDateString('it-IT') : '—'} · © Mapillary contributors (CC BY-SA)</div>` : '<div class="sub">Foto non disponibile.</div>';
+      } catch (e) { $('#cand-photo').textContent = 'Foto non caricata: ' + e.message; }
+    } else $('#cand-photo').textContent = tok ? 'Nessuna immagine collegata.' : 'Inserisci il token Mapillary per vedere la foto.';
+  }
+
+  // ricerca candidati su un comune
+  function mlyCells(bboxStr, max = 0.09) { // area di ogni cella < 0.01 gradi²
+    const [s, w, n, e] = bboxStr.split(',').map(Number); const out = [];
+    const ny = Math.max(1, Math.ceil((n - s) / max)), nx = Math.max(1, Math.ceil((e - w) / max));
+    for (let i = 0; i < ny; i++) for (let j = 0; j < nx; j++) out.push([w + (e - w) * j / nx, s + (n - s) * i / ny, w + (e - w) * (j + 1) / nx, s + (n - s) * (i + 1) / ny]);
+    return out;
+  }
+  $('#m-stop').onclick = () => { mStop = true; };
+  $('#m-go').onclick = async () => {
+    const tok = $('#m-token').value.trim(), area = $('#m-area').value.trim();
+    $('#m-log').textContent = '';
+    if (!tok) { mlog('Serve il token Mapillary.'); return; }
+    if (!area) { mlog('Scrivi il nome del comune.'); return; }
+    $('#m-go').disabled = true; $('#m-stop').hidden = false; mStop = false;
+    try {
+      mlog(`Cerco il confine di "${area}"…`);
+      const b = await comuneBoundary(area, null); if (!b) throw new Error('Comune non trovato');
+      const cells = mlyCells(b.bbox); mlog(`  ${b.label}: ${cells.length} riquadri Mapillary`);
+      const found = new Map();
+      for (let i = 0; i < cells.length; i++) {
+        if (mStop) throw new Error('Interrotto');
+        const bb = cells[i].map((x) => x.toFixed(5)).join(',');
+        const url = `https://graph.mapillary.com/map_features?access_token=${encodeURIComponent(tok)}&fields=id,object_value,geometry,first_seen_at,last_seen_at,images&bbox=${bb}&object_values=${MLY_CLASSES.join(',')}&limit=2000`;
+        const r = await fetch(url); const j = await r.json();
+        if (j.error) throw new Error('Mapillary: ' + (j.error.message || JSON.stringify(j.error)));
+        (j.data || []).forEach((f) => found.set(f.id, f));
+        mlog(`  riquadro ${i + 1}/${cells.length}: ${(j.data || []).length} rilevamenti`);
+      }
+      const feats = [...found.values()].map((f) => ({ ext_id: 'mly/' + f.id, classe: f.object_value, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], first_seen: f.first_seen_at || null, last_seen: f.last_seen_at || null, image_id: (f.images && f.images.data && f.images.data[0] && f.images.data[0].id) || null }))
+        .filter((f) => inside(b.geojson, f.lon, f.lat));
+      mlog(`Rilevamenti dentro il confine: ${feats.length}`);
+      const known = new Set(cands.map((c) => c.ext_id));
+      let dupStallo = 0, dupCand = 0; const fresh = [];
+      for (const f of feats) {
+        if (known.has(f.ext_id)) { dupCand++; continue; }
+        if (rows.some((r) => r.stato !== 'rifiutato' && distM(r, f) <= 25)) { dupStallo++; continue; }
+        fresh.push(Object.assign({ fonte: 'mapillary', comune: b.label, stato: 'nuovo' }, f));
+      }
+      mlog(`  già candidati: ${dupCand} · già stalli entro 25 m: ${dupStallo} · nuovi: ${fresh.length}`);
+      for (let i = 0; i < fresh.length; i += 200) {
+        const { error } = await sb.from('candidati').upsert(fresh.slice(i, i + 200), { onConflict: 'ext_id', ignoreDuplicates: true });
+        if (error) throw error;
+      }
+      mlog('Fatto.'); await loadCands();
+      if (fresh.length) { cfilter = 'nuovo'; renderCands(); map.fitBounds(fresh.map((f) => [f.lat, f.lon]), { padding: [20, 20], maxZoom: 15 }); }
+    } catch (e) { mlog('Errore: ' + (e.message || e)); }
+    $('#m-go').disabled = false; $('#m-stop').hidden = true;
+  };
 
   $('#ver').textContent = 'v' + C.VERSION;
   boot();

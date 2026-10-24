@@ -59,6 +59,25 @@ body{overflow:auto;background:var(--bg)}
         <ul id="i-sug" role="listbox" hidden style="position:absolute;left:0;right:110px;top:100%;margin:4px 0 0;padding:6px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:50;max-height:260px;overflow:auto"></ul></div>
       <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
     </details>
+
+    <details class="edit" style="margin-bottom:12px" id="cand-box">
+      <summary style="cursor:pointer;font-weight:600">Candidati automatici (Mapillary + ortofoto) <span class="sub" id="cand-count"></span></summary>
+      <div class="sub" style="margin:8px 0">Mapillary riconosce i cartelli "parcheggio disabili" nelle foto stradali. Qui cerchi i candidati in un comune, li confronti con la foto e con l'ortofoto, e con un clic li trasformi in stalli. Serve un token Mapillary gratuito (mapillary.com → Developers → Register application → "Client token").</div>
+      <div class="actions" style="flex-wrap:wrap">
+        <input type="password" id="m-token" placeholder="Token Mapillary (MLY|…)" style="flex:2;min-width:220px" autocomplete="off">
+        <input type="text" id="m-area" placeholder="Comune (es. Udine)" style="flex:1;min-width:160px" autocomplete="off">
+        <button class="btn primary" id="m-go">Cerca candidati</button><button class="btn danger" id="m-stop" hidden>Ferma</button>
+      </div>
+      <pre id="m-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:160px;overflow:auto"></pre>
+      <div class="grid" style="margin-top:12px">
+        <div>
+          <div class="tabs" style="margin-bottom:8px"><button class="btn active" data-cf="nuovo">Da verificare</button><button class="btn" data-cf="accettato">Accettati</button><button class="btn" data-cf="scartato">Scartati</button></div>
+          <div id="cand-rows"></div>
+        </div>
+        <div id="cand-edit" class="edit"><div class="sub">Seleziona un candidato.</div></div>
+      </div>
+    </details>
+
     <div class="tabs">
       <button class="btn active" data-f="proposto">Da approvare</button>
       <button class="btn" data-f="verificato">Verificati</button>
@@ -73,6 +92,7 @@ body{overflow:auto;background:var(--bg)}
       </div>
       <div class="edit" id="edit"><div class="sub">Seleziona uno stallo dalla lista o dalla mappa.</div></div>
     </div>
+    <div class="sub" style="margin-top:8px">Mappa: <label><input type="radio" name="base" value="osm" checked> Strade</label> · <label><input type="radio" name="base" value="esri"> Satellite (Esri)</label> · <label><input type="radio" name="base" value="fvg"> TrueOrtofoto FVG 2020</label></div>
   </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
