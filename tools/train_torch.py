@@ -125,6 +125,7 @@ def featurize(items, bb, rng):
             else:
                 F, cx, cy = bb.windows(np.rot90(img, k))
                 if cf: np.savez(cf, F=F, cx=cx, cy=cy)
+            if k == 0: it['map0'] = cf
             if k == 0 and not it['id'].startswith('neg-'): it['map'] = cf  # riletta dal disco in valutazione
             pts = rot_pts(it['pts'], k, S)
             gx, gy = np.meshgrid(cx, cy)
@@ -148,6 +149,30 @@ def stack(items):
     X = np.concatenate([f for it in items for f, _ in it['train']]).astype(np.float32); y = np.concatenate([l for it in items for _, l in it['train']]).astype(int); return X, y
 
 
+
+def fit(items, rounds=2, per_crop=40, log=None):
+    """Regressione logistica + estrazione di esempi difficili: dopo ogni giro aggiungo come negativi le finestre
+    con punteggio alto lontane da ogni posto cliccato (nei ritagli etichettati ciò che non è cliccato non è uno stallo)."""
+    X, y = stack(items); extra = []
+    for r in range(rounds + 1):
+        XX = np.concatenate([X] + [e for e in extra]) if extra else X; yy = np.concatenate([y, np.zeros(sum(len(e) for e in extra), int)]) if extra else y
+        sc = StandardScaler().fit(XX); head = LogisticRegression(C=0.05, class_weight='balanced', max_iter=4000).fit(sc.transform(XX), yy)
+        if r == rounds: break
+        new = []
+        for it in items:
+            if not it.get('map0') or not os.path.exists(it['map0']): continue
+            z = np.load(it['map0']); F, cx, cy = z['F'], z['cx'], z['cy']; flat = F.reshape(-1, F.shape[-1])
+            p = head.predict_proba(sc.transform(flat.astype(np.float32)))[:, 1]
+            gx, gy = np.meshgrid(cx, cy); gx = gx.ravel(); gy = gy.ravel()
+            if len(it['pts']): d = np.min(np.hypot(gx[:, None] - it['pts'][:, 0], gy[:, None] - it['pts'][:, 1]), 1) * RES
+            else: d = np.full(len(gx), 1e9)
+            cand = np.where((p >= 0.5) & (d >= NEG_MIN))[0]
+            if len(cand) > per_crop: cand = cand[np.argsort(-p[cand])[:per_crop]]
+            if len(cand): new.append(flat[cand].astype(np.float16))
+        if new: extra.append(np.concatenate(new))
+        if log: log(f'      giro {r + 1}: aggiunti {sum(len(n) for n in new)} esempi difficili')
+    return sc, head
+
 def nms(s, cx, cy, thr):
     c = sorted(((s[i, j], cx[j], cy[i]) for i in range(s.shape[0]) for j in range(s.shape[1]) if s[i, j] >= thr), reverse=True); k = []
     for v, x, y in c:
@@ -170,8 +195,7 @@ def main():
     for k, zs in enumerate(folds):
         tr = [i for i in items if zone(i) not in zs]; te = [i for i in items if zone(i) in zs and not i['id'].startswith('neg-')]
         if not any(i['kind'] == 'label' for i in te): continue
-        X, y = stack(tr); sc = StandardScaler().fit(X)
-        head = LogisticRegression(C=0.05, class_weight='balanced', max_iter=4000).fit(sc.transform(X), y)
+        sc, head = fit(tr, log=lambda m: print(m, flush=True)); y = np.concatenate([l for it in tr for _, l in it['train']])
         for it in te:
             z = np.load(it['map']); F, cx, cy = z['F'], z['cx'], z['cy']; S = it['S']
             s_ = head.predict_proba(sc.transform(F.reshape(-1, F.shape[-1]).astype(np.float32)))[:, 1].reshape(F.shape[:2])
@@ -196,8 +220,7 @@ def main():
         A = agg[t]; p = A['tp'] / max(1, A['tp'] + A['fp']); r = A['tp'] / max(1, A['tp'] + A['fn'])
         print(f"  soglia {t:.2f}: trovati {A['tp']}/{A['tp'] + A['fn']} posti (recall {r:.0%}) · precisione {p:.0%} · falsi per ritaglio senza stalli {A['fp_empty'] / max(1, A['n_empty']):.2f}")
         if r >= 0.6 and (best is None or p > best[1]): best = (t, p, r)
-    X, y = stack(items); sc = StandardScaler().fit(X)
-    head = LogisticRegression(C=0.05, class_weight='balanced', max_iter=4000).fit(sc.transform(X), y)
+    sc, head = fit(items, log=lambda m: print(m, flush=True))
     np.savez(os.path.join(a.out, 'head.npz'), coef=head.coef_[0], intercept=head.intercept_, mean=sc.mean_, scale=sc.scale_)
     json.dump(dict(backbone='mobilenet_v3_large IMAGENET1K_V2 features, mean+max', res=RES, patch=P, up=UP, threshold=best[0] if best else 0.9, nms_m=NMS,
                    cv={str(t): agg[t] for t in thrs}, trained=time.strftime('%Y-%m-%d %H:%M')), open(os.path.join(a.out, 'model.json'), 'w'), indent=1)
