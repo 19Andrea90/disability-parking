@@ -252,7 +252,7 @@
   // CANDIDATI AUTOMATICI — Mapillary (cartelli riconosciuti) + ortofoto
   // ======================================================================
   const MLY_CLASSES = ['information--disabled-persons--g1', 'information--disabled-persons--g2', 'information--disabled-persons--g3', 'complementary--disabled-persons--g1', 'regulatory--reserved-parking--g1'];
-  const CLASSE_LABEL = { 'information--disabled-persons--g1': 'Pannello "disabili"', 'information--disabled-persons--g2': 'Pannello "disabili"', 'information--disabled-persons--g3': 'Pannello "disabili"', 'complementary--disabled-persons--g1': 'Pannello integrativo "disabili"', 'regulatory--reserved-parking--g1': 'Parcheggio riservato' };
+  const CLASSE_LABEL = { 'segnaletica gialla': 'Segnaletica gialla (ortofoto)', 'information--disabled-persons--g1': 'Pannello "disabili"', 'information--disabled-persons--g2': 'Pannello "disabili"', 'information--disabled-persons--g3': 'Pannello "disabili"', 'complementary--disabled-persons--g1': 'Pannello integrativo "disabili"', 'regulatory--reserved-parking--g1': 'Parcheggio riservato' };
   const mlog = (m) => { const l = $('#m-log'); l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
   let cands = [], cfilter = 'nuovo', csel = null, cmarker = null, mStop = false;
   $('#m-token').value = (() => { try { return localStorage.getItem('dp.mly') || ''; } catch (e) { return ''; } })();
@@ -289,7 +289,7 @@
         · <a target="_blank" href="https://www.mapillary.com/app/?lat=${c.lat}&lng=${c.lon}&z=18${c.image_id ? '&pKey=' + c.image_id : ''}">Apri in Mapillary</a>
         · <a target="_blank" href="https://www.google.com/maps?q=${c.lat},${c.lon}&layer=c&cbll=${c.lat},${c.lon}">Street View</a></div>
       ${near.length ? `<div class="warn">Attenzione: ${near.length} stallo/i già presenti entro 40 m (${near.map((n) => esc(n.nome || n.indirizzo || n.tipo)).join(', ')}). Forse è lo stesso.</div>` : ''}
-      <div id="cand-photo" class="sub">Carico la foto…</div>
+      ${c.fonte === 'satellite' && c.note && /^https?:/.test(c.note) ? `<a href="${c.note}" target="_blank"><img src="${c.note}" alt="ritaglio ortofoto" style="width:100%;max-width:360px;border-radius:12px;image-rendering:auto"></a><div class="sub">Ritaglio ortofoto 24×24 m, in rosso la segnaletica gialla rilevata.</div>` : '<div id="cand-photo" class="sub">Carico la foto…</div>'}
       <div class="sub">Sulla mappa (ortofoto) trascina il segnaposto esattamente sullo stallo prima di accettare: il cartello è di solito a pochi metri dallo stallo.</div>
       <div class="field two">
         <label>Tipo<select id="c-tipo"><option value="generico">Generico</option><option value="personalizzato">Personalizzato</option><option value="sconosciuto">Sconosciuto</option></select></label>
@@ -304,7 +304,7 @@
       <div class="sub" id="c-msg"></div>`;
     $('#c-accept').onclick = async () => {
       const p = cmarker.getLatLng();
-      const rec = { lat: +p.lat.toFixed(6), lon: +p.lng.toFixed(6), tipo: $('#c-tipo').value, posti: +$('#c-posti').value || 1, note: $('#c-note').value.trim() || null, comune: c.comune, stato: 'verificato', fonte: 'mapillary', segnale_verticale: true, nome: null };
+      const rec = { lat: +p.lat.toFixed(6), lon: +p.lng.toFixed(6), tipo: $('#c-tipo').value, posti: +$('#c-posti').value || 1, note: $('#c-note').value.trim() || null, comune: c.comune, stato: 'verificato', fonte: c.fonte, segnale_verticale: c.fonte === 'mapillary' ? true : null, nome: null };
       $('#c-msg').textContent = 'Creo lo stallo…';
       const { data, error } = await sb.from('stalli').insert(rec).select().single();
       if (error) { $('#c-msg').textContent = 'Errore: ' + error.message; return; }
@@ -315,7 +315,7 @@
     $('#c-reset').onclick = async () => { await sb.from('candidati').update({ stato: 'nuovo' }).eq('id', c.id); c.stato = 'nuovo'; renderCands(); };
     // foto Mapillary
     const tok = $('#m-token').value.trim();
-    if (c.image_id && tok) {
+    if (c.fonte === 'satellite') { /* niente foto stradale */ } else if (c.image_id && tok) {
       try {
         const r = await fetch(`https://graph.mapillary.com/${c.image_id}?access_token=${encodeURIComponent(tok)}&fields=thumb_1024_url,captured_at,compass_angle`);
         const j = await r.json();
@@ -371,6 +371,113 @@
       if (fresh.length) { cfilter = 'nuovo'; renderCands(); map.fitBounds(fresh.map((f) => [f.lat, f.lon]), { padding: [20, 20], maxZoom: 15 }); }
     } catch (e) { mlog('Errore: ' + (e.message || e)); }
     $('#m-go').disabled = false; $('#m-stop').hidden = true;
+  };
+
+
+  // ======================================================================
+  // SCANNER ORTOFOTO — cerca segnaletica gialla a terra (stalli disabili) nell'area visibile
+  // ======================================================================
+  const slog = (m) => { const l = $('#s-log'); l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
+  let sStop = false;
+  $('#s-stop').onclick = () => { sStop = true; };
+  const FVG_WMS = 'https://irdat-ortofoto.regione.fvg.it/geoserver/ortofoto/ows';
+  function mToDeg(lat) { return { dLat: 1 / 111320, dLon: 1 / (111320 * Math.cos(lat * Math.PI / 180)) }; }
+  function loadImg(url) { return new Promise((res, rej) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => rej(new Error('immagine non caricata')); im.src = url; }); }
+  // sorgente immagine per un riquadro (bbox in gradi), restituisce canvas con pixel leggibili
+  async function fetchCell(s, w, n, e, px, src) {
+    let url;
+    if (src === 'fvg') {
+      // WMS 1.1.1 in EPSG:4326: bbox = minLon,minLat,maxLon,maxLat
+      url = `${FVG_WMS}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=trueorto_FVG_1720&STYLES=&SRS=EPSG:4326&BBOX=${w},${s},${e},${n}&WIDTH=${px}&HEIGHT=${px}&FORMAT=image/jpeg`;
+    } else {
+      // Esri: esporto via export API (consente CORS)
+      url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${w},${s},${e},${n}&bboxSR=4326&imageSR=4326&size=${px},${px}&format=jpg&f=image`;
+    }
+    const im = await loadImg(url);
+    const cv = document.createElement('canvas'); cv.width = px; cv.height = px; const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.drawImage(im, 0, 0, px, px);
+    return { cv, ctx };
+  }
+  // maschera "giallo segnaletico" e componenti connesse
+  function yellowComponents(ctx, px, sens) {
+    const d = ctx.getImageData(0, 0, px, px).data; const mask = new Uint8Array(px * px);
+    const satMin = [0.55, 0.48, 0.40, 0.33, 0.27][sens - 1], valMin = [0.62, 0.58, 0.52, 0.47, 0.42][sens - 1];
+    for (let i = 0; i < px * px; i++) {
+      const r = d[i * 4] / 255, g = d[i * 4 + 1] / 255, b = d[i * 4 + 2] / 255;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b), v = mx, sat = mx ? (mx - mn) / mx : 0;
+      if (sat < satMin || v < valMin) continue;
+      let h = 0; if (mx === r) h = 60 * (((g - b) / (mx - mn)) % 6); else if (mx === g) h = 60 * ((b - r) / (mx - mn) + 2); else h = 60 * ((r - g) / (mx - mn) + 4); if (h < 0) h += 360;
+      if (h >= 38 && h <= 68) mask[i] = 1;
+    }
+    // componenti connesse (4-vicini) con dilatazione leggera tramite griglia 2x2
+    const g = Math.ceil(px / 2), cell = new Uint8Array(g * g);
+    for (let y = 0; y < px; y++) for (let x = 0; x < px; x++) if (mask[y * px + x]) cell[(y >> 1) * g + (x >> 1)] = 1;
+    const seen = new Uint8Array(g * g); const comps = [];
+    for (let i = 0; i < g * g; i++) {
+      if (!cell[i] || seen[i]) continue;
+      const stack = [i]; seen[i] = 1; let n = 0, minx = g, maxx = 0, miny = g, maxy = 0, sx = 0, sy = 0;
+      while (stack.length) {
+        const k = stack.pop(); const x = k % g, y = (k / g) | 0; n++; sx += x; sy += y;
+        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+        for (const nb of [k - 1, k + 1, k - g, k + g, k - g - 1, k - g + 1, k + g - 1, k + g + 1]) { if (nb < 0 || nb >= g * g) continue; const nx = nb % g; if (Math.abs(nx - x) > 1) continue; if (cell[nb] && !seen[nb]) { seen[nb] = 1; stack.push(nb); } }
+      }
+      comps.push({ n, cx: (sx / n) * 2, cy: (sy / n) * 2, w: (maxx - minx + 1) * 2, h: (maxy - miny + 1) * 2 });
+    }
+    return comps;
+  }
+  $('#s-go').onclick = async () => {
+    $('#s-log').textContent = ''; $('#s-go').disabled = true; $('#s-stop').hidden = false; sStop = false;
+    const sens = +$('#s-sens').value;
+    try {
+      const b = map.getBounds(); const s0 = b.getSouth(), w0 = b.getWest(), n0 = b.getNorth(), e0 = b.getEast();
+      const { dLat, dLon } = mToDeg((s0 + n0) / 2);
+      const cellM = 120, res = 0.2, px = Math.round(cellM / res); // 120 m a 20 cm/px = 600 px
+      const ny = Math.ceil((n0 - s0) / (cellM * dLat)), nx = Math.ceil((e0 - w0) / (cellM * dLon)); const tot = nx * ny;
+      if (tot > 900) throw new Error(`Area troppo grande (${tot} riquadri): avvicina la mappa (zoom 15-16).`);
+      // scelgo la sorgente: provo FVG (10-20 cm), se i pixel non sono leggibili passo a Esri
+      let src = 'fvg';
+      try { const t = await fetchCell(s0, w0, s0 + cellM * dLat, w0 + cellM * dLon, 64, 'fvg'); t.ctx.getImageData(0, 0, 1, 1); slog('Sorgente: TrueOrtofoto FVG 2020'); }
+      catch (e) { src = 'esri'; slog('Ortofoto FVG non analizzabile dal browser (' + e.message + '): uso satellite Esri'); }
+      slog(`Scansiono ${tot} riquadri da ${cellM} m…`);
+      const found = []; let done = 0;
+      const known = cands.filter((c) => c.stato !== 'scartato');
+      for (let iy = 0; iy < ny; iy++) for (let ix = 0; ix < nx; ix++) {
+        if (sStop) throw new Error('Interrotto');
+        const cs = s0 + iy * cellM * dLat, cw = w0 + ix * cellM * dLon, cn = cs + cellM * dLat, ce = cw + cellM * dLon;
+        let cellImg; try { cellImg = await fetchCell(cs, cw, cn, ce, px, src); } catch (e) { done++; continue; }
+        const comps = yellowComponents(cellImg.ctx, px, sens);
+        for (const c of comps) {
+          const wM = c.w * res, hM = c.h * res, areaM = c.n * 4 * res * res; // n è in celle 2x2
+          // stallo disabili: ingombro 1.5–9 m per lato, strisce (non un blocco pieno), non una linea lunghissima
+          if (wM < 1.5 || hM < 1.5 || wM > 9 || hM > 9) continue;
+          if (areaM < 0.4 || areaM > 25) continue;
+          if (Math.max(wM, hM) / Math.min(wM, hM) > 4) continue;
+          const lat = cn - (c.cy / px) * (cn - cs), lon = cw + (c.cx / px) * (ce - cw);
+          if (rows.some((r) => r.stato !== 'rifiutato' && map.distance([r.lat, r.lon], [lat, lon]) <= 12)) continue;
+          if (known.some((k) => map.distance([k.lat, k.lon], [lat, lon]) <= 12)) continue;
+          if (found.some((k) => map.distance([k.lat, k.lon], [lat, lon]) <= 8)) continue;
+          // ritaglio di prova (24 m attorno)
+          const half = Math.round(12 / res); const cx = Math.round(c.cx), cy = Math.round(c.cy);
+          const crop = document.createElement('canvas'); crop.width = crop.height = half * 2;
+          crop.getContext('2d').drawImage(cellImg.cv, cx - half, cy - half, half * 2, half * 2, 0, 0, half * 2, half * 2);
+          const cctx = crop.getContext('2d'); cctx.strokeStyle = '#ff2d2d'; cctx.lineWidth = 3; cctx.strokeRect(half - c.w / 2 - 4, half - c.h / 2 - 4, c.w + 8, c.h + 8);
+          const blob = await new Promise((r) => crop.toBlob(r, 'image/jpeg', .85));
+          found.push({ lat: +lat.toFixed(6), lon: +lon.toFixed(6), blob, score: Math.round(areaM * 10) / 10 });
+        }
+        done++; if (done % 10 === 0 || done === tot) slog(`  ${done}/${tot} riquadri · candidati finora: ${found.length}`);
+      }
+      slog(`Trovati ${found.length} candidati. Salvo…`);
+      let saved = 0;
+      for (const f of found) {
+        const path = `sat/${f.lat}_${f.lon}.jpg`;
+        const { error: ue } = await sb.storage.from('foto').upload(path, f.blob, { contentType: 'image/jpeg', upsert: true });
+        const url = ue ? null : sb.storage.from('foto').getPublicUrl(path).data.publicUrl;
+        const { error } = await sb.from('candidati').upsert({ ext_id: `sat/${f.lat},${f.lon}`, fonte: 'satellite', classe: 'segnaletica gialla', lat: f.lat, lon: f.lon, comune: null, note: url, stato: 'nuovo' }, { onConflict: 'ext_id', ignoreDuplicates: true });
+        if (!error) saved++;
+      }
+      slog(`Salvati ${saved} candidati. Ora rivedili uno per uno: "Da verificare".`);
+      await loadCands(); cfilter = 'nuovo'; renderCands();
+    } catch (e) { slog('Errore: ' + (e.message || e)); }
+    $('#s-go').disabled = false; $('#s-stop').hidden = true;
   };
 
   $('#ver').textContent = 'v' + C.VERSION;

@@ -69,6 +69,11 @@ body{overflow:auto;background:var(--bg)}
         <button class="btn primary" id="m-go">Cerca candidati</button><button class="btn danger" id="m-stop" hidden>Ferma</button>
       </div>
       <pre id="m-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:160px;overflow:auto"></pre>
+      <div class="sub" style="margin:14px 0 6px;font-weight:600;color:var(--fg)">Scanner ortofoto (segnaletica gialla a terra)</div>
+      <div class="sub">Inquadra sulla mappa la zona da analizzare (zoom 15-16, un quartiere alla volta) e premi Scansiona. Cerca le strisce gialle degli stalli sull'ortofoto e propone candidati con un ritaglio dell'immagine. Avrà falsi positivi (corsie bus, carico/scarico): li scarti in un clic.</div>
+      <div class="actions" style="margin-top:8px"><button class="btn primary" id="s-go">Scansiona area visibile</button><button class="btn danger" id="s-stop" hidden>Ferma</button>
+        <label class="sub" style="display:flex;align-items:center;gap:6px">Sensibilità <input type="range" id="s-sens" min="1" max="5" value="3" style="width:110px"></label></div>
+      <pre id="s-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:160px;overflow:auto"></pre>
       <div class="grid" style="margin-top:12px">
         <div>
           <div class="tabs" style="margin-bottom:8px"><button class="btn active" data-cf="nuovo">Da verificare</button><button class="btn" data-cf="accettato">Accettati</button><button class="btn" data-cf="scartato">Scartati</button></div>
