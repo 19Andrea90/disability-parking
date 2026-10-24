@@ -175,3 +175,4 @@ input[type=text],input[type=number],select,textarea{font:inherit;font-size:16px;
 /* correzione: hidden deve vincere sempre (le schede hanno display:flex) */
 [hidden]{display:none!important}
 @media (min-width:900px){ .card{z-index:999} #top{z-index:1000} }
+@media (min-width:900px){ #top{z-index:1010} .card{z-index:1005} #suggest{z-index:1011} }
