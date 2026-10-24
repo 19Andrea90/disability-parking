@@ -196,7 +196,7 @@
     if (sugCtl) sugCtl.abort(); sugCtl = new AbortController();
     const c = mePos || { lat: map.getCenter().lat, lon: map.getCenter().lng };
     try {
-      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lang=it&limit=6&lat=${c.lat}&lon=${c.lon}&zoom=12&location_bias_scale=0.4`, { signal: sugCtl.signal });
+      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lat=${c.lat}&lon=${c.lon}&zoom=12&location_bias_scale=0.4`, { signal: sugCtl.signal });
       const j = await r.json();
       sugItems = j.features.filter((f) => f.properties.country === 'Italia' || f.properties.countrycode === 'IT').map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }, photonLabel(f.properties)));
       renderSug();

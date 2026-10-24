@@ -115,8 +115,9 @@
     csT = setTimeout(async () => {
       if (csCtl) csCtl.abort(); csCtl = new AbortController();
       try {
-        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(v)}&lang=it&limit=15`, { signal: csCtl.signal });
+        const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(v)}&limit=15`, { signal: csCtl.signal });
         const j = await r.json();
+        if (!j.features) throw new Error(j.message || 'risposta inattesa');
         const seen = new Set(); const okPlace = ['city', 'town', 'village', 'municipality', 'hamlet', 'borough'];
         csItems = j.features.filter((f) => { const p = f.properties; return p.countrycode === 'IT' && p.name && ((p.osm_key === 'place' && okPlace.includes(p.osm_value)) || (p.osm_key === 'boundary' && p.osm_value === 'administrative')); })
           .filter((f) => { const k = f.properties.name + '|' + (f.properties.county || f.properties.state); if (seen.has(k)) return false; seen.add(k); return true; })
