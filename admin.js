@@ -441,7 +441,7 @@
     const im = pctx.getImageData(0, 0, px, px); for (let i = 0; i < px * px; i++) if (yc.mask[i]) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 0; im.data[i * 4 + 2] = 255; } pctx.putImageData(im, 0, 0);
     const th = thresholds(sens);
     $('#s-prev').hidden = false;
-    $('#s-prevtxt').textContent = `Riquadro al centro, 10 cm/px. Pixel gialli: ${yc.count}. Soglie: tonalità ${Math.round(th.hMin)}–${Math.round(th.hMax)}°, saturazione ≥ ${th.satMin.toFixed(2)}, luminosità ≥ ${th.valMin.toFixed(2)}${th.ref ? ' (da colore campionato)' : ' (predefinite)'}. Clicca su una striscia gialla per usarla come riferimento.`;
+    $('#s-prevtxt').textContent = `Riquadro di 100 m al centro, 10 cm/px. Pixel gialli: ${yc.count}. Soglie: tonalità ${Math.round(th.hMin)}–${Math.round(th.hMax)}°, saturazione ≥ ${th.satMin.toFixed(2)}, luminosità ≥ ${th.valMin.toFixed(2)}${th.ref ? ' (da colore campionato)' : ' (predefinite)'}. Clicca su una striscia gialla per usarla come riferimento.`;
     const okComps = yc.comps.filter((c) => { const wM = c.w * calib.res, hM = c.h * calib.res, aM = c.n * 4 * calib.res * calib.res; return wM >= 1.5 && hM >= 1.5 && wM <= 9 && hM <= 9 && aM >= 0.4 && aM <= 25 && Math.max(wM, hM) / Math.min(wM, hM) <= 4; });
     pctx.strokeStyle = '#ff2d2d'; pctx.lineWidth = 3; okComps.forEach((c) => pctx.strokeRect(c.cx - c.w / 2 - 4, c.cy - c.h / 2 - 4, c.w + 8, c.h + 8));
     slog(`Taratura: ${yc.count} pixel gialli, ${okComps.length} forme compatibili con uno stallo (in rosso).`);
@@ -449,10 +449,10 @@
   $('#s-cal').onclick = async () => {
     $('#s-cal').disabled = true;
     try {
-      const c = map.getCenter(); const { dLat, dLon } = mToDeg(c.lat); const cellM = 120, res = 0.1, px = 1200;
+      const c = map.getCenter(); const { dLat, dLon } = mToDeg(c.lat); const cellM = 100, res = 0.1, px = 1000;
       const s0 = c.lat - cellM / 2 * dLat, n0 = c.lat + cellM / 2 * dLat, w0 = c.lng - cellM / 2 * dLon, e0 = c.lng + cellM / 2 * dLon;
       let got = null;
-      for (const src of ['fvg', 'proxy', 'esri']) { try { got = await fetchCell(s0, w0, n0, e0, px, src); got.ctx.getImageData(0, 0, 1, 1); slog('Taratura: sorgente ' + src); break; } catch (e) { got = null; } }
+      for (const src of ['fvg', 'proxy', 'esri']) { try { got = await fetchCell(s0, w0, n0, e0, px, src); got.ctx.getImageData(0, 0, 1, 1); slog('Taratura: sorgente ' + src); break; } catch (e) { got = null; slog(`  ${src}: ${e.message}`); } }
       if (!got) throw new Error('immagine non disponibile');
       calib = { cv: got.cv, px, res, s: s0, w: w0, n: n0, e: e0 };
       showCalib(+$('#s-sens').value);
