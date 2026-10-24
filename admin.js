@@ -178,7 +178,8 @@
   }
   let stopReq = false, activeCtl = null;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const checkStop = () => { if (stopReq) throw new Error('Interrotto dall\'utente'); };
+  const checkStop = () => { if (stopReq || sStop) throw new Error('Interrotto dall\'utente'); };
+  let sStop = false;
   async function overpassOnce(url, bb, timeoutMs, query) {
     const ctl = new AbortController(); activeCtl = ctl; const to = setTimeout(() => ctl.abort(), timeoutMs); const t0 = Date.now();
     try {
@@ -188,7 +189,7 @@
       const j = await r.json();
       if (j.remark && /timed out|error/i.test(j.remark)) throw new Error('server: ' + j.remark.slice(0, 80));
       return { els: j.elements, ms: Date.now() - t0 };
-    } catch (e) { if (stopReq) throw new Error('Interrotto dall\'utente'); if (e.name === 'AbortError') throw new Error(`nessuna risposta entro ${Math.round(timeoutMs / 1000)} s`); throw e; }
+    } catch (e) { if (stopReq || sStop) throw new Error('Interrotto dall\'utente'); if (e.name === 'AbortError') throw new Error(`nessuna risposta entro ${Math.round(timeoutMs / 1000)} s`); throw e; }
     finally { clearTimeout(to); activeCtl = null; }
   }
   async function overpassFetch(bb, query, logFn) {
@@ -197,7 +198,7 @@
       for (const url of OVERPASS) {
         const host = new URL(url).host;
         try { const { els, ms } = await overpassOnce(url, bb, round === 0 ? 45000 : 75000, query); L_(`    ${host}: ${els.length} elementi in ${Math.round(ms / 1000)} s`); return els; }
-        catch (e) { if (stopReq) throw e; lastErr = e; L_(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
+        catch (e) { if (stopReq || sStop) throw e; lastErr = e; L_(`    ${host}: ${e.message}`); if (/HTTP 429|HTTP 50/.test(e.message)) await sleep(4000); }
       }
       checkStop();
       const wait = 20 * (round + 1); L_(`  tutti i server occupati: riprovo tra ${wait} s (tentativo ${round + 2}/3)…`); for (let t = 0; t < wait; t++) { checkStop(); await sleep(1000); }
@@ -385,8 +386,7 @@
   // SCANNER ORTOFOTO — cerca segnaletica gialla a terra (stalli disabili) nell'area visibile
   // ======================================================================
   const slog = (m) => { const l = $('#s-log'); l.textContent += m + '\n'; l.scrollTop = l.scrollHeight; };
-  let sStop = false;
-  $('#s-stop').onclick = () => { sStop = true; };
+  $('#s-stop').onclick = () => { sStop = true; if (activeCtl) activeCtl.abort(); slog('Interrompo…'); };
   const FVG_WMS = 'https://irdat-ortofoto.regione.fvg.it/geoserver/ortofoto/ows';
   function mToDeg(lat) { return { dLat: 1 / 111320, dLon: 1 / (111320 * Math.cos(lat * Math.PI / 180)) }; }
   function loadImg(url) { return new Promise((res, rej) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => rej(new Error('immagine non caricata')); im.src = url; }); }
@@ -542,7 +542,7 @@
     slog(`Taratura: ${ym.count} pixel gialli, ${det.strips.length} fasce, ${det.cands.length} candidati (${det.cands.map((c) => c.kind + ' ×' + c.posti).join(', ') || 'nessuno'}).`);
   }
   $('#s-cal').onclick = async () => {
-    $('#s-cal').disabled = true;
+    $('#s-cal').disabled = true; sStop = false;
     try {
       const c = map.getCenter(); const { dLat, dLon } = mToDeg(c.lat); const cellM = 100, res = 0.1, px = 1000;
       const s0 = c.lat - cellM / 2 * dLat, n0 = c.lat + cellM / 2 * dLat, w0 = c.lng - cellM / 2 * dLon, e0 = c.lng + cellM / 2 * dLon;
@@ -572,7 +572,7 @@
   $('#s-reset').onclick = () => { try { localStorage.removeItem('dp.yellow'); } catch (e) { /* ignora */ } slog('Soglie riportate alle predefinite.'); if (calib) showCalib(+$('#s-sens').value); };
   $('#s-sens').addEventListener('input', () => { if (calib) showCalib(+$('#s-sens').value); });
   $('#s-go').onclick = async () => {
-    $('#s-log').textContent = ''; $('#s-go').disabled = true; $('#s-stop').hidden = false; sStop = false;
+    $('#s-log').textContent = 'Preparo la scansione…\n'; $('#s-go').disabled = true; $('#s-go').textContent = 'Scansione in corso…'; $('#s-stop').hidden = false; sStop = false;
     const sens = +$('#s-sens').value;
     try {
       const b = map.getBounds(); let s0 = b.getSouth(), w0 = b.getWest(), n0 = b.getNorth(), e0 = b.getEast();
@@ -635,8 +635,8 @@
       }
       slog(`Salvati ${saved} candidati. Ora rivedili uno per uno: "Da verificare".`);
       await loadCands(); cfilter = 'nuovo'; renderCands();
-    } catch (e) { slog('Errore: ' + (e.message || e)); }
-    $('#s-go').disabled = false; $('#s-stop').hidden = true;
+    } catch (e) { slog((sStop ? 'Fermato: ' : 'Errore: ') + (e.message || e)); }
+    $('#s-go').disabled = false; $('#s-go').textContent = 'Scansiona area visibile'; $('#s-stop').hidden = true; sStop = false;
   };
 
   $('#ver').textContent = 'v' + C.VERSION;
