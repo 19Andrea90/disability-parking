@@ -456,7 +456,10 @@
     comps.forEach((c) => {
       const fill = c.area / Math.max(0.1, c.L * c.W); // riempimento lungo gli assi reali: un'auto è piena, uno stallo tratteggiato no
       if (c.L >= 3.5 && c.L <= 16 && c.W >= 1.8 && c.W <= 8 && c.area >= 2 && c.area <= 60 && fill >= 0.1 && fill <= 0.6 && c.L / c.W <= 5) {
-        if (!cands.some((k) => Math.hypot((k.cx - c.cx) * res, (k.cy - c.cy) * res) < 6)) cands.push({ cx: c.cx, cy: c.cy, posti: Math.max(1, Math.round(c.L / 2.6)), kind: 'blocco', w: c.bw, h: c.bh, score: 1 });
+        const posti = Math.max(1, Math.round(c.L / 2.6));
+        const near = cands.find((k) => Math.hypot((k.cx - c.cx) * res, (k.cy - c.cy) * res) < 9);
+        if (near) { near.cx = (near.cx + c.cx) / 2; near.cy = (near.cy + c.cy) / 2; near.posti += posti; near.w = Math.max(near.w, Math.abs(near.cx - c.cx) * 2 + c.bw); near.h = Math.max(near.h, Math.abs(near.cy - c.cy) * 2 + c.bh); }
+        else cands.push({ cx: c.cx, cy: c.cy, posti, kind: 'blocco', w: c.bw, h: c.bh, score: 1 });
       }
     });
     return { comps, strips, cands };
