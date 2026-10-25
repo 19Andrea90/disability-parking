@@ -33,6 +33,15 @@ def sb_get(path, key):
     return json.load(urllib.request.urlopen(req, timeout=60))
 
 
+def sb_all(path, key, page=1000):
+    """Come sb_get ma a pagine: il server restituisce al massimo 1000 righe per richiesta."""
+    import re
+    path = re.sub(r'[&?]limit=\d+', '', path); sep = '&' if '?' in path else '?'; out = []
+    while True:
+        b = sb_get(f'{path}{sep}order=id&limit={page}&offset={len(out)}', key); out += b
+        if len(b) < page: return out
+
+
 def bbox(lat, lon, side):
     dlat = 1 / 111320; dlon = 1 / (111320 * math.cos(math.radians(lat))); h = side / 2
     return lat - h * dlat, lon - h * dlon, lat + h * dlat, lon + h * dlon
@@ -57,7 +66,7 @@ def load_items(crops, key, fake):
         labs = [{'ref_id': r['id'], 'centro_lat': r['lat'], 'centro_lon': r['lon'], 'crop_m': 60 if 'Parcheggio con posti' in (r.get('nome') or '') else 40,
                  'esito': 'stalli', 'punti': [[r['lat'], r['lon']]]} for r in list(stalli.values())[:fake] if 'Parcheggio con posti' not in (r.get('nome') or '')]
     else:
-        labs = sb_get('etichette?select=*&limit=10000', key)
+        labs = sb_all('etichette?select=*', key)
     for l in labs:
         fn = os.path.join(crops, f"{l['ref_id']}.jpg")
         if not os.path.exists(fn) and not wms(l['centro_lat'], l['centro_lon'], l['crop_m'], 400, fn): continue
@@ -68,7 +77,8 @@ def load_items(crops, key, fake):
         items.append(dict(id=l['ref_id'], kind='label' if l['esito'] == 'stalli' else 'empty', img=img, pts=pts, lat=l['centro_lat'], lon=l['centro_lon']))
     # candidati scartati: ritagli 24 m senza stalli
     negdir = os.path.join(crops, 'neg'); os.makedirs(negdir, exist_ok=True)
-    for c in sb_get('candidati?select=id,lat,lon&stato=eq.scartato&limit=10000', key):
+    for c in sb_all('candidati?select=id,lat,lon,classe&stato=eq.scartato', key):
+        if (c.get('classe') or '').startswith('zona nera'): continue  # ortofoto mancante, non è un esempio utile
         fn = os.path.join(negdir, f"{c['id']}.jpg")
         if not wms(c['lat'], c['lon'], 24, 240, fn): continue
         img = np.asarray(Image.open(fn).convert('RGB'), dtype=np.float32) / 255

@@ -46,12 +46,20 @@ CITIES = {  # riquadri casuali di città: tetti, giardini, cortili → negativi 
     'Gorizia': (45.930, 13.605, 45.955, 13.640), 'Monfalcone': (45.800, 13.520, 45.820, 13.545)}
 
 
+def unverified_auto(st):
+    n = (st or {}).get('note') or ''
+    return n.startswith('Confermato in automatico') and 'controllato' not in n
+
+
 def load_extra(crops, key, cand_filter=None, n_city=120, seed=0):
     """Candidati verificati (accettati → positivi nel punto dello stallo creato; scartati → negativi nel punto proposto)
     + riquadri casuali di città (uint8) con i punti noti da evitare."""
     rng = np.random.default_rng(seed); d = os.path.join(crops, 'extra'); os.makedirs(d, exist_ok=True)
-    cands = T.sb_get('candidati?select=id,lat,lon,stato,stallo_id,classe&stato=in.(accettato,scartato)&limit=10000', key)
-    stalli = {r['id']: r for r in T.sb_get('stalli?select=id,lat,lon&limit=20000', key)}
+    cands = T.sb_all('candidati?select=id,lat,lon,stato,stallo_id,classe&stato=in.(accettato,scartato)', key)
+    stalli = {r['id']: r for r in T.sb_all('stalli?select=id,lat,lon,note&stato=in.(proposto,verificato,ufficiale)', key)}
+    # gli stalli confermati in automatico dalla rete e non ancora controllati a mano non sono etichette affidabili: li escludo
+    unver = {i for i, r in stalli.items() if unverified_auto(r)}
+    cands = [c for c in cands if c.get('stallo_id') not in unver]
     if cand_filter: cands = [c for c in cands if cand_filter(c)]
     acc, rej = [], []
     for c in cands:
@@ -174,7 +182,8 @@ def main():
         if r >= 0.6 and (best is None or p > best[1]): best = (t, p, r)
     torch.save(net.state_dict(), os.path.join(a.out, 'holdout.pt'))
     if a.extra:  # prova "sul campo": l'altra metà dei candidati verificati, mai vista in addestramento
-        cands = [c for c in T.sb_get('candidati?select=id,lat,lon,stato,classe&stato=in.(accettato,scartato)&classe=like.rete*&limit=10000', key) if half(c) == 1]
+        unver = {r['id'] for r in T.sb_all('stalli?select=id,note&note=like.Confermato%20in%20automatico*', key) if unverified_auto(r)}
+        cands = [c for c in T.sb_all('candidati?select=id,lat,lon,stato,classe,stallo_id&stato=in.(accettato,scartato)&classe=like.rete*', key) if half(c) == 1 and c.get('stallo_id') not in unver]
         from sklearn.metrics import roc_auc_score
         nets = [('nuova', net)]
         if a.compare:
