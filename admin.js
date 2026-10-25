@@ -274,8 +274,11 @@
   }
   document.querySelectorAll('[data-cf]').forEach((b) => b.onclick = () => { document.querySelectorAll('[data-cf]').forEach((x) => x.classList.remove('active')); b.classList.add('active'); cfilter = b.dataset.cf; renderCands(); });
   function cicon(c, on) { return L.divIcon({ className: '', html: `<div class="pin proposto${on ? ' sel' : ''}" style="background:#7c3aed"><b>?</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] }); }
+  // punteggio di confidenza della rete (dal testo "punteggio N%"); i candidati senza punteggio vanno in fondo
+  const score = (c) => { const m = /punteggio (\d+)%/.exec(c.classe || ''); return m ? +m[1] : -1; };
+  const candView = () => cands.filter((c) => c.stato === cfilter).sort((a, b) => score(b) - score(a) || String(b.created_at).localeCompare(String(a.created_at)));
   function renderCands() {
-    const v = cands.filter((c) => c.stato === cfilter);
+    const v = candView();
     $('#cand-count').textContent = `· ${cands.filter((c) => c.stato === 'nuovo').length} da verificare`;
     $('#cand-rows').innerHTML = v.length ? v.slice(0, 300).map((c) => `<div class="row-item${csel && csel.id === c.id ? ' sel' : ''}" data-cid="${c.id}">
       <div><div class="n">${esc(CLASSE_LABEL[c.classe] || c.classe)}</div><div class="s">${esc(c.comune || '')} · visto ${c.last_seen ? new Date(c.last_seen).toLocaleDateString('it-IT') : '—'} · ${c.fonte}</div></div><div class="s">${c.stato}</div></div>`).join('') : '<div class="empty">Nessun candidato in questo stato.</div>';
@@ -303,7 +306,7 @@
   });
   async function selectCand(id) {
     csel = cands.find((c) => c.id === id); if (!csel) return; const c = csel;
-    const order = cands.filter((x) => x.stato === cfilter).map((x) => x.id); // ordine dell'elenco al momento dell'apertura
+    const order = candView().map((x) => x.id); // ordine dell'elenco al momento dell'apertura
     renderCands(); $('#cand-box').open = true;
     if (cmarker) map.removeLayer(cmarker);
     cmarker = L.marker([c.lat, c.lon], { draggable: true, icon: L.divIcon({ className: '', html: '<div class="pin generico sel"><b>♿</b></div>', iconSize: [30, 30], iconAnchor: [15, 30] }), zIndexOffset: 2000 }).addTo(map);
