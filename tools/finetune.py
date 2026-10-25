@@ -186,8 +186,8 @@ def main():
         cands = [c for c in T.sb_all('candidati?select=id,lat,lon,stato,classe,stallo_id&stato=in.(accettato,scartato)&classe=like.rete*', key) if half(c) == 1 and c.get('stallo_id') not in unver]
         from sklearn.metrics import roc_auc_score
         nets = [('nuova', net)]
-        if a.compare:
-            old = Net(); old.load_state_dict(torch.load(a.compare)); old.eval(); nets.append(('attuale', old))
+        for pth in [x for x in a.compare.split(',') if x]:
+            old = Net(); old.load_state_dict(torch.load(pth)); old.eval(); nets.append((os.path.basename(pth).replace('stalli_mobilenetv3_ft_', '').replace('.pt', ''), old))
         ys = np.array([c['stato'] == 'accettato' for c in cands]); res = {}
         for name, m in nets:
             sc = []
@@ -198,6 +198,15 @@ def main():
             sc = np.array(sc); res[name] = sc
             order = np.argsort(-sc); top = ys[order]
             log(f"Candidati di Udine mai visti ({len(cands)}: {ys.sum()} veri): rete {name} · AUC {roc_auc_score(ys, sc):.2f} · tra i primi 20 veri {top[:20].sum()} · tra i primi 40 veri {top[:40].sum()} · scartati sotto 0.2 {(sc[~ys] < 0.2).mean():.0%} perdendo {(sc[ys] < 0.2).sum()} veri")
+        names = list(res)
+        if len(names) > 1:  # combinazioni (media dei punteggi), come nello scanner
+            import itertools
+            for k in range(2, len(names) + 1):
+                for combo in itertools.combinations(names, k):
+                    sc = np.mean([res[n] for n in combo], 0)
+                    hi = sc >= 0.55; prec = ys[hi].mean() if hi.any() else float('nan')
+                    log(f"  media {'+'.join(combo)}: AUC {roc_auc_score(ys, sc):.3f} · sopra 0.55: {hi.sum()} con precisione {prec:.0%} ({ys[hi].sum()} dei {ys.sum()} veri) · scartati sotto 0.2 {(sc[~ys] < 0.2).mean():.0%} perdendo {(sc[ys] < 0.2).sum()} veri")
+            json.dump({n: res[n].tolist() for n in names} | {'y': ys.tolist(), 'ids': [c['id'] for c in cands]}, open(os.path.join(a.out, 'field_scores.json'), 'w'))
     if not a.holdout_only:
         log('\nRiaddestro su tutti i dati…'); net = train(items, a.steps, 1, log); torch.save(net.state_dict(), os.path.join(a.out, 'final.pt'))
     json.dump(dict(threshold=best[0] if best else 0.9, cv={str(k): v for k, v in agg.items()}, res=T.RES, patch=T.P, up=T.UP, steps=a.steps), open(os.path.join(a.out, 'model.json'), 'w'), indent=1)
