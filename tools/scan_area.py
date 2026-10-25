@@ -51,8 +51,16 @@ def main():
             self.nets = []
             for pth in paths:
                 n_ = Fm.Net(); n_.load_state_dict(torch.load(pth)); n_.eval(); self.nets.append(n_)
-        def dense(self, img):
-            outs = [n_.dense(img) for n_ in self.nets]; return sum(o[0] for o in outs) / len(outs), outs[0][1], outs[0][2]
+        def dense(self, img):  # scansione densa solo con la prima rete (veloce)
+            return self.nets[0].dense(img)
+        def rescore(self, img, x, y, v0):  # le altre reti valutano solo un ritaglio di 24 m attorno al candidato
+            if len(self.nets) == 1: return v0
+            r = 120; h, w_, _ = img.shape; x0, y0 = int(max(0, min(w_ - 2 * r, x - r))), int(max(0, min(h - 2 * r, y - r)))
+            sub = np.ascontiguousarray(img[y0:y0 + 2 * r, x0:x0 + 2 * r]); vals = [v0]
+            for n_ in self.nets[1:]:
+                s_, cx_, cy_ = n_.dense(sub); gx, gy = np.meshgrid(cx_ + x0, cy_ + y0); m_ = np.hypot(gx - x, gy - y) * T.RES <= 2.5
+                vals.append(float(s_[m_].max()) if m_.any() else 0.0)
+            return sum(vals) / len(vals)
     net = Ensemble(a.model.split(','))
     print(f'Reti in media: {len(net.nets)}', flush=True)
     ctx = None
@@ -93,9 +101,11 @@ def main():
             else:
                 sc, cx, cy = net.dense(img)
             m = OVER / 2 / T.RES  # tengo solo la parte centrale (il resto lo copre il riquadro vicino)
-            for v, x, y in T.nms(sc, cx, cy, a.thr):
+            for v, x, y in T.nms(sc, cx, cy, a.thr if len(net.nets) == 1 else a.thr / 2):
                 if not (m <= x <= px - m and m <= y <= px - m): continue
                 lat = n - (y / px) * (n - s); lon = w + (x / px) * (e - w)
+                v = net.rescore(img, x, y, v)
+                if v < a.thr: continue
                 if ctx is not None:
                     pt = Point(lon, lat)
                     if any(ctx['bldg'][i].contains(pt) for i in ctx['bld'].query(pt)): in_bld += 1; continue  # sopra un edificio: è un tetto
