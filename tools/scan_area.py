@@ -148,7 +148,7 @@ def main():
                 v = net.rescore(img, x, y, v)
                 if v < a.thr: continue
                 yi, xi = int(y), int(x); w8 = int(4 / T.RES)
-                if gray[max(0, yi - w8):yi + w8, max(0, xi - w8):xi + w8].mean() < 0.12: n_dark += 1; continue  # punto in zona nera
+                if gray[max(0, yi - w8):yi + w8, max(0, xi - w8):xi + w8].mean() < 0.09: n_dark += 1; continue  # punto in zona nera (l'ortofoto mancante è sotto 0,08; le ombre sono più chiare)
                 if ctx is not None:
                     pt = Point(lon, lat)
                     if any(ctx['bldg'][i].contains(pt) for i in ctx['bld'].query(pt)): in_bld += 1; continue  # sopra un edificio: è un tetto
