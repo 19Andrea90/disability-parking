@@ -57,6 +57,7 @@ body{overflow:auto;background:var(--bg)}
       <div class="sub" style="margin:8px 0">Scarica da OpenStreetMap gli stalli riservati di un comune e li inserisce come "verificati" (fonte OSM). Rilanciarlo aggiorna, non duplica.</div>
       <div class="actions" style="position:relative"><input type="text" id="i-area" value="" placeholder="Nome del comune (es. Trieste)" style="flex:1" autocomplete="off"><button class="btn primary" id="i-go">Importa</button><button class="btn danger" id="i-stop" hidden>Ferma</button>
         <ul id="i-sug" role="listbox" hidden style="position:absolute;left:0;right:110px;top:100%;margin:4px 0 0;padding:6px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:50;max-height:260px;overflow:auto"></ul></div>
+      <div class="actions" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="ctx-go">Prepara edifici e strade per la scansione</button><span class="sub">Usa il comune scritto sopra. Scarica da OpenStreetMap sagome degli edifici, strade e parcheggi e le salva per la scansione con la rete (esclude i tetti, salta campi e boschi).</span></div>
       <div class="actions" style="margin-top:8px"><button class="btn" id="i-region">Importa tutto il Friuli Venezia Giulia</button><span class="sub">Una sola richiesta per tutta la regione; aggiunge solo gli stalli non ancora presenti.</span></div>
       <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
     </details>

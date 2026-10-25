@@ -42,11 +42,32 @@ def dist_m(a_lat, a_lon, b_lat, b_lon):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('model'); ap.add_argument('--bbox', required=True); ap.add_argument('--thr', type=float, default=0.05)
-    ap.add_argument('--tta', action='store_true'); ap.add_argument('--label', default=''); ap.add_argument('--dry-run', action='store_true')
+    ap = argparse.ArgumentParser(); ap.add_argument('model', help='uno o più file .pt separati da virgola (media dei punteggi)'); ap.add_argument('--bbox', required=True); ap.add_argument('--thr', type=float, default=0.05)
+    ap.add_argument('--tta', action='store_true'); ap.add_argument('--label', default=''); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--context', default='', help='comune (es. udine): usa edifici/strade salvati dall\'admin')
     a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']; t0 = time.time()
     S0, W0, N0, E0 = map(float, a.bbox.split(','))
-    net = Fm.Net(); net.load_state_dict(torch.load(a.model)); net.eval()
+    class Ensemble:  # media dei punteggi di più reti (stessa griglia)
+        def __init__(self, paths):
+            self.nets = []
+            for pth in paths:
+                n_ = Fm.Net(); n_.load_state_dict(torch.load(pth)); n_.eval(); self.nets.append(n_)
+        def dense(self, img):
+            outs = [n_.dense(img) for n_ in self.nets]; return sum(o[0] for o in outs) / len(outs), outs[0][1], outs[0][2]
+    net = Ensemble(a.model.split(','))
+    print(f'Reti in media: {len(net.nets)}', flush=True)
+    ctx = None
+    if a.context:
+        from shapely.geometry import Polygon, LineString, Point, box
+        from shapely.strtree import STRtree
+        objs = sb('POST', '/storage/v1/object/list/foto', key, {'prefix': 'contesto/', 'limit': 1000})
+        names = sorted(o['name'] for o in objs if o['name'].startswith(a.context.lower() + '-'))
+        if not names: raise SystemExit(f'Nessun contesto per "{a.context}": usa il pulsante nell\'admin')
+        data = json.loads(urllib.request.urlopen(f'{SB}/storage/v1/object/public/foto/contesto/{names[-1]}', timeout=120).read())
+        P = lambda pts: [(lo, la) for la, lo in pts]
+        bld = [Polygon(P(p)) for p in data['edifici'] if len(p) >= 4]; bld = [g if g.is_valid else g.buffer(0) for g in bld]
+        lines = [LineString(P(p)) for p in data['strade'] if len(p) >= 2] + [Polygon(P(p)) for p in data['parcheggi'] if len(p) >= 4]
+        ctx = dict(bld=STRtree(bld), bldg=bld, lines=STRtree(lines))
+        print(f"Contesto {names[-1]}: {len(bld)} edifici, {len(lines)} strade/parcheggi", flush=True)
     stalli = sb('GET', '/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&limit=20000', key)
     cands = sb('GET', '/rest/v1/candidati?select=lat,lon&limit=20000', key)
     known = [(r['lat'], r['lon']) for r in stalli + cands]
@@ -55,11 +76,13 @@ def main():
     step_lat, step_lon = (TILE - OVER) * dlat, (TILE - OVER) * dlon
     lats = np.arange(S0, N0, step_lat); lons = np.arange(W0, E0, step_lon); tot = len(lats) * len(lons)
     print(f'Area {(N0 - S0) / dlat / 1000:.1f} × {(E0 - W0) / dlon / 1000:.1f} km · {tot} riquadri da {TILE:.0f} m · soglia {a.thr}{" · media su 4 rotazioni" if a.tta else ""}', flush=True)
-    found = []; done = 0; im_tile = None; im = None
+    found = []; done = 0; im_tile = None; im = None; skipped = 0; in_bld = 0
     for la in lats:
         for lo in lons:
-            s, w = la, lo; n, e = la + TILE * dlat, lo + TILE * dlon
-            img = wms(s, w, n, e, px); done += 1
+            s, w = la, lo; n, e = la + TILE * dlat, lo + TILE * dlon; done += 1
+            if ctx is not None and not len(ctx['lines'].query(box(w - 10 * dlon, s - 10 * dlat, e + 10 * dlon, n + 10 * dlat))):
+                skipped += 1; continue  # nessuna strada o parcheggio: campi, boschi
+            img = wms(s, w, n, e, px)
             if img is None: continue
             if a.tta:
                 acc = None
@@ -73,12 +96,15 @@ def main():
             for v, x, y in T.nms(sc, cx, cy, a.thr):
                 if not (m <= x <= px - m and m <= y <= px - m): continue
                 lat = n - (y / px) * (n - s); lon = w + (x / px) * (e - w)
+                if ctx is not None:
+                    pt = Point(lon, lat)
+                    if any(ctx['bldg'][i].contains(pt) for i in ctx['bld'].query(pt)): in_bld += 1; continue  # sopra un edificio: è un tetto
                 if im_tile is not img: im = Image.fromarray((img * 255).astype(np.uint8))
                 im_tile = img; r = 140  # ritaglio di 28 m, salvato subito per non tenere in memoria il riquadro
                 crop = im.crop((int(x - r), int(y - r), int(x + r), int(y + r))); dr = ImageDraw.Draw(crop); dr.ellipse([r - 22, r - 22, r + 22, r + 22], outline=(255, 40, 40), width=3)
                 buf = io.BytesIO(); crop.save(buf, 'JPEG', quality=85)
                 found.append(dict(score=float(v), lat=lat, lon=lon, jpg=buf.getvalue()))
-            if done % 25 == 0: print(f'  {done}/{tot} riquadri · candidati grezzi {len(found)} · {time.time() - t0:.0f} s', flush=True)
+            if done % 25 == 0: print(f'  {done}/{tot} riquadri · candidati grezzi {len(found)} · saltati {skipped} · sui tetti {in_bld} · {time.time() - t0:.0f} s', flush=True)
     # NMS globale + esclusione dei punti già noti
     found.sort(key=lambda f: -f['score']); keep = []
     for f in found:
@@ -93,7 +119,7 @@ def main():
         try: sb('POST', f'/storage/v1/object/foto/{path}', key, f['jpg'], 'image/jpeg', {'x-upsert': 'true'})
         except Exception as ex: print('  foto non caricata:', ex)
         url = f'{SB}/storage/v1/object/public/foto/{path}'
-        sb('POST', '/rest/v1/candidati?on_conflict=ext_id', key, {'ext_id': f"nn/{f['lat']:.6f},{f['lon']:.6f}", 'fonte': 'satellite', 'classe': f"rete neurale · punteggio {round(f['score'] * 100)}%",
+        sb('POST', '/rest/v1/candidati?on_conflict=ext_id', key, {'ext_id': f"nn/{f['lat']:.6f},{f['lon']:.6f}", 'fonte': 'satellite', 'classe': f"rete neurale{' (media di ' + str(len(net.nets)) + ')' if len(net.nets) > 1 else ''} · punteggio {round(f['score'] * 100)}%",
                                                                'lat': round(f['lat'], 6), 'lon': round(f['lon'], 6), 'comune': a.label or None, 'note': url, 'stato': 'nuovo'},
            extra={'Prefer': 'resolution=ignore-duplicates,return=minimal'})
         if (i + 1) % 25 == 0: print(f'  caricati {i + 1}/{len(keep)}', flush=True)

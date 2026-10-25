@@ -912,6 +912,42 @@
     btn.disabled = false;
   };
 
+
+  // ======================================================================
+  // CONTESTO PER LA SCANSIONE: edifici, strade e parcheggi OSM di un comune → Supabase Storage (foto/contesto/<comune>.json)
+  // ======================================================================
+  $('#ctx-go').onclick = async () => {
+    const area = $('#i-area').value.trim(); if (!area) { $('#i-log').textContent = 'Scrivi prima il nome del comune nella casella qui sopra.'; return; }
+    const btn = $('#ctx-go'); btn.disabled = true; $('#i-log').textContent = '';
+    try {
+      ilog(`Cerco il confine di "${area}"…`);
+      const b = await comuneBoundary(area, chosen); if (!b) throw new Error('Comune non trovato');
+      ilog(`  ${b.label}: ${b.bbox}`);
+      const q = `[out:json][timeout:300];(way["building"](${b.bbox});way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$"](${b.bbox});way["amenity"="parking"](${b.bbox}););out geom qt;`;
+      let els = null;
+      for (const url of ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+        ilog(`Scarico da ${new URL(url).host} (può richiedere 1–4 minuti)…`);
+        try { const r = await overpassOnce(url, null, 320000, q); els = r.els; ilog(`  ${els.length} elementi in ${Math.round(r.ms / 1000)} s`); break; } catch (e) { ilog('  ' + e.message); }
+      }
+      if (!els) throw new Error('Overpass non ha risposto: riprova più tardi.');
+      const r5 = (x) => Math.round(x * 1e5) / 1e5; const out = { comune: b.label, bbox: b.bbox, creato: new Date().toISOString(), edifici: [], strade: [], parcheggi: [] };
+      for (const el of els) {
+        if (!el.geometry || !el.tags) continue; const pts = el.geometry.map((p) => [r5(p.lat), r5(p.lon)]);
+        if (el.tags.building) out.edifici.push(pts);
+        else if (el.tags.amenity === 'parking') out.parcheggi.push(pts);
+        else if (el.tags.highway) out.strade.push(pts);
+      }
+      ilog(`Edifici ${out.edifici.length} · strade ${out.strade.length} · parcheggi ${out.parcheggi.length}. Salvo…`);
+      const slug = b.label.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-');
+      const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
+      const path = `contesto/${slug}-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')}.json`;
+      const { error } = await sb.storage.from('foto').upload(path, blob, { contentType: 'application/json' });
+      if (error) throw error;
+      ilog(`Fatto: ${path} (${(blob.size / 1e6).toFixed(1)} MB). Ora la scansione di ${b.label} può usarlo.`);
+    } catch (e) { ilog('Errore: ' + (e.message || e)); }
+    btn.disabled = false;
+  };
+
   $('#ver').textContent = 'v' + C.VERSION;
   boot();
 })();
