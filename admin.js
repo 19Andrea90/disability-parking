@@ -284,8 +284,26 @@
   }
   $('#cand-rows').addEventListener('click', (e) => { const it = e.target.closest('[data-cid]'); if (it) selectCand(it.dataset.cid); });
 
+  // dopo Accetta / Scarta / Salta: apre il prossimo candidato ancora da controllare nello stesso elenco
+  const skipped = new Set();
+  function goNext(fromId, order, msg) {
+    const i = order.indexOf(fromId);
+    const seq = order.slice(i + 1).concat(order.slice(0, Math.max(i, 0)));
+    const ok = (id) => { const x = cands.find((y) => y.id === id); return x && x.stato === cfilter && id !== fromId; };
+    const next = seq.find((id) => ok(id) && !skipped.has(id)) || seq.find(ok);
+    if (next) { selectCand(next).then(() => { const m = $('#c-msg'); if (m && msg) m.textContent = msg + ' Ecco il prossimo.'; }); return; }
+    csel = null; if (cmarker) { map.removeLayer(cmarker); cmarker = null; }
+    renderCands(); $('#cand-edit').innerHTML = `<div class="empty">${esc(msg || '')} Finito: non ci sono altri candidati in questo elenco. 🎉</div>`;
+  }
+  document.addEventListener('keydown', (e) => {
+    if (!csel || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''))) return;
+    if ($('#lab-area') && !$('#lab-area').hidden) return; // la modalità etichettatura ha i suoi tasti
+    const k = e.key.toLowerCase(); const b = k === 'a' ? '#c-accept' : k === 'x' ? '#c-reject' : k === 's' ? '#c-skip' : null;
+    if (b && $(b)) { e.preventDefault(); $(b).click(); }
+  });
   async function selectCand(id) {
     csel = cands.find((c) => c.id === id); if (!csel) return; const c = csel;
+    const order = cands.filter((x) => x.stato === cfilter).map((x) => x.id); // ordine dell'elenco al momento dell'apertura
     renderCands(); $('#cand-box').open = true;
     if (cmarker) map.removeLayer(cmarker);
     cmarker = L.marker([c.lat, c.lon], { draggable: true, icon: L.divIcon({ className: '', html: '<div class="pin generico sel"><b>♿</b></div>', iconSize: [30, 30], iconAnchor: [15, 30] }), zIndexOffset: 2000 }).addTo(map);
@@ -307,8 +325,10 @@
       <div class="acts">
         <button class="btn primary" id="c-accept">✓ Accetta: crea stallo qui</button>
         <button class="btn danger" id="c-reject">✗ Scarta</button>
+        <button class="btn" id="c-skip">Salta ›</button>
         <button class="btn" id="c-reset">Torna "nuovo"</button>
       </div>
+      <div class="sub">Dopo Accetta, Scarta o Salta si apre da solo il prossimo da controllare. Tasti: A accetta · X scarta · S salta.</div>
       <div class="sub" id="c-msg"></div>`;
     $('#c-accept').onclick = async () => {
       const p = cmarker.getLatLng();
@@ -317,9 +337,15 @@
       const { data, error } = await sb.from('stalli').insert(rec).select().single();
       if (error) { $('#c-msg').textContent = 'Errore: ' + error.message; return; }
       await sb.from('candidati').update({ stato: 'accettato', stallo_id: data.id }).eq('id', c.id);
-      c.stato = 'accettato'; c.stallo_id = data.id; $('#c-msg').textContent = 'Stallo creato.'; load(); renderCands();
+      c.stato = 'accettato'; c.stallo_id = data.id; load(); goNext(c.id, order, 'Stallo creato.');
     };
-    $('#c-reject').onclick = async () => { await sb.from('candidati').update({ stato: 'scartato' }).eq('id', c.id); c.stato = 'scartato'; $('#c-msg').textContent = 'Scartato.'; renderCands(); };
+    $('#c-reject').onclick = async () => {
+      $('#c-msg').textContent = 'Scarto…';
+      const { error } = await sb.from('candidati').update({ stato: 'scartato' }).eq('id', c.id);
+      if (error) { $('#c-msg').textContent = 'Errore: ' + error.message; return; }
+      c.stato = 'scartato'; goNext(c.id, order, 'Scartato.');
+    };
+    $('#c-skip').onclick = () => { skipped.add(c.id); goNext(c.id, order, 'Saltato.'); };
     $('#c-reset').onclick = async () => { await sb.from('candidati').update({ stato: 'nuovo' }).eq('id', c.id); c.stato = 'nuovo'; renderCands(); };
     // foto Mapillary
     const tok = $('#m-token').value.trim();
