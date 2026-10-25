@@ -23,3 +23,14 @@ Scansione di un'area: `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v
 Stessa architettura della v1, addestrata anche con le verifiche sul campo del centro di Udine (57 stalli confermati, 113 falsi scartati) e 120 riquadri casuali di città (tetti, giardini, cortili) come negativi.
 Da sola non batte la v1, ma **la media delle due** sì: sui candidati di Udine mai visti AUC 0,86 (v1 0,83), 15 veri tra i primi 20 (v1 13); con soglia 0,2 toglie il 94% dei falsi perdendo 6 veri su 21 (v1 ne perde 8).
 Uso in produzione: `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v1.pt,models/stalli_mobilenetv3_ft_v2.pt --bbox S,W,N,E --thr 0.2 --context udine --label Udine`
+
+## stalli_mobilenetv3_ft_v3.pt (25 ottobre 2026)
+Stessa architettura, addestrata con tutte le verifiche dell'admin sulla scansione completa di Udine: 431 stalli confermati a mano (compresi i 143 confermati in automatico e poi controllati), 204 falsi scartati, 120 riquadri casuali di città. Esclusi gli stalli automatici non controllati e i ritagli su zone nere dell'ortofoto.
+Prova sul campo (metà dei candidati verificati, mai vista in addestramento; 298 candidati, 211 veri):
+- v3 da sola AUC 0,95 (v1 0,79); coppia v3+v2 AUC 0,97 contro 0,92 della coppia v1+v2 usata finora.
+- Sopra 0,55: v3+v2 167 candidati con precisione 99% (v1+v2: 129 con 98%).
+- Con soglia 0,2 la coppia v3+v2 perde 5 veri (v1+v2 ne perdeva 29).
+- `_holdout.pt`: rete addestrata su metà dei dati (quella misurata); `_field.json`: i punteggi della prova.
+Uso in produzione (v3 per prima: è quella che scorre l'immagine; v2 riconferma):
+`python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v3.pt,models/stalli_mobilenetv3_ft_v2.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> --auto 55`
+Copie di sicurezza: Supabase storage `modelli/v3/`.
