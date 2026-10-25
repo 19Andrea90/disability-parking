@@ -36,7 +36,7 @@ class Net(torch.nn.Module):
         x = torch.nn.functional.interpolate(x, scale_factor=T.UP, mode='bilinear', align_corners=False)
         y = self.f((x - T.MEAN) / T.STD)
         F = torch.cat([torch.nn.functional.avg_pool2d(y, T.WIN, 1), torch.nn.functional.max_pool2d(y, T.WIN, 1)], 1)
-        s = torch.sigmoid(self.head(F[0].permute(1, 2, 0))[..., 0]).numpy()
+        s = torch.sigmoid(self.head(F[0].permute(1, 2, 0))[..., 0]).float().numpy()
         step = 32 / T.UP; c0 = T.WIN * step / 2
         return s, c0 + step * np.arange(s.shape[1]), c0 + step * np.arange(s.shape[0])
 
