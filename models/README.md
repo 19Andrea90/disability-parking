@@ -18,3 +18,8 @@ Scansione di un'area: `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v
 
 ## Copie di sicurezza dei dati
 `data/etichette.json` (le etichette fatte a mano) e `data/stalli.json`: esportazione completa dalle tabelle Supabase.
+
+## stalli_mobilenetv3_ft_v2.pt (25 ottobre 2026)
+Stessa architettura della v1, addestrata anche con le verifiche sul campo del centro di Udine (57 stalli confermati, 113 falsi scartati) e 120 riquadri casuali di città (tetti, giardini, cortili) come negativi.
+Da sola non batte la v1, ma **la media delle due** sì: sui candidati di Udine mai visti AUC 0,86 (v1 0,83), 15 veri tra i primi 20 (v1 13); con soglia 0,2 toglie il 94% dei falsi perdendo 6 veri su 21 (v1 ne perde 8).
+Uso in produzione: `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v1.pt,models/stalli_mobilenetv3_ft_v2.pt --bbox S,W,N,E --thr 0.2 --context udine --label Udine`
