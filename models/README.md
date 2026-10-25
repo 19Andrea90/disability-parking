@@ -34,3 +34,8 @@ Prova sul campo (metà dei candidati verificati, mai vista in addestramento; 298
 Uso in produzione (v3 per prima: è quella che scorre l'immagine; v2 riconferma):
 `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v3.pt,models/stalli_mobilenetv3_ft_v2.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> --auto 55`
 Copie di sicurezza: Supabase storage `modelli/v3/`.
+
+**Attenzione (25 ottobre, sera):** usata come rilevatore principale la v3 dà punteggi altissimi anche su strada vuota, giardini e alberi (la prova sul campo misurava solo punti già proposti da v1/v2, non zone qualsiasi). Uso corretto: v1 scorre l'immagine, la media v1+v2+v3 decide il punteggio:
+`python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v1.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v3.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> --auto 55`
+Prova a secco su 64 riquadri di Udine già scansionati: v3 come rilevatore 52 candidati nuovi (in gran parte falsi, 17 sopra 0,55); v1 come rilevatore con media di 3: 2 candidati nuovi, nessuno sopra 0,55.
+Lo scanner ora lavora a celle di 40 m (+4,8 m di margine): 1,7× più veloce del riquadro intero, stessa precisione sugli stalli reali di Udine.
