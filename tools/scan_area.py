@@ -52,7 +52,7 @@ def dist_m(a_lat, a_lon, b_lat, b_lon):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('model', help='uno o più file .pt separati da virgola (media dei punteggi)'); ap.add_argument('--bbox', required=True); ap.add_argument('--thr', type=float, default=0.05)
-    ap.add_argument('--auto', type=int, default=0, help='conferma in automatico i candidati con punteggio >= N%% (0 = no)')
+    ap.add_argument('--save-dir', default='', help='con --dry-run salva qui i ritagli dei candidati'); ap.add_argument('--cell', type=int, default=400, help='lato delle celle in px (0 = riquadro intero)'); ap.add_argument('--auto', type=int, default=0, help='conferma in automatico i candidati con punteggio >= N%% (0 = no)')
     ap.add_argument('--tta', action='store_true'); ap.add_argument('--label', default=''); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--context', default='', help='comune (es. udine): usa edifici/strade salvati dall\'admin')
     ap.add_argument('--batch', type=int, default=150); ap.add_argument('--exclude', default='', help='S,W,N,E;S,W,N,E aree già scansionate'); ap.add_argument('--progress', default='')
     a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']; t0 = time.time()
@@ -66,6 +66,7 @@ def main():
             """Scansione densa con la prima rete, a celle di 40 m (+4,8 m di margine): 1,6× più veloce del riquadro intero
             e misurata con la stessa precisione sugli stalli reali di Udine. need(y0, x0, cell) → False salta la cella."""
             h, w_, _ = img.shape; got = []; skipped = 0
+            if not CELL: return T.nms(*self.nets[0].dense(img), thr), 0
             for y0 in range(0, h, CELL):
                 for x0 in range(0, w_, CELL):
                     if need is not None and not need(y0, x0, CELL): skipped += 1; continue
@@ -140,7 +141,7 @@ def main():
                 def need(y0, x0, c, n=n, w=w):
                     g = box(w + (x0 / px) * (e - w) - 15 * dlon, n - ((y0 + c) / px) * (n - s) - 15 * dlat, w + ((x0 + c) / px) * (e - w) + 15 * dlon, n - (y0 / px) * (n - s) + 15 * dlat)
                     return any(ctx['linesl'][i].intersects(g) for i in ctx['lines'].query(g))
-            dets, sk = net.detect(img, a.thr if len(net.nets) == 1 else a.thr / 2, need); n_cells_skip += sk
+            dets, sk = net.detect(img, a.thr if len(net.nets) == 1 else a.thr / 2, need if a.cell else None, CELL=a.cell); n_cells_skip += sk
             for v, x, y in dets:
                 if not (m <= x <= px - m and m <= y <= px - m): continue
                 lat = n - (y / px) * (n - s); lon = w + (x / px) * (e - w)
@@ -166,6 +167,9 @@ def main():
                 dd = np.hypot((kl[:, 0] - f['lat']) * 111320, (kl[:, 1] - f['lon']) * 111320 * math.cos(math.radians(f['lat'])))
                 if dd.min() < EXCL: continue
             keep.append(f)
+        if a.dry_run and a.save_dir:
+            os.makedirs(a.save_dir, exist_ok=True)
+            for f in keep: open(os.path.join(a.save_dir, f"{round(f['score'] * 100):03d}_{f['lat']:.6f}_{f['lon']:.6f}.jpg"), 'wb').write(f['jpg'])
         if not a.dry_run:
             for f in sorted(keep, key=lambda f: f['score']):  # l'admin mostra prima i più recenti: carico per ultimi i più probabili
                 path = f"nn/{f['lat']:.6f}_{f['lon']:.6f}.jpg"
