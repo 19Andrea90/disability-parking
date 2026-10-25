@@ -49,30 +49,47 @@
 
   function pinClass(s) { return s.stato === 'proposto' ? 'proposto' : s.tipo; }
   function icon(s, sel) {
-    return L.divIcon({ className: '', html: `<div class="pin ${pinClass(s)}${sel ? ' sel' : ''}"><b>${s.posti > 1 ? s.posti : '♿'}</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
+    return L.divIcon({ className: '', html: `<div class="pin ${pinClass(s)}${sel ? ' sel' : ''}"><b>♿</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
   }
-  function upsert(s) {
-    stalli.set(s.id, s);
-    let m = markers.get(s.id);
-    if (!m) { m = L.marker([s.lat, s.lon], { icon: icon(s, false), keyboard: false }); m.on('click', () => openCard(s.id)); layer.addLayer(m); markers.set(s.id, m); }
-    else { m.setLatLng([s.lat, s.lon]); m.setIcon(icon(s, s.id === selectedId)); }
+  // Raggruppo gli stalli dello stesso tipo a meno di GROUP_M metri: un solo pin = "qui ci sono uno o più posti riservati"
+  const GROUP_M = 20;
+  const shown = new Map();            // id del rappresentante -> record mostrato (con _members)
+  const RANK = { ufficiale: 3, verificato: 2, proposto: 1 };
+  function rebuild() {
+    const all = [...stalli.values()]; const used = new Set(); shown.clear(); layer.clearLayers(); markers.clear();
+    all.sort((a, b) => (RANK[b.stato] || 0) - (RANK[a.stato] || 0));
+    for (const s of all) {
+      if (used.has(s.id)) continue;
+      const grp = [s]; used.add(s.id);
+      for (let k = 0; k < grp.length; k++) for (const t of all) {
+        if (used.has(t.id) || t.tipo !== s.tipo || (t.stato === 'proposto') !== (s.stato === 'proposto')) continue;
+        if (map.distance([grp[k].lat, grp[k].lon], [t.lat, t.lon]) <= GROUP_M) { grp.push(t); used.add(t.id); }
+      }
+      const rec = Object.assign({}, s, { lat: grp.reduce((a, g) => a + g.lat, 0) / grp.length, lon: grp.reduce((a, g) => a + g.lon, 0) / grp.length, _members: grp.map((g) => g.id) });
+      ['nome', 'indirizzo', 'orari', 'note', 'foto_url', 'comune'].forEach((k) => { if (!rec[k]) { const g = grp.find((x) => x[k]); if (g) rec[k] = g[k]; } });
+      shown.set(rec.id, rec);
+      const m = L.marker([rec.lat, rec.lon], { icon: icon(rec, rec.id === selectedId), keyboard: false }); m.on('click', () => openCard(rec.id)); layer.addLayer(m); markers.set(rec.id, m);
+    }
   }
-  function removeAll() { layer.clearLayers(); markers.clear(); stalli.clear(); }
+  const isFav = (r) => r._members.some((id) => favs.has(id));
+  const recentOf = (r) => r._members.map((id) => recent.get(id)).filter(Boolean).sort((a, b) => (a.at < b.at ? 1 : -1))[0];
+  function upsert(s) { stalli.set(s.id, s); }
+  function removeAll() { layer.clearLayers(); markers.clear(); stalli.clear(); shown.clear(); }
 
   async function loadData() {
     const cached = ls.get('dp.stalli', null);
-    if (cached && cached.rows) { cached.rows.forEach(upsert); refreshList(); }
+    if (cached && cached.rows) { cached.rows.forEach(upsert); rebuild(); refreshList(); }
     try {
       const { data, error } = await sb.from('stalli')
         .select('id,lat,lon,tipo,posti,nome,indirizzo,comune,note,orari,segnale_verticale,coperto,foto_url,stato,fonte,osm_url,updated_at')
         .in('stato', ['proposto', 'verificato', 'ufficiale']).limit(5000);
       if (error) throw error;
-      removeAll(); data.forEach(upsert);
+      removeAll(); data.forEach(upsert); rebuild();
       ls.set('dp.stalli', { at: Date.now(), rows: data });
-      $('#stats').textContent = `${data.length} stalli · aggiornato ora`;
+      $('#stats').textContent = `${shown.size} punti con posti riservati · aggiornato ora`;
       refreshList();
     } catch (e) {
-      $('#stats').textContent = cached ? `${cached.rows.length} stalli · copia offline del ${new Date(cached.at).toLocaleDateString('it-IT')}` : 'Nessun dato: controlla la connessione';
+      $('#stats').textContent = cached ? `${shown.size} punti · copia offline del ${new Date(cached.at).toLocaleDateString('it-IT')}` : 'Nessun dato: controlla la connessione';
       if (!cached) toast('Non riesco a scaricare gli stalli. Riprovo quando torni online.');
     }
   }
@@ -89,7 +106,7 @@
     } catch (e) { /* offline */ }
   }
   setInterval(loadRecent, 120e3);
-  function stTag(id) { const r = recent.get(id); return r ? `<span class="st ${r.esito}">${r.esito} ${timeAgo(r.at)}</span>` : ''; }
+  function stTag(rec) { const r = recentOf(rec); return r ? `<span class="st ${r.esito}">${r.esito} ${timeAgo(r.at)}</span>` : ''; }
   let onlyUsable = ls.get('dp.onlyusable', true);
   $('#onlygen').checked = onlyUsable;
   $('#onlygen').onchange = () => { onlyUsable = $('#onlygen').checked; ls.set('dp.onlyusable', onlyUsable); refreshList(); };
@@ -99,15 +116,15 @@
   function fmtDist(d) { return d < 950 ? Math.round(d) + ' m' : (d / 1000).toFixed(1) + ' km'; }
   function refreshList() {
     const list = $('#list');
-    let rows = [...stalli.values()].filter((s) => !onlyUsable || s.tipo !== 'personalizzato');
+    let rows = [...shown.values()].filter((s) => !onlyUsable || s.tipo !== 'personalizzato');
     let origin, title, sub;
     if (showFav) {
-      rows = rows.filter((s) => favs.has(s.id)); origin = mePos || { lat: map.getCenter().lat, lon: map.getCenter().lng };
+      rows = rows.filter(isFav); origin = mePos || { lat: map.getCenter().lat, lon: map.getCenter().lng };
       title = 'Preferiti'; sub = rows.length ? 'I tuoi stalli salvati' : 'Nessun preferito: apri uno stallo e tocca "Salva"';
     } else if (dest) {
       origin = dest; rows = rows.filter((s) => dist(s, dest) <= C.RAGGIO_DESTINAZIONE);
-      title = 'Vicino a ' + dest.label; sub = rows.length ? `${rows.length} stalli entro ${C.RAGGIO_DESTINAZIONE} m` : `Nessuno stallo entro ${C.RAGGIO_DESTINAZIONE} m: allarga la mappa per vedere i più vicini`;
-      if (!rows.length) { rows = [...stalli.values()].filter((s) => (!onlyUsable || s.tipo !== 'personalizzato') && dist(s, dest) <= 1500); }
+      title = 'Vicino a ' + dest.label; sub = rows.length ? `${rows.length} punti con posti riservati entro ${C.RAGGIO_DESTINAZIONE} m` : `Nessuno stallo entro ${C.RAGGIO_DESTINAZIONE} m: allarga la mappa per vedere i più vicini`;
+      if (!rows.length) { rows = [...shown.values()].filter((s) => (!onlyUsable || s.tipo !== 'personalizzato') && dist(s, dest) <= 1500); }
     } else {
       const b = map.getBounds(); origin = mePos && b.contains([mePos.lat, mePos.lon]) ? mePos : { lat: map.getCenter().lat, lon: map.getCenter().lng };
       rows = rows.filter((s) => b.contains([s.lat, s.lon]));
@@ -119,9 +136,9 @@
     list.innerHTML = rows.length ? `<div class="list">${rows.slice(0, 80).map((s) => `
       <button class="item" data-id="${s.id}">
         <i class="dot ${pinClass(s)}"></i>
-        <div class="t"><div class="n">${esc(s.nome || s.indirizzo || TIPO_LABEL[s.tipo])}${s.posti > 1 ? ` · ${s.posti} posti` : ''}${stTag(s.id)}</div>
+        <div class="t"><div class="n">${esc(s.nome || s.indirizzo || TIPO_LABEL[s.tipo])}${stTag(s)}</div>
         <div class="s">${TIPO_LABEL[s.tipo]}${s.stato === 'proposto' ? ' · da verificare' : ''}${s.orari ? ' · ' + esc(s.orari) : ''}</div></div>
-        <div class="d">${fmtDist(s._d)}<small>${favs.has(s.id) ? '★' : ''}</small></div>
+        <div class="d">${fmtDist(s._d)}<small>${isFav(s) ? '★' : ''}</small></div>
       </button>`).join('')}</div>` : `<div class="empty">${sub}</div>`;
   }
   $('#list').addEventListener('click', (e) => { const it = e.target.closest('.item'); if (it) { openCard(it.dataset.id, true); } });
@@ -139,35 +156,35 @@
 
   // ---------- scheda ----------
   async function openCard(id, fromList) {
-    const s = stalli.get(id); if (!s) return;
-    if (selectedId && markers.get(selectedId)) markers.get(selectedId).setIcon(icon(stalli.get(selectedId), false));
+    const s = shown.get(id); if (!s) return;
+    if (selectedId && markers.get(selectedId) && shown.get(selectedId)) markers.get(selectedId).setIcon(icon(shown.get(selectedId), false));
     selectedId = id; markers.get(id).setIcon(icon(s, true));
     if (fromList) map.panTo([s.lat, s.lon]);
     $('#c-badges').innerHTML = `<span class="badge ${s.tipo}">${TIPO_LABEL[s.tipo]}</span><span class="badge ${s.stato}">${STATO_LABEL[s.stato] || s.stato}</span>${s.fonte === 'osm' ? '<span class="badge osm">da OpenStreetMap</span>' : ''}`;
-    $('#c-title').textContent = s.nome || s.indirizzo || 'Stallo riservato';
+    $('#c-title').textContent = s.nome || s.indirizzo || 'Posti riservati';
     $('#c-sub').textContent = [s.comune, mePos ? fmtDist(dist(s, mePos)) + ' da te' : null].filter(Boolean).join(' · ');
     const warn = $('#c-warn');
     if (s.tipo === 'personalizzato') { warn.hidden = false; warn.textContent = 'Stallo personalizzato: riservato a una persona specifica. Non utilizzabile' + (s.orari ? ', salvo: ' + s.orari : ' se non indicato diversamente sul cartello') + '.'; }
     else if (s.stato === 'proposto') { warn.hidden = false; warn.textContent = 'Segnalazione non ancora verificata: controlla la segnaletica sul posto.'; }
     else warn.hidden = true;
     const ph = $('#c-photo'); if (s.foto_url) { ph.src = s.foto_url; ph.hidden = false; } else ph.hidden = true;
-    const info = [['Posti', s.posti], ['Orari', s.orari], ['Segnale verticale', s.segnale_verticale == null ? null : (s.segnale_verticale ? 'Sì' : 'No')], ['Coperto', s.coperto ? 'Sì' : null], ['Note', s.note], ['Aggiornato', s.updated_at ? new Date(s.updated_at).toLocaleDateString('it-IT') : null]].filter((r) => r[1] != null && r[1] !== '');
+    const info = [['Orari', s.orari], ['Segnale verticale', s.segnale_verticale == null ? null : (s.segnale_verticale ? 'Sì' : 'No')], ['Coperto', s.coperto ? 'Sì' : null], ['Note', s.note], ['Aggiornato', s.updated_at ? new Date(s.updated_at).toLocaleDateString('it-IT') : null]].filter((r) => r[1] != null && r[1] !== '');
     $('#c-info').innerHTML = info.map((r) => `<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('');
     $('#c-nav').href = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`;
     updateFavBtn();
     $('#c-last').textContent = '';
     $('#card').hidden = false; sheet.hidden = true;
     try {
-      const { data } = await sb.from('conferme').select('esito,created_at').eq('stallo_id', id).order('created_at', { ascending: false }).limit(1);
+      const { data } = await sb.from('conferme').select('esito,created_at').in('stallo_id', s._members).order('created_at', { ascending: false }).limit(1);
       if (data && data[0]) { const l = { esiste: 'confermato esistente', non_esiste: 'segnalato come inesistente', libero: 'visto libero', occupato: 'visto occupato' }[data[0].esito]; $('#c-last').textContent = `Ultimo aggiornamento: ${l} ${timeAgo(data[0].created_at)}`; }
     } catch (e) { /* offline */ }
   }
   function timeAgo(iso) { const m = Math.round((Date.now() - new Date(iso)) / 60000); if (m < 60) return m + ' min fa'; const h = Math.round(m / 60); if (h < 48) return h + ' ore fa'; return Math.round(h / 24) + ' giorni fa'; }
-  function closeCard() { $('#card').hidden = true; sheet.hidden = false; if (selectedId && markers.get(selectedId)) markers.get(selectedId).setIcon(icon(stalli.get(selectedId), false)); selectedId = null; }
+  function closeCard() { $('#card').hidden = true; sheet.hidden = false; if (selectedId && markers.get(selectedId) && shown.get(selectedId)) markers.get(selectedId).setIcon(icon(shown.get(selectedId), false)); selectedId = null; }
   $('#cardclose').onclick = closeCard; $('#cardgrip').onclick = closeCard;
   map.on('click', () => { if (!$('#card').hidden) closeCard(); });
-  function updateFavBtn() { const on = favs.has(selectedId); $('#c-fav').textContent = on ? '★ Salvato' : '☆ Salva'; $('#c-fav').classList.toggle('active', on); }
-  $('#c-fav').onclick = () => { if (favs.has(selectedId)) favs.delete(selectedId); else favs.add(selectedId); ls.set('dp.favs', [...favs]); updateFavBtn(); refreshList(); };
+  function updateFavBtn() { const r = shown.get(selectedId); const on = !!r && isFav(r); $('#c-fav').textContent = on ? '★ Salvato' : '☆ Salva'; $('#c-fav').classList.toggle('active', on); }
+  $('#c-fav').onclick = () => { const r = shown.get(selectedId); if (!r) return; if (isFav(r)) r._members.forEach((id) => favs.delete(id)); else favs.add(selectedId); ls.set('dp.favs', [...favs]); updateFavBtn(); refreshList(); };
   document.querySelectorAll('[data-esito]').forEach((b) => b.onclick = async () => {
     if (!selectedId) return;
     b.disabled = true;
@@ -272,11 +289,11 @@
         if (ue) throw ue; foto_url = sb.storage.from('foto').getPublicUrl(path).data.publicUrl;
       }
       const seg = $('#f-segnale').value;
-      const rec = { lat: +$('#form').dataset.lat, lon: +$('#form').dataset.lon, tipo: new FormData(e.target).get('tipo'), posti: +$('#f-posti').value || 1,
+      const rec = { lat: +$('#form').dataset.lat, lon: +$('#form').dataset.lon, tipo: new FormData(e.target).get('tipo'), posti: 1,
         orari: $('#f-orari').value.trim() || null, note: $('#f-note').value.trim() || null, segnale_verticale: seg === '' ? null : seg === 'true', foto_url, stato: 'proposto', fonte: 'utente', device_id: deviceId };
       const { data, error } = await sb.from('stalli').insert(rec).select().single();
       if (error) throw error;
-      upsert(data); $('#formclose').onclick(); toast('Grazie! Stallo segnalato, in attesa di verifica', 3500); refreshList();
+      upsert(data); rebuild(); $('#formclose').onclick(); toast('Grazie! Stallo segnalato, in attesa di verifica', 3500); refreshList();
     } catch (err) { toast('Invio fallito: ' + (err.message || err), 5000); }
     btn.disabled = false; btn.textContent = 'Invia segnalazione';
   };
