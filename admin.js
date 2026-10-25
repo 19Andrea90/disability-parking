@@ -46,7 +46,7 @@
   async function load() {
     const { data, error } = await fetchAll(() => sb.from('stalli_con_conferme').select('*').order('created_at', { ascending: false }).order('id'));
     if (error) { $('#rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} (sei registrato come admin? controlla la tabella admins)</div>`; return; }
-    rows = data; kpi(); render(); if (labDone.size) labCount();
+    rows = data; kpi(); render(); if (labDone.size) labCount(); if (cands.length) renderCands();
   }
   function kpi() {
     const n = (st) => rows.filter((r) => r.stato === st).length;
@@ -278,10 +278,14 @@
   function cicon(c, on) { return L.divIcon({ className: '', html: `<div class="pin proposto${on ? ' sel' : ''}" style="background:#7c3aed"><b>?</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] }); }
   // punteggio di confidenza della rete (dal testo "punteggio N%"); i candidati senza punteggio vanno in fondo
   const score = (c) => { const m = /punteggio (\d+)%/.exec(c.classe || ''); return m ? +m[1] : -1; };
-  const candView = () => cands.filter((c) => c.stato === cfilter).sort((a, b) => score(b) - score(a) || String(b.created_at).localeCompare(String(a.created_at)));
+  const AUTO = 'Confermato in automatico';
+  const stOf = (c) => c.stallo_id && rows.find((r) => r.id === c.stallo_id);
+  const isAutoTodo = (c) => { if (c.stato !== 'accettato') return false; const st = stOf(c); return !!(st && (st.note || '').startsWith(AUTO) && !/controllato/.test(st.note) && st.stato === 'verificato'); };
+  const inView = (c) => cfilter === 'auto' ? isAutoTodo(c) : c.stato === cfilter;
+  const candView = () => cands.filter(inView).sort((a, b) => score(b) - score(a) || String(b.created_at).localeCompare(String(a.created_at)));
   function renderCands() {
     const v = candView();
-    $('#cand-count').textContent = `· ${cands.filter((c) => c.stato === 'nuovo').length} da verificare`;
+    $('#cand-count').textContent = `· ${cands.filter((c) => c.stato === 'nuovo').length} da verificare · ${cands.filter(isAutoTodo).length} automatici da controllare`;
     $('#cand-rows').innerHTML = v.length ? v.slice(0, 300).map((c) => `<div class="row-item${csel && csel.id === c.id ? ' sel' : ''}" data-cid="${c.id}">
       <div><div class="n">${esc(CLASSE_LABEL[c.classe] || c.classe)}</div><div class="s">${esc(c.comune || '')} · visto ${c.last_seen ? new Date(c.last_seen).toLocaleDateString('it-IT') : '—'} · ${c.fonte}</div></div><div class="s">${c.stato}</div></div>`).join('') : '<div class="empty">Nessun candidato in questo stato.</div>';
     candLayer.clearLayers();
@@ -294,7 +298,7 @@
   function goNext(fromId, order, msg) {
     const i = order.indexOf(fromId);
     const seq = order.slice(i + 1).concat(order.slice(0, Math.max(i, 0)));
-    const ok = (id) => { const x = cands.find((y) => y.id === id); return x && x.stato === cfilter && id !== fromId; };
+    const ok = (id) => { const x = cands.find((y) => y.id === id); return x && inView(x) && id !== fromId; };
     const next = seq.find((id) => ok(id) && !skipped.has(id)) || seq.find(ok);
     if (next) { selectCand(next).then(() => { const m = $('#c-msg'); if (m && msg) m.textContent = msg + ' Ecco il prossimo.'; }); return; }
     csel = null; if (cmarker) { map.removeLayer(cmarker); cmarker = null; }
@@ -303,7 +307,7 @@
   document.addEventListener('keydown', (e) => {
     if (!csel || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ''))) return;
     if ($('#lab-area') && !$('#lab-area').hidden) return; // la modalità etichettatura ha i suoi tasti
-    const k = e.key.toLowerCase(); const b = k === 'a' ? '#c-accept' : k === 'x' ? '#c-reject' : k === 's' ? '#c-skip' : null;
+    const k = e.key.toLowerCase(); const b = k === 'a' ? ($('#c-ok') ? '#c-ok' : '#c-accept') : k === 'x' ? ($('#c-bad') ? '#c-bad' : '#c-reject') : k === 's' ? '#c-skip' : null;
     if (b && $(b)) { e.preventDefault(); $(b).click(); }
   });
   async function selectCand(id) {
@@ -352,6 +356,27 @@
     };
     $('#c-skip').onclick = () => { skipped.add(c.id); goNext(c.id, order, 'Saltato.'); };
     $('#c-reset').onclick = async () => { await sb.from('candidati').update({ stato: 'nuovo' }).eq('id', c.id); c.stato = 'nuovo'; renderCands(); };
+    if (cfilter === 'auto' && isAutoTodo(c)) { // controllo degli stalli confermati in automatico dalla rete
+      const st = stOf(c);
+      $('#cand-edit').querySelector('.acts').innerHTML = `<button class="btn primary" id="c-ok">✓ Giusto</button><button class="btn danger" id="c-bad">✗ Sbagliato: togli dalla mappa</button><button class="btn" id="c-skip">Salta ›</button>`;
+      $('#cand-edit').querySelector('.field.two').hidden = true; $('#c-note').closest('.field').hidden = true;
+      const hint = $('#cand-edit').querySelectorAll('.sub'); hint[hint.length - 1].insertAdjacentHTML('beforebegin', `<div class="sub">${esc(st.note)}. Se il segnaposto non è esattamente sullo stallo, trascinalo prima di premere "Giusto". Tasti: A giusto · X sbagliato · S salta.</div>`);
+      $('#c-ok').onclick = async () => {
+        const p = cmarker.getLatLng(); const upd = { note: st.note + ' · controllato', lat: +p.lat.toFixed(6), lon: +p.lng.toFixed(6) };
+        $('#c-msg').textContent = 'Salvo…';
+        const { error } = await sb.from('stalli').update(upd).eq('id', st.id);
+        if (error) { $('#c-msg').textContent = 'Errore: ' + error.message; return; }
+        Object.assign(st, upd); goNext(c.id, order, 'Confermato.');
+      };
+      $('#c-bad').onclick = async () => {
+        $('#c-msg').textContent = 'Tolgo…';
+        const { error } = await sb.from('stalli').update({ stato: 'rifiutato', note: st.note + ' · controllato: sbagliato' }).eq('id', st.id);
+        if (error) { $('#c-msg').textContent = 'Errore: ' + error.message; return; }
+        await sb.from('candidati').update({ stato: 'scartato' }).eq('id', c.id);
+        st.stato = 'rifiutato'; c.stato = 'scartato'; goNext(c.id, order, 'Tolto dalla mappa.');
+      };
+      $('#c-skip').onclick = () => { skipped.add(c.id); goNext(c.id, order, 'Saltato.'); };
+    }
     // foto Mapillary
     const tok = $('#m-token').value.trim();
     if (c.fonte === 'satellite') { /* niente foto stradale */ } else if (c.image_id && tok) {
