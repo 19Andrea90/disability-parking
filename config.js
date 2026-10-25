@@ -6,5 +6,5 @@ window.DP_CONFIG = {
   HOME: { lat: 46.063, lon: 13.236, zoom: 14 },
   // Raggio "vicino alla destinazione" in metri
   RAGGIO_DESTINAZIONE: 300,
-  VERSION: '0.5.3'
+  VERSION: '0.5.4'
 };

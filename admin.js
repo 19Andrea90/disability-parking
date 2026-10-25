@@ -1,4 +1,6 @@
 (function () {
+  // il server restituisce al massimo 1000 righe per richiesta: scarico a pagine
+  async function fetchAll(mk) { let out = []; for (let i = 0; ; i += 1000) { const { data, error } = await mk().range(i, i + 999); if (error) return { data: out, error }; out = out.concat(data); if (data.length < 1000) return { data: out }; } }
   'use strict';
   const C = window.DP_CONFIG; const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -42,7 +44,7 @@
 
   // ---------- dati ----------
   async function load() {
-    const { data, error } = await sb.from('stalli_con_conferme').select('*').order('created_at', { ascending: false }).limit(5000);
+    const { data, error } = await fetchAll(() => sb.from('stalli_con_conferme').select('*').order('created_at', { ascending: false }).order('id'));
     if (error) { $('#rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} (sei registrato come admin? controlla la tabella admins)</div>`; return; }
     rows = data; kpi(); render(); if (labDone.size) labCount();
   }
@@ -268,7 +270,7 @@
   const distM = (a, b) => map.distance([a.lat, a.lon], [b.lat, b.lon]);
 
   async function loadCands() {
-    const { data, error } = await sb.from('candidati').select('*').order('created_at', { ascending: false }).limit(5000);
+    const { data, error } = await fetchAll(() => sb.from('candidati').select('*').order('created_at', { ascending: false }).order('id'));
     if (error) { $('#cand-rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} — hai eseguito supabase/03_candidati.sql?</div>`; return; }
     cands = data; renderCands();
   }

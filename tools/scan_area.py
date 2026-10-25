@@ -13,6 +13,7 @@ import finetune as Fm, train_torch as T
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 TILE = 120.0   # m
 OVER = 10.0    # m di sovrapposizione tra riquadri
+MAX_PER_TILE = 12  # più rilevamenti di così in un riquadro di 120 m = immagine anomala, non stalli
 EXCL = 12.0    # m: niente candidati vicino a stalli o candidati già presenti
 
 
@@ -24,6 +25,14 @@ def sb(method, path, key, body=None, ctype='application/json', extra=None):
     req = urllib.request.Request(f'{SB}{path}', data=data, method=method, headers=h)
     with urllib.request.urlopen(req, timeout=60) as r:
         t = r.read(); return json.loads(t) if t and r.headers.get('content-type', '').startswith('application/json') else t
+
+
+def sb_all(path, key, page=1000):
+    """GET paginato: il server restituisce al massimo 1000 righe per richiesta."""
+    out = []; sep = '&' if '?' in path else '?'
+    while True:
+        b = sb('GET', f'{path}{sep}limit={page}&offset={len(out)}', key); out += b
+        if len(b) < page: return out
 
 
 def wms(s, w, n, e, px):
@@ -102,27 +111,33 @@ def main():
     from concurrent.futures import ThreadPoolExecutor
     pool = ThreadPoolExecutor(3); fetch = lambda t_: wms(t_[0], t_[1], t_[0] + TILE * dlat, t_[1] + TILE * dlon, px)
     tag = f"rete neurale{' (media di ' + str(len(net.nets)) + ')' if len(net.nets) > 1 else ''}"
-    total_up = 0; in_bld = 0
+    total_up = 0; in_bld = 0; n_dark = 0; n_anom = 0
     for bi in range(0, len(todo), a.batch):
         batch = todo[bi:bi + a.batch]; futs = [pool.submit(fetch, t_) for t_ in batch[:3]]; found = []
         for j, (la, lo) in enumerate(batch):
             if j + 3 < len(batch): futs.append(pool.submit(fetch, batch[j + 3]))  # scarico in anticipo mentre la rete calcola
             img = futs[j].result(); s, w, n, e = la, lo, la + TILE * dlat, lo + TILE * dlon
             if img is None: continue
-            sc, cx, cy = net.dense(img); m = OVER / 2 / T.RES; im = None
+            gray = img.mean(2)
+            if (gray < 0.12).mean() > 0.5: n_dark += 1; continue  # ortofoto mancante (zona nera): la rete vedrebbe solo rumore
+            sc, cx, cy = net.dense(img); m = OVER / 2 / T.RES; im = None; tile_found = []
             for v, x, y in T.nms(sc, cx, cy, a.thr if len(net.nets) == 1 else a.thr / 2):
                 if not (m <= x <= px - m and m <= y <= px - m): continue
                 lat = n - (y / px) * (n - s); lon = w + (x / px) * (e - w)
                 v = net.rescore(img, x, y, v)
                 if v < a.thr: continue
+                yi, xi = int(y), int(x); w8 = int(4 / T.RES)
+                if gray[max(0, yi - w8):yi + w8, max(0, xi - w8):xi + w8].mean() < 0.12: n_dark += 1; continue  # punto in zona nera
                 if ctx is not None:
                     pt = Point(lon, lat)
                     if any(ctx['bldg'][i].contains(pt) for i in ctx['bld'].query(pt)): in_bld += 1; continue  # sopra un edificio: è un tetto
                 if im is None: im = Image.fromarray((img * 255).astype(np.uint8))
                 r = 140; crop = im.crop((int(x - r), int(y - r), int(x + r), int(y + r))); dr = ImageDraw.Draw(crop); dr.ellipse([r - 22, r - 22, r + 22, r + 22], outline=(255, 40, 40), width=3)
-                buf = io.BytesIO(); crop.save(buf, 'JPEG', quality=85); found.append(dict(score=float(v), lat=lat, lon=lon, jpg=buf.getvalue()))
+                buf = io.BytesIO(); crop.save(buf, 'JPEG', quality=85); tile_found.append(dict(score=float(v), lat=lat, lon=lon, jpg=buf.getvalue()))
+            if len(tile_found) > MAX_PER_TILE: print(f'  riquadro anomalo {la:.5f},{lo:.5f}: {len(tile_found)} rilevamenti, scartato', flush=True); n_anom += 1; continue
+            found.extend(tile_found)
         # fine blocco: confronto con ciò che è già in database (anche quanto caricato nei blocchi precedenti) e carico
-        known = [(r['lat'], r['lon']) for r in sb('GET', '/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&limit=20000', key) + sb('GET', '/rest/v1/candidati?select=lat,lon&limit=20000', key)]
+        known = [(r['lat'], r['lon']) for r in sb_all('/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&order=id', key) + sb_all('/rest/v1/candidati?select=lat,lon&order=id', key)]
         kl = np.array(known) if known else np.zeros((0, 2))
         found.sort(key=lambda f: -f['score']); keep = []
         for f in found:
@@ -147,7 +162,7 @@ def main():
             try: sb('POST', remote, key, open(prog, 'rb').read(), 'application/json', {'x-upsert': 'true'})
             except Exception as ex: print('  avanzamento non salvato su Supabase:', ex)
         total_up += len(keep)
-        print(f'  blocco {bi // a.batch + 1}/{math.ceil(len(todo) / a.batch)}: riquadri {min(bi + a.batch, len(todo))}/{len(todo)} · nuovi candidati {len(keep)} (totale {total_up}) · scartati sui tetti {in_bld} · {(time.time() - t0) / 60:.0f} min', flush=True)
+        print(f'  blocco {bi // a.batch + 1}/{math.ceil(len(todo) / a.batch)}: riquadri {min(bi + a.batch, len(todo))}/{len(todo)} · nuovi candidati {len(keep)} (totale {total_up}) · scartati sui tetti {in_bld} · zone nere {n_dark} · riquadri anomali {n_anom} · {(time.time() - t0) / 60:.0f} min', flush=True)
     print(f'Fatto in {(time.time() - t0) / 60:.0f} min: {total_up} candidati caricati.')
 
 

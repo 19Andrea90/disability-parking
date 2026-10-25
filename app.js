@@ -1,4 +1,6 @@
 /* Disability Parking — app principale (vanilla JS, nessun build step) */
+  // il server restituisce al massimo 1000 righe per richiesta: scarico a pagine
+  async function fetchAll(mk) { let out = []; for (let i = 0; ; i += 1000) { const { data, error } = await mk().range(i, i + 999); if (error) return { data: out, error }; out = out.concat(data); if (data.length < 1000) return { data: out }; } }
 (function () {
   'use strict';
   const C = window.DP_CONFIG;
@@ -80,9 +82,9 @@
     const cached = ls.get('dp.stalli', null);
     if (cached && cached.rows) { cached.rows.forEach(upsert); rebuild(); refreshList(); }
     try {
-      const { data, error } = await sb.from('stalli')
+      const { data, error } = await fetchAll(() => sb.from('stalli')
         .select('id,lat,lon,tipo,posti,nome,indirizzo,comune,note,orari,segnale_verticale,coperto,foto_url,stato,fonte,osm_url,updated_at')
-        .in('stato', ['proposto', 'verificato', 'ufficiale']).limit(5000);
+        .in('stato', ['proposto', 'verificato', 'ufficiale']).order('id'));
       if (error) throw error;
       removeAll(); data.forEach(upsert); rebuild();
       ls.set('dp.stalli', { at: Date.now(), rows: data });

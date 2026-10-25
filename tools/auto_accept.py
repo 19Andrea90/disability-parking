@@ -8,13 +8,13 @@ Uso: SUPABASE_SERVICE_KEY=... python3 auto_accept.py [--min 98] [--dry-run]
 """
 import argparse, os, re, sys
 sys.path.insert(0, os.path.dirname(__file__))
-from scan_area import sb
+from scan_area import sb, sb_all
 
 AUTO = 'Confermato in automatico dalla rete'
 
 
 def run(key, min_score=98, dry=False, log=print):
-    rows = sb('GET', '/rest/v1/candidati?select=id,classe,lat,lon,comune&fonte=eq.satellite&stato=eq.nuovo&limit=20000', key)
+    rows = sb_all('/rest/v1/candidati?select=id,classe,lat,lon,comune&fonte=eq.satellite&stato=eq.nuovo&order=id', key)
     todo = []
     for c in rows:
         m = re.search(r'media di \d+\) · punteggio (\d+)%', c['classe'] or '')
@@ -31,7 +31,7 @@ def run(key, min_score=98, dry=False, log=print):
 
 
 def undo(key):
-    st = sb('GET', f"/rest/v1/stalli?select=id&note=like.{AUTO.replace(' ', '%20')}*&stato=eq.verificato&limit=20000", key)
+    st = sb_all(f"/rest/v1/stalli?select=id&note=like.{AUTO.replace(' ', '%20')}*&stato=eq.verificato&order=id", key)
     for r in st:
         sb('PATCH', f"/rest/v1/stalli?id=eq.{r['id']}", key, {'stato': 'rimosso'}, extra={'Prefer': 'return=minimal'})
         sb('PATCH', f"/rest/v1/candidati?stallo_id=eq.{r['id']}", key, {'stato': 'nuovo', 'stallo_id': None}, extra={'Prefer': 'return=minimal'})
