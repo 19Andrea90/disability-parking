@@ -39,3 +39,13 @@ Copie di sicurezza: Supabase storage `modelli/v3/`.
 `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v1.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v3.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> --auto 55`
 Prova a secco su 64 riquadri di Udine già scansionati: v3 come rilevatore 52 candidati nuovi (in gran parte falsi, 17 sopra 0,55); v1 come rilevatore con media di 3: 2 candidati nuovi, nessuno sopra 0,55.
 Lo scanner ora lavora a celle di 40 m (+4,8 m di margine): 1,7× più veloce del riquadro intero, stessa precisione sugli stalli reali di Udine.
+
+## stalli_mobilenetv3_ft_v4.pt (26 ottobre 2026)
+Corregge il difetto della v3 (stalli visti su ombre, strade, giardini) e impara gli stalli blu di Gorizia.
+Dati: tutte le verifiche di Udine e Gorizia (499 stalli confermati, 282 falsi scartati compresi 52 falsi positivi della v3 in `data/falsi_positivi_v3.json`),
+400 riquadri casuali di 60 m su Udine, Gorizia, Trieste, Pordenone, Monfalcone (anche periferie), più peso ai negativi di città (`N_CITY=400 CITY_M=60 CITY_EXTRA=4`).
+Prova sul campo (metà mai vista, 342 candidati, 239 veri): v4 AUC 0,95 (v1 0,77); media v1+v2+v4 sopra 0,55: 189 con precisione 97% (v1+v2: 148 con 97%).
+Prova "zona qualsiasi" (64 riquadri di Udine già verificati, ogni rete da sola come rilevatore): candidati falsi v3 11 (5 sopra 0,55), v4 4 (1), v1 0.
+Uso in produzione: v1 scorre l'immagine, v1+v2+v4 votano:
+`python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v1.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v4.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> [--auto 55]`
+Copie: Supabase `modelli/v4/`.
