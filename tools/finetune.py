@@ -43,7 +43,12 @@ class Net(torch.nn.Module):
 
 CITIES = {  # riquadri casuali di città: tetti, giardini, cortili → negativi quasi certi
     'Udine': (46.045, 13.205, 46.085, 13.265), 'Trieste': (45.630, 13.760, 45.665, 13.800), 'Pordenone': (45.945, 12.640, 45.975, 12.680),
-    'Gorizia': (45.930, 13.605, 45.955, 13.640), 'Monfalcone': (45.800, 13.520, 45.820, 13.545)}
+    'Gorizia': (45.930, 13.605, 45.955, 13.640), 'Monfalcone': (45.800, 13.520, 45.820, 13.545),
+    # v4: anche periferie intere di Udine e Gorizia (strade, giardini, campi: dove la v3 vedeva stalli inesistenti)
+    'UdineTutta': (46.005, 13.190, 46.110, 13.290), 'GoriziaTutta': (45.915, 13.585, 45.965, 13.640)}
+N_CITY = int(os.environ.get('N_CITY', '120')); CITY_M = float(os.environ.get('CITY_M', '120'))  # quanti riquadri casuali e di che lato
+CITY_EXTRA = int(os.environ.get('CITY_EXTRA', '0'))  # negativi di città in più per passo (al posto di negativi generici)
+FP_POINTS = os.environ.get('FP_POINTS', '')  # file json [[lat, lon], ...] di falsi positivi noti (negativi difficili)
 
 
 def unverified_auto(st):
@@ -51,7 +56,7 @@ def unverified_auto(st):
     return n.startswith('Confermato in automatico') and 'controllato' not in n
 
 
-def load_extra(crops, key, cand_filter=None, n_city=120, seed=0):
+def load_extra(crops, key, cand_filter=None, n_city=None, seed=0):
     """Candidati verificati (accettati → positivi nel punto dello stallo creato; scartati → negativi nel punto proposto)
     + riquadri casuali di città (uint8) con i punti noti da evitare."""
     rng = np.random.default_rng(seed); d = os.path.join(crops, 'extra'); os.makedirs(d, exist_ok=True)
@@ -69,16 +74,22 @@ def load_extra(crops, key, cand_filter=None, n_city=120, seed=0):
         elif c['stato'] == 'scartato' and (c.get('classe') or '').startswith('rete'):
             fn = os.path.join(d, f"rej-{c['id']}.jpg")
             if T.wms(c['lat'], c['lon'], 40, 400, fn): rej.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
+    if FP_POINTS:
+        for la, lo in json.load(open(FP_POINTS)):
+            fn = os.path.join(d, f"fp-{la:.6f}-{lo:.6f}.jpg")
+            if T.wms(la, lo, 40, 400, fn): rej.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
     known = np.array([[r['lat'], r['lon']] for r in stalli.values()] + [[c['lat'], c['lon']] for c in cands])
-    city = []
+    city = []; n_city = N_CITY if n_city is None else n_city; side = CITY_M; S = int(round(side / T.RES))
     names = list(CITIES); k = 0
     while len(city) < n_city and k < n_city * 3:
         k += 1; nm = names[k % len(names)]; s0, w0, n0, e0 = CITIES[nm]
-        la, lo = rng.uniform(s0, n0), rng.uniform(w0, e0); fn = os.path.join(d, f"city-{nm}-{la:.5f}-{lo:.5f}.jpg")
-        if not T.wms(la, lo, 120, 1200, fn): continue
-        img = np.asarray(Image.open(fn).convert('RGB')); bs, bw, bn, be = T.bbox(la, lo, 120)
+        la, lo = rng.uniform(s0, n0), rng.uniform(w0, e0); fn = os.path.join(d, f"city-{nm}-{la:.5f}-{lo:.5f}{'' if side == 120 else f'-{side:.0f}m'}.jpg")
+        if not T.wms(la, lo, side, S, fn): continue
+        img = np.asarray(Image.open(fn).convert('RGB'))
+        if (img.mean(2) < 30).mean() > 0.3: continue  # zona nera dell'ortofoto
+        bs, bw, bn, be = T.bbox(la, lo, side)
         near = known[(known[:, 0] > bs - 3e-4) & (known[:, 0] < bn + 3e-4) & (known[:, 1] > bw - 4e-4) & (known[:, 1] < be + 4e-4)]
-        pts = np.array([[(lo_ - bw) / (be - bw) * 1200, (bn - la_) / (bn - bs) * 1200] for la_, lo_ in near]).reshape(-1, 2)
+        pts = np.array([[(lo_ - bw) / (be - bw) * S, (bn - la_) / (bn - bs) * S] for la_, lo_ in near]).reshape(-1, 2)
         city.append((img, pts))
     print(f'Extra: {len(acc)} stalli confermati, {len(rej)} falsi scartati, {len(city)} riquadri casuali di città', flush=True)
     return dict(acc=acc, rej=rej, city=city)
@@ -108,9 +119,9 @@ def extra_sampler(ex, rng):
         img, x, y = ex['rej'][rng.integers(len(ex['rej']))]; j = rng.uniform(-1.0, 1.0, 2) / T.RES; return f(T.patch(img, x + j[0], y + j[1]))
     def city():
         for _ in range(30):
-            img, pts = ex['city'][rng.integers(len(ex['city']))]; cx, cy = rng.uniform(T.P / 2, 1200 - T.P / 2, 2)
+            img, pts = ex['city'][rng.integers(len(ex['city']))]; H_, W_ = img.shape[:2]; cx, cy = rng.uniform(T.P / 2, W_ - T.P / 2), rng.uniform(T.P / 2, H_ - T.P / 2)
             if not len(pts) or np.min(np.hypot(pts[:, 0] - cx, pts[:, 1] - cy)) * T.RES > 15: return f(T.patch(img, cx, cy))
-        return f(T.patch(img, 600, 600))
+        return f(T.patch(img, img.shape[1] / 2, img.shape[0] / 2))
     return acc, rej, city
 
 
@@ -131,7 +142,7 @@ def train(items, steps, seed, log, extra=None):
     net.train()
     for i in range(steps):
         if extra:
-            ps = [pos() for _ in range(9)] + ([e_acc() for _ in range(3)] if extra['acc'] else [pos() for _ in range(3)]) + [neg() for _ in range(8)] + [neg(True) for _ in range(6)] + ([e_rej() for _ in range(4)] if extra['rej'] else [neg(True) for _ in range(4)]) + [e_city() for _ in range(6)]
+            ps = [pos() for _ in range(9)] + ([e_acc() for _ in range(3)] if extra['acc'] else [pos() for _ in range(3)]) + [neg() for _ in range(8 - CITY_EXTRA)] + [neg(True) for _ in range(6)] + ([e_rej() for _ in range(4)] if extra['rej'] else [neg(True) for _ in range(4)]) + [e_city() for _ in range(6 + CITY_EXTRA)]
         else:
             ps = [pos() for _ in range(12)] + [neg() for _ in range(14)] + [neg(True) for _ in range(10)]
         y = torch.tensor([1.] * 12 + [0.] * 24)
