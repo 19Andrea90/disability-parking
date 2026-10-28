@@ -1,3 +1,5 @@
+-- NOTA (28/10/2026): PostGIS, la colonna geom e le funzioni stalli_vicini/stalli_entro sono state rimosse con 06_rimuovi_postgis.sql
+-- (spatial_ref_sys non era protetta). Per un'installazione nuova: eseguire questo file e poi 02…06 in ordine.
 -- Disability Parking — schema v1
 -- Da incollare nel SQL Editor di Supabase ed eseguire una sola volta.
 
