@@ -972,6 +972,30 @@
   // ======================================================================
   // CONTESTO PER LA SCANSIONE: edifici, strade e parcheggi OSM di un comune → Supabase Storage (foto/contesto/<comune>.json)
   // ======================================================================
+  const slugOf = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  // scarica edifici/strade/parcheggi di un rettangolo e li salva in foto/contesto/<slug>-<data>.json
+  async function buildContext(label, bbox, log = ilog) {
+    const q = `[out:json][timeout:300];(way["building"](${bbox});way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$"](${bbox});way["amenity"="parking"](${bbox}););out geom qt;`;
+    let els = null;
+    for (const url of ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+      log(`  scarico da ${new URL(url).host}…`);
+      try { const r = await overpassOnce(url, null, 320000, q); els = r.els; log(`  ${els.length} elementi in ${Math.round(r.ms / 1000)} s`); break; } catch (e) { log('  ' + e.message); }
+    }
+    if (!els) throw new Error('Overpass non ha risposto');
+    const r5 = (x) => Math.round(x * 1e5) / 1e5; const out = { comune: label, bbox, creato: new Date().toISOString(), edifici: [], strade: [], parcheggi: [] };
+    for (const el of els) {
+      if (!el.geometry || !el.tags) continue; const pts = el.geometry.map((p) => [r5(p.lat), r5(p.lon)]);
+      if (el.tags.building) out.edifici.push(pts);
+      else if (el.tags.amenity === 'parking') out.parcheggi.push(pts);
+      else if (el.tags.highway) out.strade.push(pts);
+    }
+    const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
+    const path = `contesto/${slugOf(label)}-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')}.json`;
+    const { error } = await sb.storage.from('foto').upload(path, blob, { contentType: 'application/json' });
+    if (error) throw error;
+    return { path, size: blob.size, n: [out.edifici.length, out.strade.length, out.parcheggi.length] };
+  }
+
   $('#ctx-go').onclick = async () => {
     const area = $('#i-area').value.trim(); if (!area) { $('#i-log').textContent = 'Scrivi prima il nome del comune nella casella qui sopra.'; return; }
     const btn = $('#ctx-go'); btn.disabled = true; $('#i-log').textContent = '';
@@ -979,29 +1003,53 @@
       ilog(`Cerco il confine di "${area}"…`);
       const b = await comuneBoundary(area, chosen); if (!b) throw new Error('Comune non trovato');
       ilog(`  ${b.label}: ${b.bbox}`);
-      const q = `[out:json][timeout:300];(way["building"](${b.bbox});way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$"](${b.bbox});way["amenity"="parking"](${b.bbox}););out geom qt;`;
-      let els = null;
-      for (const url of ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
-        ilog(`Scarico da ${new URL(url).host} (può richiedere 1–4 minuti)…`);
-        try { const r = await overpassOnce(url, null, 320000, q); els = r.els; ilog(`  ${els.length} elementi in ${Math.round(r.ms / 1000)} s`); break; } catch (e) { ilog('  ' + e.message); }
-      }
-      if (!els) throw new Error('Overpass non ha risposto: riprova più tardi.');
-      const r5 = (x) => Math.round(x * 1e5) / 1e5; const out = { comune: b.label, bbox: b.bbox, creato: new Date().toISOString(), edifici: [], strade: [], parcheggi: [] };
-      for (const el of els) {
-        if (!el.geometry || !el.tags) continue; const pts = el.geometry.map((p) => [r5(p.lat), r5(p.lon)]);
-        if (el.tags.building) out.edifici.push(pts);
-        else if (el.tags.amenity === 'parking') out.parcheggi.push(pts);
-        else if (el.tags.highway) out.strade.push(pts);
-      }
-      ilog(`Edifici ${out.edifici.length} · strade ${out.strade.length} · parcheggi ${out.parcheggi.length}. Salvo…`);
-      const slug = b.label.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-');
-      const blob = new Blob([JSON.stringify(out)], { type: 'application/json' });
-      const path = `contesto/${slug}-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')}.json`;
-      const { error } = await sb.storage.from('foto').upload(path, blob, { contentType: 'application/json' });
-      if (error) throw error;
-      ilog(`Fatto: ${path} (${(blob.size / 1e6).toFixed(1)} MB). Ora la scansione di ${b.label} può usarlo.`);
+      const r = await buildContext(b.label, b.bbox);
+      ilog(`Edifici ${r.n[0]} · strade ${r.n[1]} · parcheggi ${r.n[2]}.`);
+      ilog(`Fatto: ${r.path} (${(r.size / 1e6).toFixed(1)} MB). Ora la scansione di ${b.label} può usarlo.`);
     } catch (e) { ilog('Errore: ' + (e.message || e)); }
     btn.disabled = false;
+  };
+
+  // ======================================================================
+  // CONTESTO PER TUTTI I COMUNI DEL FVG (uno dopo l'altro; salta quelli già pronti; scrive contesto/_elenco_fvg.json)
+  // ======================================================================
+  let ctxStop = false;
+  $('#ctx-stop').onclick = () => { ctxStop = true; $('#ctx-stop').disabled = true; ilog('Mi fermo dopo il comune in corso…'); };
+  $('#ctx-all').onclick = async () => {
+    const btn = $('#ctx-all'); btn.disabled = true; ctxStop = false; stopReq = false; $('#ctx-stop').hidden = false; $('#ctx-stop').disabled = false; $('#i-log').textContent = '';
+    try {
+      ilog('Scarico l\'elenco dei comuni del Friuli Venezia Giulia…');
+      const q = '[out:json][timeout:120];area["ISO3166-2"="IT-36"]->.a;rel["boundary"="administrative"]["admin_level"="8"](area.a);out tags bb;';
+      let els = null;
+      for (const url of ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+        try { els = (await overpassOnce(url, null, 150000, q)).els; break; } catch (e) { ilog('  ' + e.message); }
+      }
+      if (!els || !els.length) throw new Error('Elenco dei comuni non disponibile: riprova più tardi.');
+      const comuni = els.filter((e) => e.tags && e.tags.name && e.bounds).map((e) => ({ nome: e.tags.name, slug: slugOf(e.tags.name),
+        bbox: [e.bounds.minlat, e.bounds.minlon, e.bounds.maxlat, e.bounds.maxlon].map((x) => x.toFixed(7)).join(',') }))
+        .sort((x, y) => x.nome.localeCompare(y.nome, 'it'));
+      ilog(`  ${comuni.length} comuni.`);
+      const { data: files } = await sb.storage.from('foto').list('contesto', { limit: 1000 });
+      const done = new Set((files || []).map((f) => f.name.replace(/-\d{12}\.json$/, '')));
+      const saveList = async () => {
+        const lst = comuni.map((c) => ({ ...c, pronto: done.has(c.slug) }));
+        await sb.storage.from('foto').upload('contesto/_elenco_fvg.json', new Blob([JSON.stringify(lst)], { type: 'application/json' }), { contentType: 'application/json', upsert: true });
+      };
+      const todo = comuni.filter((c) => !done.has(c.slug));
+      ilog(`Già pronti ${comuni.length - todo.length}, da preparare ${todo.length}.`);
+      let k = 0, err = 0;
+      for (const c of todo) {
+        if (ctxStop) { ilog('Fermato. Ripremi il pulsante per riprendere.'); break; }
+        k++; ilog(`[${k}/${todo.length}] ${c.nome}`);
+        try { const r = await buildContext(c.nome, c.bbox, () => {}); done.add(c.slug); ilog(`  ok: ${r.n[0]} edifici, ${r.n[1]} strade, ${r.n[2]} parcheggi (${(r.size / 1e6).toFixed(1)} MB)`); }
+        catch (e) { err++; ilog(`  errore: ${e.message || e} (lo riprovo al prossimo giro)`); }
+        if (k % 10 === 0) await saveList();
+        await new Promise((r) => setTimeout(r, 4000)); // non sovraccaricare Overpass
+      }
+      await saveList();
+      ilog(`Fatto: ${done.size}/${comuni.length} comuni pronti${err ? `, ${err} da riprovare (ripremi il pulsante)` : ''}.`);
+    } catch (e) { ilog('Errore: ' + (e.message || e)); }
+    btn.disabled = false; $('#ctx-stop').hidden = true;
   };
 
   $('#ver').textContent = 'v' + C.VERSION;

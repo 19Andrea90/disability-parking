@@ -59,6 +59,7 @@ body{overflow:auto;background:var(--bg)}
         <ul id="i-sug" role="listbox" hidden style="position:absolute;left:0;right:110px;top:100%;margin:4px 0 0;padding:6px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:50;max-height:260px;overflow:auto"></ul></div>
       <div class="actions" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="ctx-go">Prepara edifici e strade per la scansione</button><span class="sub">Usa il comune scritto sopra. Scarica da OpenStreetMap sagome degli edifici, strade e parcheggi e le salva per la scansione con la rete (esclude i tetti, salta campi e boschi).</span></div>
       <div class="actions" style="margin-top:8px"><button class="btn" id="i-region">Importa tutto il Friuli Venezia Giulia</button><span class="sub">Una sola richiesta per tutta la regione; aggiunge solo gli stalli non ancora presenti.</span></div>
+      <div class="actions" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="ctx-all">Prepara edifici e strade di tutto il FVG</button><button class="btn danger" id="ctx-stop" hidden>Ferma</button><span class="sub">Fa "Prepara edifici e strade" per tutti i comuni della regione, uno dopo l'altro (salta quelli già pronti). Ci vogliono 2–3 ore: tieni la pagina aperta sul computer. Se si interrompe, ripremi: riparte da dove era.</span></div>
       <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
     </details>
 
