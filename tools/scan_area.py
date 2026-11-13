@@ -14,6 +14,7 @@ SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 TILE = 120.0   # m
 OVER = 10.0    # m di sovrapposizione tra riquadri
 MAX_PER_TILE = 12  # più rilevamenti di così in un riquadro di 120 m = immagine anomala, non stalli
+ZONA = 30.0    # m: un solo stallo/pin per zona (richiesta di Andrea, 13/11)
 EXCL = 12.0    # m: niente candidati vicino a stalli o candidati già presenti
 
 
@@ -159,14 +160,15 @@ def main():
             if len(tile_found) > MAX_PER_TILE: print(f'  riquadro anomalo {la:.5f},{lo:.5f}: {len(tile_found)} rilevamenti, scartato', flush=True); n_anom += 1; continue
             found.extend(tile_found)
         # fine blocco: confronto con ciò che è già in database (anche quanto caricato nei blocchi precedenti) e carico
-        known = [(r['lat'], r['lon']) for r in sb_all('/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&order=id', key) + sb_all('/rest/v1/candidati?select=lat,lon&order=id', key)]
-        kl = np.array(known) if known else np.zeros((0, 2))
+        # un pin per zona: niente candidati entro ZONA m da uno stallo (anche accorpato/rimosso) o da un altro candidato nuovo,
+        # né entro EXCL m da un candidato già in database
+        ks = np.array([(r['lat'], r['lon']) for r in sb_all('/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&order=id', key)] or np.zeros((0, 2)))
+        kc = np.array([(r['lat'], r['lon']) for r in sb_all('/rest/v1/candidati?select=lat,lon&order=id', key)] or np.zeros((0, 2)))
+        def mind(arr, la, lo): return np.hypot((arr[:, 0] - la) * 111320, (arr[:, 1] - lo) * 111320 * math.cos(math.radians(la))).min() if len(arr) else 1e9
         found.sort(key=lambda f: -f['score']); keep = []
         for f in found:
-            if any(dist_m(f['lat'], f['lon'], k['lat'], k['lon']) < T.NMS for k in keep): continue
-            if len(kl):
-                dd = np.hypot((kl[:, 0] - f['lat']) * 111320, (kl[:, 1] - f['lon']) * 111320 * math.cos(math.radians(f['lat'])))
-                if dd.min() < EXCL: continue
+            if any(dist_m(f['lat'], f['lon'], k['lat'], k['lon']) < ZONA for k in keep): continue
+            if mind(ks, f['lat'], f['lon']) < ZONA or mind(kc, f['lat'], f['lon']) < EXCL: continue
             keep.append(f)
         if a.dry_run and a.save_dir:
             os.makedirs(a.save_dir, exist_ok=True)

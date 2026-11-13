@@ -54,7 +54,7 @@
     return L.divIcon({ className: '', html: `<div class="pin ${pinClass(s)}${sel ? ' sel' : ''}"><b>♿</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
   }
   // Raggruppo gli stalli dello stesso tipo a meno di GROUP_M metri: un solo pin = "qui ci sono uno o più posti riservati"
-  const GROUP_M = 20;
+  const GROUP_M = 30;
   const shown = new Map();            // id del rappresentante -> record mostrato (con _members)
   const RANK = { ufficiale: 3, verificato: 2, proposto: 1 };
   function rebuild() {

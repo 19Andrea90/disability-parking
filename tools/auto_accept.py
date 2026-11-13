@@ -19,14 +19,28 @@ def run(key, min_score=98, dry=False, log=print):
     for c in rows:
         m = re.search(r'media di \d+\) · punteggio (\d+)%', c['classe'] or '')
         if m and int(m.group(1)) >= min_score: todo.append((int(m.group(1)), c))
-    n = 0
+    n = linked = 0
+    import math
+    near_r = 30.0  # entro 30 m da uno stallo attivo non ne creo un altro: collego il candidato a quello (un pin per zona)
+    act = sb_all('/rest/v1/stalli?select=id,lat,lon,tipo&stato=in.(proposto,verificato,ufficiale)&tipo=neq.personalizzato&order=id', key) if todo else []
+    def nearest(la, lo):
+        best = None
+        for x in act:
+            d = math.hypot((x['lat'] - la) * 111320, (x['lon'] - lo) * 111320 * math.cos(math.radians(la)))
+            if d <= near_r and (best is None or d < best[0]): best = (d, x)
+        return best
     for s, c in todo:
         if dry: n += 1; continue
+        nb = nearest(c['lat'], c['lon'])
+        if nb:
+            sb('PATCH', f"/rest/v1/candidati?id=eq.{c['id']}", key, {'stato': 'accettato', 'stallo_id': nb[1]['id']}, extra={'Prefer': 'return=minimal'})
+            linked += 1; continue
         st = sb('POST', '/rest/v1/stalli', key, {'lat': c['lat'], 'lon': c['lon'], 'tipo': 'generico', 'posti': 1, 'comune': c['comune'], 'stato': 'verificato',
                                                   'fonte': 'satellite', 'note': f'{AUTO} (punteggio {s}%)'}, extra={'Prefer': 'return=representation'})
         sb('PATCH', f"/rest/v1/candidati?id=eq.{c['id']}", key, {'stato': 'accettato', 'stallo_id': st[0]['id']}, extra={'Prefer': 'return=minimal'})
+        act.append({'id': st[0]['id'], 'lat': c['lat'], 'lon': c['lon'], 'tipo': 'generico'})
         n += 1
-    log(f'  conferma automatica (≥{min_score}%): {n} stalli {"da creare" if dry else "creati"}')
+    log(f'  conferma automatica (≥{min_score}%): {n} stalli {"da creare" if dry else "creati"}' + (f', {linked} collegati a uno stallo già presenti entro 30 m' if linked else ''))
     return n
 
 
