@@ -3,7 +3,7 @@
 
 Uso: SUPABASE_SERVICE_KEY=... python3 scan_area.py MODEL.pt --bbox S,W,N,E [--thr 0.05] [--tta] [--label "Udine centro"] [--dry-run]
 """
-import argparse, io, json, math, os, sys, time, urllib.request, urllib.parse
+import argparse, io, json, math, os, re, sys, time, urllib.request, urllib.parse
 import numpy as np
 from PIL import Image, ImageDraw
 import torch
@@ -93,8 +93,8 @@ def main():
     if a.context:
         from shapely.geometry import Polygon, LineString, Point, box
         from shapely.strtree import STRtree
-        objs = sb('POST', '/storage/v1/object/list/foto', key, {'prefix': 'contesto/', 'limit': 1000})
-        names = sorted(o['name'] for o in objs if o['name'].startswith(a.context.lower() + '-'))
+        objs = sb('POST', '/storage/v1/object/list/foto', key, {'prefix': 'contesto/', 'limit': 1000, 'sortBy': {'column': 'name', 'order': 'asc'}})
+        names = sorted(o['name'] for o in objs if re.fullmatch(re.escape(a.context.lower()) + r'-\d{12}\.json', o['name']))  # esatto: 'san-vito' non deve prendere 'san-vito-al-tagliamento'
         if not names: raise SystemExit(f'Nessun contesto per "{a.context}": usa il pulsante nell\'admin')
         data = json.loads(urllib.request.urlopen(f'{SB}/storage/v1/object/public/foto/contesto/{names[-1]}', timeout=120).read())
         P = lambda pts: [(lo, la) for la, lo in pts]
