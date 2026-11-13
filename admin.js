@@ -1033,7 +1033,9 @@
       const done = new Set((files || []).map((f) => f.name.replace(/-\d{12}\.json$/, '')));
       const saveList = async () => {
         const lst = comuni.map((c) => ({ ...c, pronto: done.has(c.slug) }));
-        await sb.storage.from('foto').upload('contesto/_elenco_fvg.json', new Blob([JSON.stringify(lst)], { type: 'application/json' }), { contentType: 'application/json', upsert: true });
+        // l'elenco serve solo per nomi e confini: lo scanner controlla da sé quali comuni hanno il file pronto
+        const { error } = await sb.storage.from('foto').upload('contesto/_elenco_fvg.json', new Blob([JSON.stringify(lst)], { type: 'application/json' }), { contentType: 'application/json', upsert: true });
+        if (error && !/exists|duplicate/i.test(error.message || '')) ilog('  (elenco non aggiornato: ' + error.message + ')');
       };
       const todo = comuni.filter((c) => !done.has(c.slug));
       ilog(`Già pronti ${comuni.length - todo.length}, da preparare ${todo.length}.`);

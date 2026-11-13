@@ -20,7 +20,12 @@ ap.add_argument('--auto', type=int, default=0, help='conferma automatica sopra q
 a = ap.parse_args()
 
 lst = json.loads(urllib.request.urlopen(f'{SB}/storage/v1/object/public/foto/contesto/_elenco_fvg.json', timeout=60).read())
-lst = [c for c in lst if c.get('pronto')]
+# un comune è pronto se esiste il suo file di contesto (il flag "pronto" dell'elenco può essere vecchio)
+req = urllib.request.Request(f'{SB}/storage/v1/object/list/foto', method='POST', data=json.dumps({'prefix': 'contesto/', 'limit': 2000}).encode(),
+                             headers={'apikey': os.environ['SUPABASE_SERVICE_KEY'], 'Authorization': 'Bearer ' + os.environ['SUPABASE_SERVICE_KEY'], 'Content-Type': 'application/json'})
+import re
+files = {re.sub(r'-\d{12}\.json$', '', o['name']) for o in json.loads(urllib.request.urlopen(req, timeout=60).read()) if re.search(r'-\d{12}\.json$', o['name'])}
+lst = [c for c in lst if c['slug'] in files]
 fatti = set(json.load(open(FATTI))) if os.path.exists(FATTI) else set()
 primi = [x.strip().lower() for x in a.primi.split(',') if x.strip()]
 solo = [x.strip().lower() for x in a.solo.split(',') if x.strip()]
