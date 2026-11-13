@@ -134,7 +134,7 @@ def main():
             img = futs[j].result(); s, w, n, e = la, lo, la + TILE * dlat, lo + TILE * dlon
             if img is None: continue
             gray = img.mean(2)
-            if (gray < 0.12).mean() > 0.5: n_dark += 1; continue  # ortofoto mancante (zona nera): la rete vedrebbe solo rumore
+            if (gray < 0.12).mean() > 0.5 or (gray > 0.95).mean() > 0.5: n_dark += 1; continue  # ortofoto mancante (zona nera o bianca): la rete vedrebbe solo rumore
             m = OVER / 2 / T.RES; im = None; tile_found = []
             need = None
             if ctx is not None:  # salto le celle lontane più di 15 m da strade e parcheggi: lì non ci sono stalli
@@ -148,7 +148,8 @@ def main():
                 v = net.rescore(img, x, y, v)
                 if v < a.thr: continue
                 yi, xi = int(y), int(x); w8 = int(4 / T.RES)
-                if gray[max(0, yi - w8):yi + w8, max(0, xi - w8):xi + w8].mean() < 0.09: n_dark += 1; continue  # punto in zona nera (l'ortofoto mancante è sotto 0,08; le ombre sono più chiare)
+                win = gray[max(0, yi - w8):yi + w8, max(0, xi - w8):xi + w8]
+                if win.mean() < 0.09 or (win.mean() > 0.93 and win.std() < 0.02): n_dark += 1; continue  # punto in zona nera (l'ortofoto mancante è sotto 0,08; le ombre sono più chiare)
                 if ctx is not None:
                     pt = Point(lon, lat)
                     if any(ctx['bldg'][i].contains(pt) for i in ctx['bld'].query(pt)): in_bld += 1; continue  # sopra un edificio: è un tetto
