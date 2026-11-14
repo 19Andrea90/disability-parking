@@ -5,12 +5,14 @@ Gli stalli creati così hanno nelle note il marcatore AUTO, quindi si possono ri
   python3 auto_accept.py --undo     (rimette i candidati a 'nuovo' e marca gli stalli come 'rimosso')
 
 Uso: SUPABASE_SERVICE_KEY=... python3 auto_accept.py [--min 98] [--dry-run]
+     python3 auto_accept.py --scarta-sotto 30 [--dry-run]   (scarta i candidati con punteggio basso; --undo-scarto li rimette a 'nuovo')
 """
 import argparse, os, re, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from scan_area import sb, sb_all
 
 AUTO = 'Confermato in automatico dalla rete'
+SCARTO = 'scartato in automatico'  # marcatore aggiunto alla classe dei candidati scartati sotto soglia (non usati per l'addestramento)
 
 
 def run(key, min_score=98, dry=False, log=print):
@@ -44,6 +46,27 @@ def run(key, min_score=98, dry=False, log=print):
     return n
 
 
+def reject_low(key, max_score=30, dry=False, log=print):
+    """Scarta (in modo reversibile) i candidati 'nuovo' della rete con punteggio sotto max_score."""
+    rows = sb_all('/rest/v1/candidati?select=id,classe&fonte=eq.satellite&stato=eq.nuovo&order=id', key)
+    n = 0
+    for c in rows:
+        m = re.search(r'media di \d+\) · punteggio (\d+)%', c['classe'] or '')
+        if not m or int(m.group(1)) >= max_score: continue
+        n += 1
+        if not dry:
+            sb('PATCH', f"/rest/v1/candidati?id=eq.{c['id']}", key, {'stato': 'scartato', 'classe': f"{c['classe']} · {SCARTO} (<{max_score}%)"}, extra={'Prefer': 'return=minimal'})
+    if n: log(f'  scarto automatico (<{max_score}%): {n} candidati {"da scartare" if dry else "scartati"}')
+    return n
+
+
+def undo_low(key):
+    rows = sb_all(f"/rest/v1/candidati?select=id,classe&stato=eq.scartato&classe=like.*{SCARTO.replace(' ', '%20')}*&order=id", key)
+    for c in rows:
+        sb('PATCH', f"/rest/v1/candidati?id=eq.{c['id']}", key, {'stato': 'nuovo', 'classe': re.sub(r' · ' + SCARTO + r' \(<\d+%\)', '', c['classe'])}, extra={'Prefer': 'return=minimal'})
+    print(f'ripristinati {len(rows)} candidati scartati in automatico')
+
+
 def undo(key):
     st = sb_all(f"/rest/v1/stalli?select=id&note=like.{AUTO.replace(' ', '%20')}*&stato=eq.verificato&order=id", key)
     for r in st:
@@ -53,6 +76,9 @@ def undo(key):
 
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser(); ap.add_argument('--min', type=int, default=98); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--undo', action='store_true')
+    ap = argparse.ArgumentParser(); ap.add_argument('--min', type=int, default=98); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--undo', action='store_true'); ap.add_argument('--scarta-sotto', type=int, default=0); ap.add_argument('--undo-scarto', action='store_true')
     a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']
-    undo(key) if a.undo else run(key, a.min, a.dry_run)
+    if a.undo: undo(key)
+    elif a.undo_scarto: undo_low(key)
+    elif a.scarta_sotto: reject_low(key, a.scarta_sotto, a.dry_run)
+    else: run(key, a.min, a.dry_run)

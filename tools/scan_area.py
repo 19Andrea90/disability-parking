@@ -53,7 +53,7 @@ def dist_m(a_lat, a_lon, b_lat, b_lon):
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('model', help='uno o più file .pt separati da virgola (media dei punteggi)'); ap.add_argument('--bbox', required=True); ap.add_argument('--thr', type=float, default=0.05)
-    ap.add_argument('--save-dir', default='', help='con --dry-run salva qui i ritagli dei candidati'); ap.add_argument('--cell', type=int, default=400, help='lato delle celle in px (0 = riquadro intero)'); ap.add_argument('--auto', type=int, default=0, help='conferma in automatico i candidati con punteggio >= N%% (0 = no)')
+    ap.add_argument('--save-dir', default='', help='con --dry-run salva qui i ritagli dei candidati'); ap.add_argument('--cell', type=int, default=400, help='lato delle celle in px (0 = riquadro intero)'); ap.add_argument('--auto', type=int, default=0, help='conferma in automatico i candidati con punteggio >= N%% (0 = no)'); ap.add_argument('--scarta', type=int, default=0, help='scarta in automatico i candidati con punteggio < N%% (0 = no)')
     ap.add_argument('--tta', action='store_true'); ap.add_argument('--label', default=''); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--context', default='', help='comune (es. udine): usa edifici/strade salvati dall\'admin')
     ap.add_argument('--batch', type=int, default=150); ap.add_argument('--exclude', default='', help='S,W,N,E;S,W,N,E aree già scansionate'); ap.add_argument('--progress', default='')
     a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']; t0 = time.time()
@@ -185,6 +185,10 @@ def main():
                 try:
                     import auto_accept; auto_accept.run(key, a.auto)
                 except Exception as ex: print('  conferma automatica non riuscita:', ex)
+            if a.scarta:
+                try:
+                    import auto_accept; auto_accept.reject_low(key, a.scarta)
+                except Exception as ex: print('  scarto automatico non riuscito:', ex)
             done_set.update(batch); json.dump(sorted(done_set), open(prog, 'w'))
             try: sb('POST', remote, key, open(prog, 'rb').read(), 'application/json', {'x-upsert': 'true'})
             except Exception as ex: print('  avanzamento non salvato su Supabase:', ex)

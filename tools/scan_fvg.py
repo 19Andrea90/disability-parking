@@ -4,7 +4,7 @@
 Ogni comune ha il suo file di avanzamento, quindi se il processo si ferma (limite di tempo, errore) basta rilanciarlo:
 riparte dal comune e dal blocco in cui era. Un comune finito viene segnato in /home/claude/scan_fvg_fatti.json.
 
-Uso: SUPABASE_SERVICE_KEY=... python3 tools/scan_fvg.py [--primi Trieste,Pordenone] [--auto 0] [--solo Trieste]
+Uso: SUPABASE_SERVICE_KEY=... python3 tools/scan_fvg.py [--primi Trieste,Pordenone] [--auto 0] [--scarta 0] [--solo Trieste]
 """
 import argparse, json, os, subprocess, sys, urllib.request
 
@@ -17,6 +17,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--primi', default='Trieste', help='comuni da fare per primi, separati da virgola')
 ap.add_argument('--solo', default='', help='fai solo questi comuni (virgola)')
 ap.add_argument('--auto', type=int, default=0, help='conferma automatica sopra questa soglia (0 = no)')
+ap.add_argument('--scarta', type=int, default=0, help='scarto automatico sotto questa soglia (0 = no)')
 a = ap.parse_args()
 
 lst = json.loads(urllib.request.urlopen(f'{SB}/storage/v1/object/public/foto/contesto/_elenco_fvg.json', timeout=60).read())
@@ -38,6 +39,7 @@ for c in todo:
     cmd = [sys.executable, '-I', '-u', 'tools/scan_area.py', MODELS, '--bbox', c['bbox'], '--thr', '0.2', '--context', c['slug'],
            '--label', c['nome'], '--batch', '150', '--progress', f'/home/claude/scan_progress_{c["slug"]}.json']
     if a.auto: cmd += ['--auto', str(a.auto)]
+    if a.scarta: cmd += ['--scarta', str(a.scarta)]
     r = subprocess.run(cmd)
     if r.returncode != 0:
         print(f'  {c["nome"]}: uscito con codice {r.returncode}, lo riprendo al prossimo lancio', flush=True); sys.exit(r.returncode)

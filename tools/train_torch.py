@@ -78,7 +78,7 @@ def load_items(crops, key, fake):
     # candidati scartati: ritagli 24 m senza stalli
     negdir = os.path.join(crops, 'neg'); os.makedirs(negdir, exist_ok=True)
     for c in sb_all('candidati?select=id,lat,lon,classe&stato=eq.scartato', key):
-        if (c.get('classe') or '').startswith('zona nera'): continue  # ortofoto mancante, non è un esempio utile
+        if (c.get('classe') or '').startswith('zona nera') or 'scartato in automatico' in (c.get('classe') or ''): continue  # ortofoto mancante, non è un esempio utile
         fn = os.path.join(negdir, f"{c['id']}.jpg")
         if not wms(c['lat'], c['lon'], 24, 240, fn): continue
         img = np.asarray(Image.open(fn).convert('RGB'), dtype=np.float32) / 255

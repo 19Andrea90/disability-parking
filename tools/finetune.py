@@ -71,7 +71,7 @@ def load_extra(crops, key, cand_filter=None, n_city=None, seed=0):
         if c['stato'] == 'accettato' and c.get('stallo_id') in stalli:
             st = stalli[c['stallo_id']]; fn = os.path.join(d, f"acc-{c['id']}.jpg")
             if T.wms(st['lat'], st['lon'], 40, 400, fn): acc.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
-        elif c['stato'] == 'scartato' and (c.get('classe') or '').startswith('rete'):
+        elif c['stato'] == 'scartato' and (c.get('classe') or '').startswith('rete') and 'scartato in automatico' not in c['classe']:
             fn = os.path.join(d, f"rej-{c['id']}.jpg")
             if T.wms(c['lat'], c['lon'], 40, 400, fn): rej.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
     if FP_POINTS:
@@ -194,7 +194,7 @@ def main():
     torch.save(net.state_dict(), os.path.join(a.out, 'holdout.pt'))
     if a.extra:  # prova "sul campo": l'altra metà dei candidati verificati, mai vista in addestramento
         unver = {r['id'] for r in T.sb_all('stalli?select=id,note&note=like.Confermato%20in%20automatico*', key) if unverified_auto(r)}
-        cands = [c for c in T.sb_all('candidati?select=id,lat,lon,stato,classe,stallo_id&stato=in.(accettato,scartato)&classe=like.rete*', key) if half(c) == 1 and c.get('stallo_id') not in unver]
+        cands = [c for c in T.sb_all('candidati?select=id,lat,lon,stato,classe,stallo_id&stato=in.(accettato,scartato)&classe=like.rete*', key) if half(c) == 1 and c.get('stallo_id') not in unver and 'scartato in automatico' not in (c.get('classe') or '')]
         from sklearn.metrics import roc_auc_score
         nets = [('nuova', net)]
         for pth in [x for x in a.compare.split(',') if x]:
