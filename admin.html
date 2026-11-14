@@ -63,6 +63,13 @@ body{overflow:auto;background:var(--bg)}
       <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
     </details>
 
+    <details class="edit" style="margin-bottom:12px">
+      <summary style="cursor:pointer;font-weight:600">Raggruppa stalli vicini</summary>
+      <div class="sub" style="margin:8px 0">Entro la distanza scelta resta un solo pin (quello più affidabile: ufficiale &gt; verificato a mano &gt; automatico &gt; proposto). Gli altri passano a "rimosso" con la nota "Accorpato in …", quindi si possono ripristinare. Gli stalli personalizzati (con targa) restano a parte.</div>
+      <div class="actions" style="flex-wrap:wrap"><label class="sub" for="m-r">Distanza (m)</label><input type="number" id="m-r" value="40" min="5" max="100" step="5" style="width:80px"><button class="btn" id="m-prev">Anteprima</button><button class="btn primary" id="m-go" disabled>Raggruppa</button></div>
+      <pre id="m-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
+    </details>
+
     <details class="edit" style="margin-bottom:12px" id="lab-box">
       <summary style="cursor:pointer;font-weight:600">Etichetta per l'addestramento <span class="sub" id="lab-count"></span></summary>
       <div class="sub" style="margin:8px 0">Per ogni stallo noto vedi l'ortofoto di 40 × 40 m attorno. <b>Clicca al centro di ogni posto riservato visibile nell'immagine</b> (anche più di uno), poi Invio. Se non se ne vede nessuno, premi N. Tasti: <b>V</b> apre Street View · <b>G</b> satellite Google (più recente) · <b>Z</b> zoom 2× · <b>Invio</b> salva e avanti · <b>N</b> non visibile · <b>S</b> salta · <b>Backspace</b> annulla l'ultimo clic · <b>←</b> indietro. Il segnaposto blu è la posizione registrata (spesso spostata di qualche metro).</div>

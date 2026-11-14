@@ -1054,6 +1054,59 @@
     btn.disabled = false; $('#ctx-stop').hidden = true;
   };
 
+  // ======================================================================
+  // RAGGRUPPA STALLI VICINI (stessa logica di tools/merge_stalli.py)
+  // ======================================================================
+  let mPlan = null;
+  const mglog = (t) => { const el = $('#m-log'); el.textContent += t + '\n'; el.scrollTop = el.scrollHeight; };
+  const mDist = (a, b) => Math.hypot((a.lat - b.lat) * 111320, (a.lon - b.lon) * 111320 * Math.cos(a.lat * Math.PI / 180));
+  const mRank = (s) => { const auto = (s.note || '').startsWith('Confermato in automatico'); return ({ ufficiale: 4, verificato: auto ? 2 : 3, proposto: 1 })[s.stato] || 0; };
+  async function mPlanMerge(R) {
+    const { data: st, error } = await fetchAll(() => sb.from('stalli').select('id,lat,lon,tipo,stato,note,created_at').in('stato', ['proposto', 'verificato', 'ufficiale']).order('id'));
+    if (error) throw error;
+    const merges = [];
+    for (const fam of ['generico', 'personalizzato']) {
+      const rest = st.filter((s) => (s.tipo === 'personalizzato' ? 'personalizzato' : 'generico') === fam)
+        .sort((a, b) => (mRank(b) - mRank(a)) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+      const cell = (s) => [Math.floor(s.lat * 111320 / R), Math.floor(s.lon * 111320 * Math.cos(46 * Math.PI / 180) / R)];
+      const grid = new Map();
+      for (const s of rest) { const k = cell(s).join(); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(s); }
+      const used = new Set();
+      for (const s of rest) {
+        if (used.has(s.id)) continue; used.add(s.id);
+        const [cy, cx] = cell(s); const grp = [];
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++)
+          for (const t of grid.get(`${cy + dy},${cx + dx}`) || []) if (!used.has(t.id) && mDist(s, t) <= R) grp.push(t);
+        grp.forEach((t) => used.add(t.id));
+        if (grp.length) merges.push([s, grp]);
+      }
+    }
+    return { total: st.length, merges };
+  }
+  $('#m-prev').onclick = async () => {
+    const R = Number($('#m-r').value) || 40; $('#m-log').textContent = ''; $('#m-go').disabled = true; mPlan = null;
+    try {
+      mglog('Calcolo…'); const p = await mPlanMerge(R); const n = p.merges.reduce((a, [, g]) => a + g.length, 0);
+      mglog(`Entro ${R} m: ${p.total} stalli attivi → ${p.total - n} (${p.merges.length} gruppi, ${n} stalli da togliere dalla mappa).`);
+      if (n) { mPlan = { R, merges: p.merges }; $('#m-go').disabled = false; mglog('Premi "Raggruppa" per applicare.'); } else mglog('Niente da raggruppare.');
+    } catch (e) { mglog('Errore: ' + (e.message || e)); }
+  };
+  $('#m-go').onclick = async () => {
+    if (!mPlan) return; const btn = $('#m-go'); btn.disabled = true; $('#m-prev').disabled = true;
+    let k = 0, err = 0;
+    for (const [keep, grp] of mPlan.merges) {
+      const ids = grp.map((t) => t.id);
+      const r1 = await sb.from('candidati').update({ stallo_id: keep.id }).in('stallo_id', ids); if (r1.error) err++;
+      for (const t of grp) {
+        const r2 = await sb.from('stalli').update({ stato: 'rimosso', note: `Accorpato in ${keep.id} (${Math.round(mDist(keep, t))} m). ` + (t.note || '') }).eq('id', t.id);
+        if (r2.error) err++;
+      }
+      if (++k % 20 === 0) mglog(`  ${k}/${mPlan.merges.length} gruppi…`);
+    }
+    mglog(`Fatto: ${k} gruppi raggruppati${err ? `, ${err} errori (riprova Anteprima)` : ''}.`);
+    mPlan = null; $('#m-prev').disabled = false;
+  };
+
   $('#ver').textContent = 'v' + C.VERSION;
   boot();
 })();
