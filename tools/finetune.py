@@ -6,7 +6,7 @@ Per contenere i tempi su CPU valuta su un solo gruppo di zone tenuto fuori (25%)
 
 Uso: SUPABASE_SERVICE_KEY=... python3 finetune.py CROPS_DIR OUT_DIR [--steps 2500] [--holdout-only]
 """
-import argparse, json, math, os, sys, time
+import argparse, json, math, os, sys, time, urllib.parse, urllib.request
 import numpy as np
 from PIL import Image
 import torch, torchvision
@@ -48,7 +48,36 @@ CITIES = {  # riquadri casuali di città: tetti, giardini, cortili → negativi 
     'UdineTutta': (46.005, 13.190, 46.110, 13.290), 'GoriziaTutta': (45.915, 13.585, 45.965, 13.640)}
 N_CITY = int(os.environ.get('N_CITY', '120')); CITY_M = float(os.environ.get('CITY_M', '120'))  # quanti riquadri casuali e di che lato
 CITY_EXTRA = int(os.environ.get('CITY_EXTRA', '0'))  # negativi di città in più per passo (al posto di negativi generici)
-FP_POINTS = os.environ.get('FP_POINTS', '')  # file json [[lat, lon], ...] di falsi positivi noti (negativi difficili)
+FP_POINTS = os.environ.get('FP_POINTS', '')
+DEGRADE = float(os.environ.get('DEGRADE', '0'))  # probabilità di rendere una patch "a 20 cm" (rimpicciolita 2x, sfocata, velata)
+EXTRA20 = os.environ.get('EXTRA20', '')  # comuni con foto a 20 cm (es. "Bolzano"): candidati verificati presi dal WMS dell'Alto Adige
+N_BZ_CITY = int(os.environ.get('N_BZ_CITY', '0'))  # riquadri casuali di città altoatesine (Merano, Bressanone) come negativi
+BZ_WMS = 'https://geoservices.buergernetz.bz.it/mapproxy/ows'; BZ_LAYER = 'p_bz-Orthoimagery:Aerial-2023-RGB'
+BZ_CITIES = {'merano': (46.655, 11.140, 46.685, 11.180), 'bressanone': (46.705, 11.640, 46.725, 11.665)}
+
+
+def wms_bz(lat, lon, side, px, path):
+    if os.path.exists(path) and os.path.getsize(path) > 2000: return True
+    s_, w_, n_, e_ = T.bbox(lat, lon, side)
+    q = urllib.parse.urlencode({'SERVICE': 'WMS', 'VERSION': '1.3.0', 'REQUEST': 'GetMap', 'LAYERS': BZ_LAYER, 'STYLES': '', 'CRS': 'CRS:84',
+                                'BBOX': f'{w_},{s_},{e_},{n_}', 'WIDTH': px, 'HEIGHT': px, 'FORMAT': 'image/jpeg'})
+    for k in range(3):
+        try:
+            d = urllib.request.urlopen(f'{BZ_WMS}?{q}', timeout=60).read()
+            if d[:2] == b'\xff\xd8': open(path, 'wb').write(d); return True
+        except Exception: time.sleep(2 + 2 * k)
+    return False
+
+
+def degrade(p, rng):
+    """Simula un'ortofoto a 20 cm: media 2x2 e reingrandimento, un po' di sfocatura, velo e meno saturazione."""
+    h, w, _ = p.shape; q = p.reshape(h // 2, 2, w // 2, 2, 3).mean((1, 3))
+    q = np.asarray(Image.fromarray((np.clip(q, 0, 1) * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR), dtype=np.float32) / 255
+    if rng.random() < 0.5:
+        from PIL import ImageFilter
+        q = np.asarray(Image.fromarray((q * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(rng.uniform(0.3, 0.9))), dtype=np.float32) / 255
+    g = q.mean(2, keepdims=True); q = g + (q - g) * rng.uniform(0.65, 1.0); q = q * rng.uniform(0.85, 1.0) + rng.uniform(0, 0.08)
+    return np.clip(q, 0, 1)  # file json [[lat, lon], ...] di falsi positivi noti (negativi difficili)
 
 
 def unverified_auto(st):
@@ -60,7 +89,9 @@ def load_extra(crops, key, cand_filter=None, n_city=None, seed=0):
     """Candidati verificati (accettati → positivi nel punto dello stallo creato; scartati → negativi nel punto proposto)
     + riquadri casuali di città (uint8) con i punti noti da evitare."""
     rng = np.random.default_rng(seed); d = os.path.join(crops, 'extra'); os.makedirs(d, exist_ok=True)
-    cands = T.sb_all('candidati?select=id,lat,lon,stato,stallo_id,classe&stato=in.(accettato,scartato)', key)
+    cands = T.sb_all('candidati?select=id,lat,lon,stato,stallo_id,classe,comune&stato=in.(accettato,scartato)', key)
+    b20 = {x.strip() for x in EXTRA20.split(',') if x.strip()}
+    getw = lambda c: wms_bz if c.get('comune') in b20 else T.wms
     stalli = {r['id']: r for r in T.sb_all('stalli?select=id,lat,lon,note&stato=in.(proposto,verificato,ufficiale)', key)}
     # gli stalli confermati in automatico dalla rete e non ancora controllati a mano non sono etichette affidabili: li escludo
     unver = {i for i, r in stalli.items() if unverified_auto(r)}
@@ -70,10 +101,10 @@ def load_extra(crops, key, cand_filter=None, n_city=None, seed=0):
     for c in cands:
         if c['stato'] == 'accettato' and c.get('stallo_id') in stalli:
             st = stalli[c['stallo_id']]; fn = os.path.join(d, f"acc-{c['id']}.jpg")
-            if T.wms(st['lat'], st['lon'], 40, 400, fn): acc.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
+            if getw(c)(st['lat'], st['lon'], 40, 400, fn): acc.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
         elif c['stato'] == 'scartato' and (c.get('classe') or '').startswith('rete') and 'scartato in automatico' not in c['classe']:
             fn = os.path.join(d, f"rej-{c['id']}.jpg")
-            if T.wms(c['lat'], c['lon'], 40, 400, fn): rej.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
+            if getw(c)(c['lat'], c['lon'], 40, 400, fn): rej.append((np.asarray(Image.open(fn).convert('RGB')), 200.0, 200.0))
     if FP_POINTS:
         for la, lo in json.load(open(FP_POINTS)):
             fn = os.path.join(d, f"fp-{la:.6f}-{lo:.6f}.jpg")
@@ -91,6 +122,10 @@ def load_extra(crops, key, cand_filter=None, n_city=None, seed=0):
         near = known[(known[:, 0] > bs - 3e-4) & (known[:, 0] < bn + 3e-4) & (known[:, 1] > bw - 4e-4) & (known[:, 1] < be + 4e-4)]
         pts = np.array([[(lo_ - bw) / (be - bw) * S, (bn - la_) / (bn - bs) * S] for la_, lo_ in near]).reshape(-1, 2)
         city.append((img, pts))
+    for i in range(N_BZ_CITY):  # città altoatesine a 20 cm: negativi nel nuovo dominio
+        nm = list(BZ_CITIES)[i % len(BZ_CITIES)]; s0, w0, n0, e0 = BZ_CITIES[nm]
+        la, lo = rng.uniform(s0, n0), rng.uniform(w0, e0); fn = os.path.join(d, f"bzcity-{nm}-{la:.5f}-{lo:.5f}.jpg")
+        if wms_bz(la, lo, side, S, fn): city.append((np.asarray(Image.open(fn).convert('RGB')), np.zeros((0, 2))))
     print(f'Extra: {len(acc)} stalli confermati, {len(rej)} falsi scartati, {len(city)} riquadri casuali di città', flush=True)
     return dict(acc=acc, rej=rej, city=city)
 
@@ -126,6 +161,7 @@ def extra_sampler(ex, rng):
 
 
 def to_batch(ps, rng):
+    ps = [degrade(np.asarray(p, dtype=np.float32), rng) if DEGRADE and rng.random() < DEGRADE else p for p in ps]
     b = np.stack([dihedral(p, int(rng.integers(8))) for p in ps]).astype(np.float32)
     m = b.mean(axis=(1, 2, 3), keepdims=True); b = np.clip((b - m) * rng.uniform(.85, 1.15, (len(b), 1, 1, 1)) + m + rng.uniform(-.06, .06, (len(b), 1, 1, 1)), 0, 1).astype(np.float32)
     x = torch.from_numpy(b).permute(0, 3, 1, 2)
