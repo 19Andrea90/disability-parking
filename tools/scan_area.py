@@ -36,12 +36,19 @@ def sb_all(path, key, page=1000):
         if len(b) < page: return out
 
 
+# fonte delle foto: di default la TrueOrtofoto FVG (10 cm); per altre regioni DP_WMS / DP_LAYER / DP_CRS
+WMS_URL = os.environ.get('DP_WMS', 'https://irdat-ortofoto.regione.fvg.it/geoserver/ortofoto/ows')
+WMS_LAYER = os.environ.get('DP_LAYER', 'trueorto_FVG_1720')
+WMS_CRS = os.environ.get('DP_CRS', 'EPSG:4326')  # 'EPSG:4326' (WMS 1.1.1) oppure 'CRS:84' (WMS 1.3.0)
+
+
 def wms(s, w, n, e, px):
-    q = urllib.parse.urlencode({'SERVICE': 'WMS', 'VERSION': '1.1.1', 'REQUEST': 'GetMap', 'LAYERS': 'trueorto_FVG_1720', 'STYLES': '', 'SRS': 'EPSG:4326',
-                                'BBOX': f'{w},{s},{e},{n}', 'WIDTH': px, 'HEIGHT': px, 'FORMAT': 'image/jpeg'})
+    p = {'SERVICE': 'WMS', 'REQUEST': 'GetMap', 'LAYERS': WMS_LAYER, 'STYLES': '', 'BBOX': f'{w},{s},{e},{n}', 'WIDTH': px, 'HEIGHT': px, 'FORMAT': 'image/jpeg'}
+    p.update({'VERSION': '1.3.0', 'CRS': 'CRS:84'} if WMS_CRS == 'CRS:84' else {'VERSION': '1.1.1', 'SRS': WMS_CRS})
+    q = urllib.parse.urlencode(p)
     for k in range(3):
         try:
-            d = urllib.request.urlopen(f'https://irdat-ortofoto.regione.fvg.it/geoserver/ortofoto/ows?{q}', timeout=90).read()
+            d = urllib.request.urlopen(f'{WMS_URL}?{q}', timeout=90).read()
             if d[:2] == b'\xff\xd8': return np.asarray(Image.open(io.BytesIO(d)).convert('RGB'), dtype=np.float32) / 255
         except Exception: time.sleep(3 + 3 * k)
     return None
