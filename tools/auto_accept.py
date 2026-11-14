@@ -15,8 +15,9 @@ AUTO = 'Confermato in automatico dalla rete'
 SCARTO = 'scartato in automatico'  # marcatore aggiunto alla classe dei candidati scartati sotto soglia (non usati per l'addestramento)
 
 
-def run(key, min_score=98, dry=False, log=print):
+def run(key, min_score=98, dry=False, log=print, comune=None):
     rows = sb_all('/rest/v1/candidati?select=id,classe,lat,lon,comune&fonte=eq.satellite&stato=eq.nuovo&order=id', key)
+    if comune: rows = [c for c in rows if c.get('comune') == comune]  # solo il comune appena scansionato
     todo = []
     for c in rows:
         m = re.search(r'media di \d+\) · punteggio (\d+)%', c['classe'] or '')
@@ -46,9 +47,10 @@ def run(key, min_score=98, dry=False, log=print):
     return n
 
 
-def reject_low(key, max_score=30, dry=False, log=print):
+def reject_low(key, max_score=30, dry=False, log=print, comune=None):
     """Scarta (in modo reversibile) i candidati 'nuovo' della rete con punteggio sotto max_score."""
-    rows = sb_all('/rest/v1/candidati?select=id,classe&fonte=eq.satellite&stato=eq.nuovo&order=id', key)
+    rows = sb_all('/rest/v1/candidati?select=id,classe,comune&fonte=eq.satellite&stato=eq.nuovo&order=id', key)
+    if comune: rows = [c for c in rows if c.get('comune') == comune]
     n = 0
     for c in rows:
         m = re.search(r'media di \d+\) · punteggio (\d+)%', c['classe'] or '')

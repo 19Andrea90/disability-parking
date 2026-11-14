@@ -190,11 +190,11 @@ def main():
                    extra={'Prefer': 'resolution=ignore-duplicates,return=minimal'})
             if a.auto:
                 try:
-                    import auto_accept; auto_accept.run(key, a.auto)
+                    import auto_accept; auto_accept.run(key, a.auto, comune=a.label or None)
                 except Exception as ex: print('  conferma automatica non riuscita:', ex)
             if a.scarta:
                 try:
-                    import auto_accept; auto_accept.reject_low(key, a.scarta)
+                    import auto_accept; auto_accept.reject_low(key, a.scarta, comune=a.label or None)
                 except Exception as ex: print('  scarto automatico non riuscito:', ex)
             done_set.update(batch); json.dump(sorted(done_set), open(prog, 'w'))
             try: sb('POST', remote, key, open(prog, 'rb').read(), 'application/json', {'x-upsert': 'true'})
