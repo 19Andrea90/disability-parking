@@ -45,7 +45,7 @@ for c in todo:
         print(f'  {c["nome"]}: uscito con codice {r.returncode}, lo riprendo al prossimo lancio', flush=True); sys.exit(r.returncode)
     fatti.add(c['slug']); json.dump(sorted(fatti), open(FATTI, 'w'))
     try:  # un pin per zona: accorpo gli stalli entro 30 m anche dopo ogni comune
-        sys.path.insert(0, 'tools'); import merge_stalli; merge_stalli.run(os.environ['SUPABASE_SERVICE_KEY'], 30.0)
+        sys.path.insert(0, 'tools'); import merge_stalli; merge_stalli.run(os.environ['SUPABASE_SERVICE_KEY'], 30.0, bbox=c['bbox'])  # solo il comune appena fatto, mai tutta Italia
     except Exception as ex: print('  accorpamento non riuscito:', ex, flush=True)
     print(f'=== {c["nome"]} finito ===', flush=True)
 print('Tutti i comuni fatti.', flush=True)

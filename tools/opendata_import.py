@@ -12,12 +12,18 @@ vengono accorpati (stato 'rimosso', nota 'Accorpato in …'), come fa il pulsant
 
 Uso: SUPABASE_SERVICE_KEY=... python3 tools/opendata_import.py bologna firenze trento [--raggio 15] [--dry-run]
 """
-import argparse, io, json, math, os, urllib.request, zipfile
+import argparse, io, json, math, os, re, urllib.request, zipfile
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 
 
-def get(url): return urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'disability-parking/1.0'}), timeout=180).read()
+def get(url, tries=4):  # alcuni server comunali chiudono la connessione a caso: riprovo
+    import time
+    for t in range(tries):
+        try: return urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (disability-parking)'}), timeout=180).read()
+        except Exception:
+            if t == tries - 1: raise
+            time.sleep(5 * (t + 1))
 
 
 def rec(comune, key, la, lo, posti=1, ind=None, note='', tipo='generico', src=None):
@@ -163,8 +169,40 @@ def lombardia():  # solo le righe con coordinate; quelle con il solo indirizzo l
                   via(r['toponimo'], r['nome_via'], r['civico']), '', src='lombardia')
 
 
+def torino():  # stalli generici di maggio 2019 (Monte Mario fuso Ovest, EPSG:3003), in un .7z
+    import tempfile, py7zr, shapefile
+    tr = _3003(); d = tempfile.mkdtemp()
+    py7zr.SevenZipFile(io.BytesIO(get('https://risorse.comune.torino.it/opendata/geodata/StalliDisabiliGenerici.7z'))).extractall(d)
+    shp = [os.path.join(d, n) for n in os.listdir(d) if n.endswith('.shp')][0]
+    r = shapefile.Reader(shp, encoding='latin-1')
+    for sr in r.iterShapeRecords():
+        if not sr.shape.points: continue
+        x, y = sr.shape.points[0]; lo, la = tr.transform(x, y); f = list(sr.record)
+        yield rec('Torino', f[0], la, lo, f[2] if isinstance(f[2], int) and f[2] > 0 else 1, via(f[5], f[6]), (f[4] or '').strip())
+
+
+def prato():  # posti generici e riservati (a targa); i revocati ("...REV") esclusi
+    import csv
+    tr = _3003(); txt = get('https://odn.comune.prato.it/dataset/634c11db-1216-4f6a-81eb-7010a1868f2f/resource/08a023f2-b697-491f-b507-c611d4d27afe/download/stalli-di-sosta-diversamente-abili.csv').decode('utf-8', 'replace')
+    for p in csv.DictReader(io.StringIO(txt)):
+        t = (p.get('TIPOLOGIA') or '').lower()
+        if t.endswith('rev'): continue
+        try: lo, la = tr.transform(float(p['X_COORD']), float(p['Y_COORD']))
+        except ValueError: continue
+        yield rec('Prato', p['ID'], la, lo, 1, (p.get('TOPONIMO') or '').strip() or None, (p.get('NOTE') or '').strip(), 'personalizzato' if t == 'riservato' else 'generico')
+
+
+def matera():
+    d = json.loads(get('https://dati.comune.matera.it/dataset/291b73f8-29b6-4178-9427-bced8347f361/resource/a08868ff-1ce7-4588-9b20-d07cb1927b08/download/stalli_diversamente_abili.geojson'))
+    for f in d['features']:
+        if not f.get('geometry'): continue
+        lo, la = f['geometry']['coordinates'][:2]; p = f['properties']
+        civ = re.sub(r'(?i)^civ\.?\s*', '', p.get('CIVICO') or '')
+        yield rec('Matera', p.get('ID') or f'{la:.6f},{lo:.6f}', la, lo, 1, via('Via', p.get('VIA'), civ) if p.get('VIA') else None, '')
+
+
 FONTI = {'bologna': bologna, 'firenze': firenze, 'trento': trento, 'cesena': cesena, 'ferrara': ferrara, 'siena': siena, 'livorno': livorno,
-         'verona': verona, 'lombardia': lombardia}
+         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera}
 
 
 def sb(method, path, key, body=None, prefer='return=minimal'):

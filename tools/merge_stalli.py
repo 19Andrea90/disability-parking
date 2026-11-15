@@ -33,8 +33,11 @@ def dist(a, b):
     return math.hypot((a['lat'] - b['lat']) * 111320, (a['lon'] - b['lon']) * 111320 * math.cos(math.radians(a['lat'])))
 
 
-def run(key, raggio=30.0, dry=False, comune=None, log=print):
+def run(key, raggio=30.0, dry=False, comune=None, log=print, bbox=None):
+    """bbox 'S,W,N,E': accorpa solo dentro quel rettangolo (la scansione passa quello del comune appena fatto)."""
     q = '/rest/v1/stalli?select=id,lat,lon,tipo,stato,note,created_at,comune&stato=in.(proposto,verificato,ufficiale)&order=id'
+    if bbox:
+        S, W, N, E = map(float, bbox.split(',')); q += f'&lat=gte.{S}&lat=lte.{N}&lon=gte.{W}&lon=lte.{E}'
     st = sb_all(q, key)
     if comune: st = [s for s in st if (s.get('comune') or '').lower() == comune.lower()]
     merges = []  # (tenuto, [assorbiti])
@@ -67,5 +70,5 @@ def run(key, raggio=30.0, dry=False, comune=None, log=print):
 
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser(); ap.add_argument('--raggio', type=float, default=30); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--comune')
-    a = ap.parse_args(); run(os.environ['SUPABASE_SERVICE_KEY'], a.raggio, a.dry_run, a.comune)
+    ap = argparse.ArgumentParser(); ap.add_argument('--raggio', type=float, default=30); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--comune'); ap.add_argument('--bbox', help='S,W,N,E')
+    a = ap.parse_args(); run(os.environ['SUPABASE_SERVICE_KEY'], a.raggio, a.dry_run, a.comune, bbox=a.bbox)
