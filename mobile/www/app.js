@@ -187,7 +187,6 @@
     $('#c-save').setAttribute('aria-pressed', salvati.has(id)); $('#c-save').querySelector('span').textContent = salvati.has(id) ? 'Salvato' : 'Salva';
     aggiornaConferma();
     $('#home').hidden = true; $('#top').hidden = true; $('#card').hidden = false;
-    if (!eraAperta) history.pushState({ scheda: 1 }, '');
     seguo = false; map.easeTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 16.5), padding: { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }, duration: 500 });
   }
   function aggiornaConferma() {
@@ -201,9 +200,13 @@
   function chiudiScheda(daIndietro) {
     if (!selId) return; selId = null; $('#card').hidden = true; $('#home').hidden = false; $('#top').hidden = false; disegna();
     map.easeTo({ padding: padHome(), duration: 300 });
-    if (!daIndietro && history.state && history.state.scheda) history.back();
   }
-  window.addEventListener('popstate', () => chiudiScheda(true));
+  // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
+  (function () {
+    const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
+    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (selId) chiudiScheda(true); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
+  })();
   $('#c-close').onclick = () => chiudiScheda(false);
   $('#c-nav').onclick = () => naviga(stalli.get(selId));
   $('#c-street').onclick = () => { const s = stalli.get(selId); if (s) apri(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lon}`); };

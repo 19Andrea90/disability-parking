@@ -45,6 +45,8 @@ jobs:
         run: |
           sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
           mkdir -p ~/.android && cp debug.keystore ~/.android/debug.keystore
+      - name: Icona e schermata di avvio
+        run: npx --yes @capacitor/assets@3 generate --android
       - run: npx cap sync android
       - name: Compila
         run: cd android && ./gradlew assembleDebug --no-daemon
