@@ -201,8 +201,19 @@ def matera():
         yield rec('Matera', p.get('ID') or f'{la:.6f},{lo:.6f}', la, lo, 1, via('Via', p.get('VIA'), civ) if p.get('VIA') else None, '')
 
 
+def modena():  # il server di Modena chiude le connessioni da qui: uso lo zip scaricato da Andrea il 15/11/2026 (data/opendata/), dati "fino al 2024"
+    import tempfile, shapefile
+    tr = _3003(); d = tempfile.mkdtemp()
+    zipfile.ZipFile(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'modena_parcheggi_disabili.zip')).extractall(d)
+    r = shapefile.Reader([os.path.join(d, n) for n in os.listdir(d) if n.endswith('.shp')][0])
+    for sr in r.iterShapeRecords():
+        if not sr.shape.points: continue
+        x, y = sr.shape.points[0]; lo, la = tr.transform(x, y); f = sr.record.as_dict()
+        yield rec('Modena', int(f['GID']), la, lo, 1, via(f.get('NOME_VIA'), int(f['CIVICO']) if f.get('CIVICO') else None, f.get('ESPONENTE')), '')
+
+
 FONTI = {'bologna': bologna, 'firenze': firenze, 'trento': trento, 'cesena': cesena, 'ferrara': ferrara, 'siena': siena, 'livorno': livorno,
-         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera}
+         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena}
 
 
 def sb(method, path, key, body=None, prefer='return=minimal'):
@@ -225,7 +236,7 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument('comuni', nargs='+', choices=sorted(FONTI)); ap.add_argument('--raggio', type=float, default=15)
     ap.add_argument('--dry-run', action='store_true'); a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']
     for c in a.comuni:
-        recs = list({r['osm_id']: r for r in FONTI[c]()}.values())
+        recs = list({r['osm_id']: r for r in FONTI[c]() if 35.4 < r['lat'] < 47.2 and 6.5 < r['lon'] < 18.6}.values())  # scarto le coordinate vuote (0,0)
         ks = set().union(*recs) if recs else set(); recs = [{k: r.get(k) for k in ks} for r in recs]  # PostgREST vuole le stesse chiavi in ogni riga
         if not recs: print(f'{c}: nessuno stallo'); continue
         print(f'{c.capitalize()}: {len(recs)} stalli ufficiali ({sum(r["posti"] for r in recs)} posti)', flush=True)
