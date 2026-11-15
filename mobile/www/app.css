@@ -267,3 +267,5 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .sw button[aria-checked="true"] i::after{left:27px}
 .sw button:disabled{opacity:.45}
 .testo{font-size:16px;line-height:1.45}.testo p{margin:0 0 12px}
+
+.italia{font-size:17px;margin:2px 0 6px}.italia b{font-size:26px;font-weight:700;color:var(--blu);margin-right:4px}

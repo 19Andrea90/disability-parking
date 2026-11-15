@@ -1,0 +1,23 @@
+name: Email · verifica di Resend
+
+# Controlla che la chiave di Resend (segreto RESEND_KEY) funzioni e dice quali domini sono pronti per spedire.
+# Non stampa mai la chiave.
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/email-verifica.yml']
+  workflow_dispatch:
+
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Domini registrati su Resend
+        env:
+          RESEND_KEY: ${{ secrets.RESEND_KEY }}
+        run: |
+          if [ -z "$RESEND_KEY" ]; then echo "ESITO: segreto RESEND_KEY mancante"; exit 1; fi
+          code=$(curl -s -o r.json -w '%{http_code}' https://api.resend.com/domains -H "Authorization: Bearer $RESEND_KEY")
+          echo "ESITO: risposta $code"
+          python3 -c "import json;d=json.load(open('r.json'));print('ESITO:',[(x.get('name'),x.get('status'),x.get('region')) for x in d.get('data',[])] if 'data' in d else d)"

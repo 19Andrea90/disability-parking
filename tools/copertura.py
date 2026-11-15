@@ -40,19 +40,21 @@ def scarica():
 
 def main():
     key = os.environ['SUPABASE_SERVICE_KEY']; base = scarica()
-    info = {}
+    info, per_nome, regioni = {}, {}, {}
     for row in csv.reader(io.StringIO(open(f'{DIR}/elenco.csv', encoding='latin1').read()), delimiter=';'):
-        if row and row[4].isdigit(): info[row[4]] = dict(regione=row[10], provincia=row[14], capoluogo=row[13] == '1')
+        if row and row[4].isdigit():
+            info[row[4]] = dict(regione=row[10], provincia=row[14], capoluogo=row[13] == '1', prov_nome=row[11]); per_nome[row[6].lower()] = info[row[4]]; regioni[int(row[0])] = row[10]
     r = shapefile.Reader(base); geoms, meta = [], []
     for sr in r.iterShapeRecords():
-        d = sr.record.as_dict(); geoms.append(shape(sr.shape.__geo_interface__)); meta.append(dict(cod=d['PRO_COM_T'], nome=d['COMUNE'], **info.get(d['PRO_COM_T'], {})))
+        d = sr.record.as_dict(); geoms.append(shape(sr.shape.__geo_interface__)); i0 = info.get(d['PRO_COM_T']) or per_nome.get(d['COMUNE'].lower()) or dict(regione=regioni.get(int(d['COD_REG']), '?'), provincia='', capoluogo=False, prov_nome=regioni.get(int(d['COD_REG']), '?'))
+        meta.append(dict(cod=d['PRO_COM_T'], nome=d['COMUNE'], **i0))
     tree = STRtree(geoms); utm = Transformer.from_crs('EPSG:4326', 'EPSG:32632', always_xy=True)
-    st = sb_all('/rest/v1/stalli?select=lat,lon,fonte,stato&stato=in.(proposto,verificato,ufficiale)&order=id', key)
+    st = sb_all('/rest/v1/stalli?select=lat,lon,fonte,stato,tipo&stato=in.(proposto,verificato,ufficiale)&order=id', key)
     cnt = defaultdict(Counter)
     for s in st:
         x, y = utm.transform(s['lon'], s['lat']); p = Point(x, y)
         for i in tree.query(p):
-            if geoms[i].contains(p): cnt[i]['tot'] += 1; cnt[i][s['fonte']] += 1; cnt[i][s['stato']] += 1; break
+            if geoms[i].contains(p): cnt[i]['tot'] += 1; cnt[i][s['fonte']] += 1; cnt[i][s['stato']] += 1; cnt[i]['vis'] += s['tipo'] != 'personalizzato'; break
     out = []
     for i, m in enumerate(meta):
         c = cnt.get(i, Counter()); out.append(dict(m, stalli=c['tot'], ufficiali=c['opendata'], osm=c['osm'], rete=c['satellite'], utenti=c['utente'], da_verificare=c['proposto']))
@@ -71,6 +73,18 @@ def main():
                                  headers={'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'x-upsert': 'true'})
     urllib.request.urlopen(req, timeout=120).read()
     wgs = Transformer.from_crs('EPSG:32632', 'EPSG:4326', always_xy=True)
+    # riepilogo per la mappa dell'app vista da lontano: quanti posti (visibili nell'app) per regione, provincia e comune
+    com, gr, gp = [], defaultdict(lambda: [0, 0.0, 0.0]), defaultdict(lambda: [0, 0.0, 0.0])
+    for i, m in enumerate(meta):
+        t = cnt.get(i, Counter())['vis']
+        if not t: continue
+        pt = geoms[i].representative_point(); lo, la = wgs.transform(pt.x, pt.y); com.append(dict(n=m['nome'], lat=round(la, 4), lon=round(lo, 4), t=t))
+        for g, k in ((gr, m.get('regione', '?')), (gp, m.get('prov_nome') or m.get('regione', '?'))): g[k][0] += t; g[k][1] += la * t; g[k][2] += lo * t
+    gruppo = lambda g: [dict(n=k.split('/')[0], lat=round(v[1] / v[0], 4), lon=round(v[2] / v[0], 4), t=v[0]) for k, v in g.items() if v[0]]
+    rie = json.dumps(dict(creato=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), totale=sum(c['t'] for c in com), regioni=gruppo(gr), province=gruppo(gp), comuni=com), ensure_ascii=False).encode()
+    req = urllib.request.Request(f'{SB}/storage/v1/object/foto/copertura/riepilogo.json', data=rie, method='POST',
+                                 headers={'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'x-upsert': 'true', 'Cache-Control': 'max-age=3600'})
+    urllib.request.urlopen(req, timeout=120).read(); print(f'Caricato riepilogo.json ({len(rie) / 1e3:.0f} KB)')
     from shapely.ops import transform
     feats = [dict(type='Feature', properties=dict(c=o['cod'], n=o['nome'], s=o['stalli'], u=o['ufficiali']),
                   geometry=mapping(transform(wgs.transform, geoms[i].simplify(150)))) for i, o in enumerate(out)]

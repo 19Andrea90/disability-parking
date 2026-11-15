@@ -75,6 +75,7 @@
     } catch (err) { if (err.name !== 'AbortError') toast('Non riesco a caricare i posti. Controlla la connessione.'); return []; }
   }
   function caricaVista() {
+    zone();
     if (map.getZoom() < CFG.MIN_ZOOM_DATI) { vicini(); return; }
     const b = map.getBounds(), dy = (b.getNorth() - b.getSouth()) * 0.25, dx = (b.getEast() - b.getWest()) * 0.25;
     carica(b.getSouth() - dy, b.getWest() - dx, b.getNorth() + dy, b.getEast() + dx, true);
@@ -94,19 +95,38 @@
     return x.getImageData(0, 0, 48, 48);
   }
   const VUOTO = { type: 'FeatureCollection', features: [] };
+  // ---------- vista da lontano: quanti posti per regione, provincia, comune ----------
+  let riepilogo = null, livello = '';
+  const LIVELLI = [['regioni', 7.2, 8.4], ['province', 9.6, 10.6], ['comuni', CFG.MIN_ZOOM_DATI, 13.5]]; // nome, fino a che zoom, zoom dopo il tocco
+  const num = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+$)/g, '.');
+  function fondoZona() { // fondo blu arrotondato che si allarga attorno al testo
+    const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+    x.beginPath(); x.roundRect(3, 3, 58, 58, 22); x.fillStyle = '#0b2a5b'; x.fill(); x.lineWidth = 4; x.strokeStyle = '#ffffff'; x.stroke();
+    return x.getImageData(0, 0, 64, 64);
+  }
+  function zone() {
+    if (!pronta || !riepilogo) return;
+    const z = map.getZoom(), l = (LIVELLI.find((v) => z < v[1]) || [''])[0];
+    if (l === livello) return; livello = l;
+    map.getSource('zone').setData(l ? { type: 'FeatureCollection', features: riepilogo[l].map((v) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [v.lon, v.lat] }, properties: { n: v.n, t: v.t, tl: num(v.t) } })) } : VUOTO);
+  }
+  fetch(CFG.SB + '/storage/v1/object/public/foto/copertura/riepilogo.json').then((r) => r.ok ? r.json() : null).then((j) => { if (j && j.regioni) { riepilogo = j; zone(); vicini(); } }).catch(() => {});
   map.on('load', () => {
     map.addImage('wc-w', glifo('#ffffff'), { pixelRatio: 2 }); map.addImage('wc-b', glifo('#0b2a5b'), { pixelRatio: 2 }); map.addImage('wc-d', glifo('#2b2300'), { pixelRatio: 2 });
     map.addSource('stalli', { type: 'geojson', data: VUOTO, cluster: true, clusterRadius: 42, clusterMaxZoom: 15 });
     map.addSource('sel', { type: 'geojson', data: VUOTO });
-    map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', filter: ['has', 'point_count'], paint: { 'circle-color': '#0b2a5b', 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
-    map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', filter: ['!', ['has', 'point_count']], paint: { 'circle-radius': 15, 'circle-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#ffffff', '#0b2a5b'], 'circle-stroke-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#0b2a5b', '#ffffff'], 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'pin-i', type: 'symbol', source: 'stalli', filter: ['!', ['has', 'point_count']], layout: { 'icon-image': ['case', ['==', ['get', 'stato'], 'proposto'], 'wc-b', 'wc-w'], 'icon-size': 0.8, 'icon-allow-overlap': true } });
+    map.addSource('zone', { type: 'geojson', data: VUOTO }); map.addImage('zona', fondoZona(), { pixelRatio: 2, stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
+    map.addLayer({ id: 'zone', type: 'symbol', source: 'zone', maxzoom: CFG.MIN_ZOOM_DATI, layout: { 'icon-image': 'zona', 'icon-text-fit': 'both', 'symbol-sort-key': ['-', ['get', 't']], 'text-field': ['format', ['get', 'n'], { 'font-scale': 0.8 }, '\n', {}, ['get', 'tl'], { 'text-font': ['literal', ['Noto Sans Bold']] }], 'text-font': ['Noto Sans Regular'], 'text-size': 15, 'text-line-height': 1.25, 'text-max-width': 9, 'text-padding': 6 }, paint: { 'text-color': '#ffffff' } });
+    map.on('click', 'zone', (e) => { const f = e.features[0], v = LIVELLI.find((x) => x[0] === livello); seguo = false; map.easeTo({ center: f.geometry.coordinates, zoom: v ? v[2] : 13 }); });
+    map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': '#0b2a5b', 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
+    map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], paint: { 'circle-radius': 15, 'circle-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#ffffff', '#0b2a5b'], 'circle-stroke-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#0b2a5b', '#ffffff'], 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'pin-i', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], layout: { 'icon-image': ['case', ['==', ['get', 'stato'], 'proposto'], 'wc-b', 'wc-w'], 'icon-size': 0.8, 'icon-allow-overlap': true } });
     map.addLayer({ id: 'sel', type: 'circle', source: 'sel', paint: { 'circle-radius': 23, 'circle-color': '#ffcc00', 'circle-stroke-color': '#0b1f44', 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'sel-i', type: 'symbol', source: 'sel', layout: { 'icon-image': 'wc-d', 'icon-size': 1.15, 'icon-allow-overlap': true } });
     map.on('click', 'pin', (e) => apriScheda(e.features[0].properties.id));
     map.on('click', 'gruppi', (e) => { const f = e.features[0]; Promise.resolve(map.getSource('stalli').getClusterExpansionZoom(f.properties.cluster_id)).then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(z, 18) })); });
-    pronta = true; map.setPadding(padHome()); disegna(); caricaVista();
+    pronta = true; map.setPadding(padHome()); disegna(); zone(); caricaVista();
   });
   map.on('error', (e) => { if (!pronta && e && e.error && /style|Failed to fetch|load/i.test(String(e.error.message))) toast('La mappa non si carica. Controlla la connessione.', 5000); });
   let pronta = false, moveT;
@@ -205,7 +225,11 @@
   function vicini() {
     if (!pronta || dest) return;
     const el = $('#near-body');
-    if (map.getZoom() < CFG.MIN_ZOOM_DATI) { el.innerHTML = '<div class="eyebrow">Mappa troppo lontana</div><div class="empty">Avvicinati con due dita per vedere i posti della zona.</div>'; return; }
+    if (map.getZoom() < CFG.MIN_ZOOM_DATI) {
+      el.innerHTML = riepilogo ? `<div class="eyebrow">In tutta Italia</div><div class="italia"><b>${num(riepilogo.totale)}</b> posti riservati in ${num(riepilogo.comuni.length)} comuni</div><div class="empty">Tocca una zona sulla mappa per avvicinarti.</div>`
+        : '<div class="eyebrow">Mappa troppo lontana</div><div class="empty">Avvicinati con due dita per vedere i posti della zona.</div>';
+      return;
+    }
     const { usoMe, out } = elencoVicini();
     if (!out.length) { el.innerHTML = `<div class="eyebrow">${usoMe ? 'Vicino a te' : 'In questa zona'}</div><div class="empty">Nessun posto qui${filtri.ver || filtri.cop || filtri.multi ? ' con questi filtri' : ''}. Sposta la mappa${filtri.ver || filtri.cop || filtri.multi ? ' o togli un filtro' : ''}.</div>`; return; }
     const a = out[0], [cls, lab] = affidabilita(a.s);
