@@ -25,6 +25,11 @@
     <symbol id="i-save" viewBox="0 0 24 24"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
     <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M5 13v6h14v-6"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-casa" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></symbol>
+    <symbol id="i-lavoro" viewBox="0 0 24 24"><path d="M4 8h16v12H4z"/><path d="M9 8V5h6v3"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4h11l-2 4 2 4H5"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></symbol>
   </defs>
 </svg>
@@ -54,6 +59,46 @@
     <div class="handle"></div>
     <div id="near-body"></div>
   </section>
+</div>
+
+<!-- Schermata 4 · Posti vicino alla destinazione -->
+<div id="destbar" hidden>
+  <button id="d-back" aria-label="Chiudi la destinazione e torna alla mappa"><svg class="ic"><use href="#i-back"/></svg></button>
+  <div id="d-name"></div>
+</div>
+<div id="arrivo" hidden>
+  <section class="sheet" aria-label="Posti vicino alla destinazione">
+    <div class="handle"></div>
+    <div class="hrow">
+      <h1 id="a-count"></h1>
+      <label class="raggio"><span class="vh">Raggio di ricerca</span>
+        <select id="a-r"><option value="150">entro 150 m</option><option value="300">entro 300 m</option><option value="500">entro 500 m</option><option value="1000">entro 1 km</option></select>
+        <svg class="ic"><use href="#i-down"/></svg>
+      </label>
+    </div>
+    <div id="a-sub" class="muted"></div>
+    <div id="a-list"></div>
+    <button id="a-nav" class="primary"><svg class="ic"><use href="#i-nav"/></svg><span></span></button>
+    <div id="a-hint" class="muted small center"></div>
+  </section>
+</div>
+
+<!-- Schermata 3 · Cerca una destinazione -->
+<div id="search" hidden>
+  <div class="s-top">
+    <button id="s-back" aria-label="Torna alla mappa"><svg class="ic"><use href="#i-back"/></svg></button>
+    <div class="s-field">
+      <label for="s-q" class="vh">Destinazione</label>
+      <input id="s-q" type="search" placeholder="Via, luogo o città" autocomplete="off" enterkeyhint="search">
+      <button id="s-x" aria-label="Cancella il testo" hidden><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+  </div>
+  <div class="s-chips">
+    <button data-k="casa"><svg class="ic"><use href="#i-casa"/></svg><span>Casa</span></button>
+    <button data-k="lavoro"><svg class="ic"><use href="#i-lavoro"/></svg><span>Lavoro</span></button>
+    <button data-k="salvati"><svg class="ic"><use href="#i-save"/></svg><span>Salvati</span></button>
+  </div>
+  <div id="s-body"></div>
 </div>
 
 <!-- Schermata 5 · Scheda del posto -->
