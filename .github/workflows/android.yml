@@ -1,0 +1,59 @@
+name: App Android (versione di prova)
+
+# Compila l'app Android di prova a ogni modifica di mobile/ e la pubblica come file installabile:
+# https://github.com/19Andrea90/disability-parking/releases/download/app-prova/disability-parking.apk
+
+on:
+  push:
+    branches: [main]
+    paths: ['mobile/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-prova
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run build
+      - name: Crea il progetto Android
+        run: npx cap add android
+      - name: Permessi per la posizione
+        run: |
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
+          cat android/app/src/main/AndroidManifest.xml
+      - name: Numero di versione e firma di prova (sempre la stessa, così gli aggiornamenti si installano sopra)
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
+          mkdir -p ~/.android && cp debug.keystore ~/.android/debug.keystore
+      - run: npx cap sync android
+      - name: Compila
+        run: cd android && ./gradlew assembleDebug --no-daemon
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk disability-parking.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app-prova
+          name: App Android · versione di prova
+          body: "Versione di prova 0.1.${{ github.run_number }}. Scarica disability-parking.apk sul telefono Android e aprilo per installarla."
+          prerelease: true
+          make_latest: false
+          files: mobile/disability-parking.apk

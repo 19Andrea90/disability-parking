@@ -1,0 +1,22 @@
+{
+  "name": "disability-parking-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Disability Parking, app Android (Capacitor)",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "build": "npm run vendor",
+    "android": "npm run build && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.0",
+    "@capacitor/core": "^7.4.0",
+    "@capacitor/geolocation": "^7.1.0",
+    "@capacitor/share": "^7.0.0",
+    "@fontsource/atkinson-hyperlegible": "^5.2.0",
+    "maplibre-gl": "^4.7.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.0"
+  }
+}

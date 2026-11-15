@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b2a5b">
+<title>Disability Parking</title>
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-wc" viewBox="0 0 24 24"><circle cx="10" cy="4.5" r="1.8"/><path d="M10 8.5v5.5h5l2.5 5"/><path d="M7.5 11.5a5.5 5.5 0 1 0 7.5 7"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-5 8-5s6.5 1 8 5"/></symbol>
+    <symbol id="i-nav" viewBox="0 0 24 24"><path d="M21 3L3 10.5l7.5 3L13.5 21z"/></symbol>
+    <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M5 13v6h14v-6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></symbol>
+  </defs>
+</svg>
+
+<div id="map" aria-label="Mappa dei posti riservati"></div>
+
+<!-- Schermata 2 · Mappa -->
+<div id="top">
+  <div class="row">
+    <button id="b-search" class="search"><svg class="ic"><use href="#i-search"/></svg><span>Dove vai?</span></button>
+    <button id="b-menu" class="sq" aria-label="Menu e impostazioni"><svg class="ic"><use href="#i-user"/></svg></button>
+  </div>
+  <div class="chips">
+    <button class="chip" data-f="ver" aria-pressed="false"><svg class="ic sm"><use href="#i-check"/></svg><span>Verificati</span></button>
+    <button class="chip" data-f="cop" aria-pressed="false">Coperti</button>
+    <button class="chip" data-f="multi" aria-pressed="false">2+ posti</button>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div id="home">
+  <div class="float">
+    <button id="b-add" class="pill"><svg class="ic"><use href="#i-plus"/></svg><span>Segnala un posto</span></button>
+    <button id="b-me" class="round" aria-label="Centra la mappa sulla mia posizione"><svg class="ic"><use href="#i-locate"/></svg></button>
+  </div>
+  <section id="near" class="sheet" aria-label="Posti vicini">
+    <div class="handle"></div>
+    <div id="near-body"></div>
+  </section>
+</div>
+
+<!-- Schermata 5 · Scheda del posto -->
+<div id="card" hidden>
+  <button id="c-close" class="round" aria-label="Chiudi la scheda"><svg class="ic"><use href="#i-back"/></svg></button>
+  <section class="sheet tall" aria-label="Scheda del posto">
+    <div class="handle"></div>
+    <div class="scroll">
+      <h1 id="c-title"></h1>
+      <div id="c-sub" class="muted"></div>
+      <div id="c-badges" class="badges"></div>
+      <p id="c-note" class="muted" hidden></p>
+      <button id="c-nav" class="primary"><svg class="ic"><use href="#i-nav"/></svg><span>Portami lì</span></button>
+      <div class="three">
+        <button id="c-street" class="sec"><svg class="ic"><use href="#i-eye"/></svg><span>Vedi il posto</span></button>
+        <button id="c-save" class="sec" aria-pressed="false"><svg class="ic"><use href="#i-save"/></svg><span>Salva</span></button>
+        <button id="c-share" class="sec"><svg class="ic"><use href="#i-share"/></svg><span>Condividi</span></button>
+      </div>
+      <div id="c-confirm" class="box" hidden>
+        <div class="b">Sei qui? Il posto c'è ancora?</div>
+        <div id="c-conf-info" class="muted small"></div>
+        <div class="two">
+          <button class="yes" data-esito="esiste"><svg class="ic"><use href="#i-check"/></svg><span>Sì, c'è</span></button>
+          <button class="no" data-esito="non_esiste"><svg class="ic"><use href="#i-x"/></svg><span>Non c'è più</span></button>
+        </div>
+      </div>
+      <div id="c-conf-far" class="muted small"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Schermata 1 · Primo avvio -->
+<div id="welcome" hidden>
+  <div class="logo"><svg class="ic"><use href="#i-wc"/></svg></div>
+  <h1>Tutti i posti riservati d'Italia, in una mappa.</h1>
+  <p class="lead">Apri l'app, guarda la mappa e fatti portare allo stallo. Puoi usarla subito, anche senza account.</p>
+  <ul>
+    <li><span class="bul"><svg class="ic"><use href="#i-pin"/></svg></span><span>Oltre 50.000 posti in tutta Italia, vicino a te o dove stai andando.</span></li>
+    <li><span class="bul"><svg class="ic"><use href="#i-nav"/></svg></span><span>Un tocco e parte il navigatore che usi già.</span></li>
+    <li><span class="bul"><svg class="ic"><use href="#i-check"/></svg></span><span>Conferma i posti che trovi: aiuti chi arriva dopo di te.</span></li>
+  </ul>
+  <div class="bottom">
+    <p class="small">La posizione serve solo a mostrarti i posti vicini. Non viene salvata.</p>
+    <button id="w-go" class="primary"><svg class="ic"><use href="#i-locate"/></svg><span>Attiva la posizione</span></button>
+    <button id="w-skip" class="ghost">Non ora, guardo la mappa</button>
+    <p class="small center">I dati arrivano da Comuni, OpenStreetMap e segnalazioni degli utenti e possono contenere errori.</p>
+  </div>
+</div>
+
+<script src="vendor/maplibre-gl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
