@@ -57,7 +57,7 @@
     }
     const { data, error } = await fetchAll(() => sb.from('stalli_con_conferme').select('*').order('created_at', { ascending: false }).order('id'));
     if (error) { $('#rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} (sei registrato come admin? controlla la tabella admins)</div>`; return; }
-    rows = data; tutti = true; kpi(); render(); if (cands.length) renderCands();
+    rows = data; tutti = true; if (sel) sel = rows.find((r) => r.id === sel.id) || sel; kpi(); render(); if (cands.length) renderCands();
   }
   // conteggi subito dal server, senza aspettare di aver scaricato tutti gli stalli
   async function kpiFast() {
@@ -139,7 +139,7 @@
     const patch = Object.assign(formValues(), extra); $('#e-msg').textContent = 'Salvo…';
     const { error } = await sb.from('stalli').update(patch).eq('id', sel.id);
     if (error) { $('#e-msg').textContent = 'Errore: ' + error.message; return; }
-    Object.assign(sel, patch); $('#e-msg').textContent = 'Salvato ' + new Date().toLocaleTimeString('it-IT'); kpi(); render();
+    Object.assign(sel, patch); const inLista = rows.find((r) => r.id === sel.id); if (inLista && inLista !== sel) Object.assign(inLista, patch); $('#e-msg').textContent = 'Salvato ' + new Date().toLocaleTimeString('it-IT'); kpi(); render();
   }
   // ---------- import da OpenStreetMap (dal browser dell'admin) ----------
   const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://lz4.overpass-api.de/api/interpreter', 'https://z.overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
