@@ -126,7 +126,14 @@
         <button class="btn" id="e-move">Sposta sul centro mappa</button>
       </div>
       <div class="sub" id="e-msg"></div>`;
-    $('#edit').querySelectorAll('[data-st]').forEach((b) => b.onclick = () => save({ stato: b.dataset.st }));
+    $('#edit').querySelectorAll('[data-st]').forEach((b) => b.onclick = () => {
+      const extra = { stato: b.dataset.st };
+      if (sel.fonte === 'utente' && b.dataset.st === 'rifiutato') { // il motivo lo legge chi ha fatto la segnalazione, in "Le mie segnalazioni"
+        const m = prompt('Motivo del rifiuto (lo vedrà chi ha fatto la segnalazione). Lascia vuoto per non indicarlo.', sel.motivo_rifiuto || '');
+        if (m === null) return; extra.motivo_rifiuto = m.trim() || null;
+      }
+      save(extra);
+    });
     $('#e-save').onclick = () => save({});
     $('#e-move').onclick = () => { const c = map.getCenter(); save({ lat: +c.lat.toFixed(6), lon: +c.lng.toFixed(6) }); };
   }
@@ -137,7 +144,8 @@
   }
   async function save(extra) {
     const patch = Object.assign(formValues(), extra); $('#e-msg').textContent = 'Salvo…';
-    const { error } = await sb.from('stalli').update(patch).eq('id', sel.id);
+    let { error } = await sb.from('stalli').update(patch).eq('id', sel.id);
+    if (error && 'motivo_rifiuto' in patch && /motivo_rifiuto/.test(error.message)) { delete patch.motivo_rifiuto; ({ error } = await sb.from('stalli').update(patch).eq('id', sel.id)); if (!error) alert('Rifiutato, ma il motivo non è stato salvato: manca ancora la colonna nel database (file supabase/08_mie_segnalazioni.sql).'); }
     if (error) { $('#e-msg').textContent = 'Errore: ' + error.message; return; }
     Object.assign(sel, patch); const inLista = rows.find((r) => r.id === sel.id); if (inLista && inLista !== sel) Object.assign(inLista, patch); $('#e-msg').textContent = 'Salvato ' + new Date().toLocaleTimeString('it-IT'); kpi(); render();
   }

@@ -296,7 +296,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -593,7 +593,9 @@
     return fetch(CFG.SB + path, Object.assign({}, opt, { headers: Object.assign({ apikey: CFG.KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + (sessione ? sessione.token : CFG.KEY) }, (opt || {}).headers) }));
   }
   function entra2(j) { sessione = { token: j.access_token, refresh: j.refresh_token, scade: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sessione && sessione.email) || '' }; ls.set('dp.sessione', sessione); }
-  const pacchetto = () => ({ salvati: [...salvati.values()], luoghi: luoghi(), profilo: profilo(), agg: ls.get('dp.agg', 0) });
+  // i telefoni usati con questo account: servono a ritrovare le proprie segnalazioni anche da un telefono nuovo
+  const dispositivi = (altri) => [...new Set([deviceId, ...ls.get('dp.dispositivi', []), ...(altri || [])])].slice(0, 20);
+  const pacchetto = () => ({ salvati: [...salvati.values()], luoghi: luoghi(), profilo: profilo(), dispositivi: dispositivi(), agg: ls.get('dp.agg', 0) });
   function applica(d) {
     salvati.clear(); (d.salvati || []).forEach((x) => salvati.set(x.id, x)); ls.set('dp.salvati', [...salvati.values()]);
     ls.set('dp.luoghi', d.luoghi || {}); ls.set('dp.profilo', d.profilo || {}); ls.set('dp.agg', d.agg || Date.now()); programmaAvvisi();
@@ -602,8 +604,9 @@
   async function allinea() { // dopo l'accesso: vince la copia più recente tra telefono e account
     try {
       const r = await aut('/auth/v1/user'); if (!r.ok) return; const u = await r.json(), remoto = (u.user_metadata || {}).dp;
+      const nuovoQui = !remoto || !(remoto.dispositivi || []).includes(deviceId); if (remoto) ls.set('dp.dispositivi', dispositivi(remoto.dispositivi));
       const locale = pacchetto(), vuoto = !locale.salvati.length && !Object.keys(locale.luoghi).length && !locale.profilo.scadenza;
-      if (remoto && (vuoto || (remoto.agg || 0) > locale.agg)) applica(remoto); else if (!vuoto) { ls.set('dp.agg', locale.agg || Date.now()); await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); }
+      if (remoto && (vuoto || (remoto.agg || 0) > locale.agg)) { applica(remoto); if (nuovoQui) await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); } else if (!vuoto) { ls.set('dp.agg', locale.agg || Date.now()); await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); }
     } catch (e) { /* si riprova al prossimo cambiamento */ }
   }
   async function accedi(email, password, nuovoAccount) {
@@ -631,6 +634,7 @@
     $('#m-body').innerHTML = `${acc}
       <div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>
       <button class="vaip" data-a="profilo"><span class="mk">${icon('wc')}</span><span class="t">Il mio contrassegno e gli avvisi</span>${icon('chev')}</button>
+      <button class="vaip" data-a="segn"><span class="mk">${icon('plus')}</span><span class="t">Le mie segnalazioni</span>${icon('chev')}</button>
       <div><div class="eyebrow">Posti salvati</div>${v.length ? v.map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('') : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>'}</div>
       <div class="piede"><button data-a="fonti">Fonti e avvertenze</button></div>`;
   }
@@ -652,9 +656,33 @@
     else if (a === 'salvato') { $('#menu').hidden = true; apriSalvato(b.dataset.id); }
     else if (a === 'via') { salvati.delete(b.dataset.id); ls.set('dp.salvati', [...salvati.values()]); toccato(); menu(); }
     else if (a === 'profilo') { $('#profilo').hidden = false; scheda8(); }
+    else if (a === 'segn') apriSegnalazioni();
     else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-ver').textContent = 'Disability Parking, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
   $('#f-back').onclick = () => { $('#fonti').hidden = true; };
+
+  // ---------- le mie segnalazioni: i posti che ho segnalato e a che punto sono ----------
+  async function apriSegnalazioni() {
+    const el = $('#g-body'); $('#segn').hidden = false; el.innerHTML = '<div class="empty">Carico le tue segnalazioni…</div>';
+    try {
+      const r = await fetch(CFG.SB + '/rest/v1/rpc/mie_segnalazioni', { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_device: dispositivi() }) });
+      if (!r.ok) throw new Error(r.status);
+      const v = await r.json();
+      if (!v.length) { el.innerHTML = '<div class="empty">Non hai ancora segnalato posti. Se ne vedi uno che manca, tocca «Segnala un posto» sulla mappa.</div>'; return; }
+      const STATO = { proposto: ['att', 'In attesa di verifica'], verificato: ['ok', 'Approvata'], ufficiale: ['ok', 'Approvata'], rifiutato: ['no', 'Non approvata'], rimosso: ['no', 'Posto rimosso'] };
+      el.innerHTML = `<p class="muted">${sessione ? 'Le segnalazioni fatte con il tuo account.' : 'Le segnalazioni fatte da questo telefono. Accedi per ritrovarle anche su un altro.'}</p>` + v.map((x) => {
+        const [c, t] = STATO[x.stato] || ['att', x.stato], g = new Date(x.created_at), vivo = x.stato !== 'rifiutato' && x.stato !== 'rimosso';
+        return `<${vivo ? 'button' : 'div'} class="segn" ${vivo ? `data-la="${x.lat}" data-lo="${x.lon}" data-id="${esc(x.id)}"` : ''}><span class="t"><b>${esc(x.indirizzo || 'Posto riservato')}</b><span>${esc([x.comune, `${g.getDate()} ${MESI[g.getMonth()]} ${g.getFullYear()}`].filter(Boolean).join(' · '))}</span>${x.stato === 'rifiutato' && x.motivo_rifiuto ? `<span class="perche"><b>Motivo:</b> ${esc(x.motivo_rifiuto)}</span>` : ''}</span><span class="esito ${c}">${t}</span></${vivo ? 'button' : 'div'}>`;
+      }).join('');
+    } catch (e) { el.innerHTML = '<div class="empty">Non riesco a caricare le segnalazioni. Controlla la connessione e riprova.</div>'; }
+  }
+  $('#g-back').onclick = () => { $('#segn').hidden = true; };
+  $('#g-body').addEventListener('click', (e) => {
+    const b = e.target.closest('button.segn'); if (!b) return;
+    $('#segn').hidden = true; $('#menu').hidden = true; seguo = false;
+    const la = +b.dataset.la, lo = +b.dataset.lo, id = b.dataset.id;
+    map.jumpTo({ center: [lo, la], zoom: 17 }); carica(la - 0.004, lo - 0.006, la + 0.004, lo + 0.006, false).then(() => { if (stalli.has(id)) apriScheda(id); });
+  });
 
   // ---------- schermata 8 · profilo e contrassegno ----------
   const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
