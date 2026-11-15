@@ -22,11 +22,14 @@ DIR = '/home/claude/osm'
 
 
 def is_disabled(t):
+    """Schema del progetto OSM Italia aprile 2026: amenity=parking + capacity:disabled (numero o yes)
+    oppure parking_space=disabled (anche senza amenity=parking_space, errore frequente)."""
     a = t.get('amenity')
-    if a == 'parking_space': return t.get('parking_space') == 'disabled' or t.get('disabled') in ('yes', 'designated')
+    if t.get('parking_space') == 'disabled': return True
+    if a == 'parking_space': return t.get('disabled') in ('yes', 'designated', 'private')
     if a == 'parking':
-        cd = t.get('capacity:disabled')
-        if cd is not None: return cd.isdigit() and int(cd) > 0
+        cd = (t.get('capacity:disabled') or '').strip().lower()
+        if cd: return cd == 'yes' or (cd.split(';')[0].isdigit() and int(cd.split(';')[0]) > 0)
         return t.get('disabled') in ('yes', 'designated')
     return False
 
@@ -43,7 +46,7 @@ def convert(kind, oid, lat, lon, t):  # come osmConvert in admin.js
     else:
         posti = cap or toint(t.get('capacity')) or 1; nome = t.get('name'); note = t.get('description') or t.get('note')
     desc = ' '.join(str(t.get(k, '')) for k in ('description', 'note', 'access:note', 'ref')).lower()
-    tipo = 'personalizzato' if re.search(r'contrassegno|personalizz|nominativ|ad personam', desc) else 'generico'
+    tipo = 'personalizzato' if t.get('disabled') == 'private' or re.search(r'contrassegno|personalizz|nominativ|ad personam', desc) else 'generico'
     ind = ' '.join(x for x in (t.get('addr:street'), t.get('addr:housenumber')) if x) or None
     return dict(osm_id=f'{kind}/{oid}', lat=round(lat, 7), lon=round(lon, 7), tipo=tipo, posti=max(1, posti), nome=nome, indirizzo=ind,
                 comune=t.get('addr:city') or t.get('is_in:city'), note=note, orari=t.get('opening_hours') or t.get('access:conditional'),

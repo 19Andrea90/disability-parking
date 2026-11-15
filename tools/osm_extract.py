@@ -19,11 +19,14 @@ r5 = lambda x: round(x * 1e5) / 1e5
 
 
 def is_disabled(t):
+    """Schema del progetto OSM Italia aprile 2026: amenity=parking + capacity:disabled (numero o yes)
+    oppure parking_space=disabled (anche senza amenity=parking_space, errore frequente)."""
     a = t.get('amenity')
-    if a == 'parking_space': return t.get('parking_space') == 'disabled' or t.get('disabled') in ('yes', 'designated')
+    if t.get('parking_space') == 'disabled': return True
+    if a == 'parking_space': return t.get('disabled') in ('yes', 'designated', 'private')
     if a == 'parking':
-        cd = t.get('capacity:disabled')
-        if cd is not None: return cd.isdigit() and int(cd) > 0
+        cd = (t.get('capacity:disabled') or '').strip().lower()
+        if cd: return cd == 'yes' or (cd.split(';')[0].isdigit() and int(cd.split(';')[0]) > 0)
         return t.get('disabled') in ('yes', 'designated')
     return False
 
