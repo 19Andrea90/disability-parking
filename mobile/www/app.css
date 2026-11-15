@@ -162,3 +162,8 @@ button.handle{position:relative;border-radius:999px;background:var(--bordo)}
 button.handle::before{content:"";position:absolute;inset:-14px -60px}
 #near{touch-action:none}
 #near.exp .others{max-height:calc(100vh - var(--sat) - 430px);overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
+
+/* --- nome della destinazione toccabile, tempi su strada --- */
+#d-name{height:56px;text-align:left}
+.other .d,.arow .d{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.d small{font-size:13px;font-weight:400;color:var(--muted)}

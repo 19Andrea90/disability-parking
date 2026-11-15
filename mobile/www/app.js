@@ -148,27 +148,54 @@
   }
 
   // ---------- pannello "il più vicino" ----------
+  // ---------- distanze e tempi su strada ----------
+  // In auto da dove sei tu, a piedi dalla destinazione. Per ora dal servizio gratuito di OpenStreetMap (senza traffico);
+  // se non risponde restano le distanze in linea d'aria.
+  const cacheT = new Map(); let pausaT = 0;
+  const kT = (o, s, prof) => `${prof}${o.lat.toFixed(3)},${o.lon.toFixed(3)}>${s.id}`;
+  const suStrada = (o, s, prof) => cacheT.get(kT(o, s, prof)) || null;
+  const fmtMin = (sec) => { const m = Math.max(1, Math.round(sec / 60)); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; };
+  async function tempi(o, arr, prof) {
+    if (Date.now() < pausaT) return false;
+    const manca = arr.filter((x) => !cacheT.has(kT(o, x.s, prof))).slice(0, 15); if (!manca.length) return false;
+    manca.forEach((x) => cacheT.set(kT(o, x.s, prof), null)); // prenotati: niente doppie richieste
+    try {
+      const coords = [o].concat(manca.map((x) => x.s)).map((q) => `${q.lon},${q.lat}`).join(';');
+      const r = await fetch(`https://routing.openstreetmap.de/routed-${prof}/table/v1/driving/${coords}?sources=0&annotations=duration,distance`);
+      if (!r.ok) throw new Error(r.status); const j = await r.json();
+      manca.forEach((x, i) => { const m = j.distances && j.distances[0][i + 1], sec = j.durations && j.durations[0][i + 1]; if (m != null && sec != null) cacheT.set(kT(o, x.s, prof), { m, sec }); });
+      if (cacheT.size > 4000) cacheT.clear();
+      return true;
+    } catch (e) { manca.forEach((x) => cacheT.delete(kT(o, x.s, prof))); pausaT = Date.now() + 60000; return false; }
+  }
+
   let espanso = false; // pannello tirato su: mostra fino a 15 posti invece di 3
   function elencoVicini() {
     const c = map.getCenter(); const usoMe = me && dist(me.lat, me.lon, c.lat, c.lng) < 1500;
     const ref = usoMe ? me : { lat: c.lat, lon: c.lng };
     const tutti = []; for (const s of stalli.values()) if (passa(s)) { const d = dist(ref.lat, ref.lon, s.lat, s.lon); if (d < 5000) tutti.push({ s, d }); }
     tutti.sort((a, b) => a.d - b.d);
-    const out = []; // niente doppioni a pochi metri l'uno dall'altro
-    for (const x of tutti) { if (!out.some((y) => dist(x.s.lat, x.s.lon, y.s.lat, y.s.lon) < 25)) out.push(x); if (out.length === (espanso ? 15 : 3)) break; }
-    return { usoMe, out };
+    let out = []; const quanti = espanso ? 15 : 3; // niente doppioni a pochi metri l'uno dall'altro
+    for (const x of tutti) { if (!out.some((y) => dist(x.s.lat, x.s.lon, y.s.lat, y.s.lon) < 25)) out.push(x); if (out.length === Math.max(quanti, 8)) break; }
+    if (usoMe) { // in auto conta la strada, non la linea d'aria: riordino con i tempi di guida appena arrivano
+      out.forEach((x) => { x.r = suStrada(me, x.s, 'car'); });
+      out.sort((a, b) => (a.r ? a.r.sec : a.d / 7) - (b.r ? b.r.sec : b.d / 7));
+      tempi(me, out, 'car').then((ok) => { if (ok) { vicini(); if (selId) sottotitolo(); } });
+    }
+    return { usoMe, out: out.slice(0, quanti) };
   }
+  const quanto = (x) => x.r ? `${fmtDist(x.r.m)} · ${fmtMin(x.r.sec)} in auto` : fmtDist(x.d);
   function vicini() {
     if (!pronta || dest) return;
     const el = $('#near-body');
     if (map.getZoom() < CFG.MIN_ZOOM_DATI) { el.innerHTML = '<div class="eyebrow">Mappa troppo lontana</div><div class="empty">Avvicinati con due dita per vedere i posti della zona.</div>'; return; }
     const { usoMe, out } = elencoVicini();
     if (!out.length) { el.innerHTML = `<div class="eyebrow">${usoMe ? 'Vicino a te' : 'In questa zona'}</div><div class="empty">Nessun posto qui${filtri.ver || filtri.cop || filtri.multi ? ' con questi filtri' : ''}. Sposta la mappa${filtri.ver || filtri.cop || filtri.multi ? ' o togli un filtro' : ''}.</div>`; return; }
-    const a = out[0], [cls, lab] = affidabilita(a.s), w = usoMe ? fmtWalk(a.d) : '';
+    const a = out[0], [cls, lab] = affidabilita(a.s);
     el.innerHTML = `<div class="eyebrow">${usoMe ? 'Il più vicino a te' : 'Il più vicino in questa zona'}</div>
-      <button class="first" data-id="${esc(a.s.id)}"><span class="tile">${icon('wc')}</span><span class="t"><b>${esc(titolo(a.s))}</b><span>${[fmtDist(a.d), w, posti(a.s.posti)].filter(Boolean).join(' · ')}</span></span><span class="badge ${cls}">${lab}</span></button>
+      <button class="first" data-id="${esc(a.s.id)}"><span class="tile">${icon('wc')}</span><span class="t"><b>${esc(titolo(a.s))}</b><span>${[quanto(a), posti(a.s.posti)].join(' · ')}</span></span><span class="badge ${cls}">${lab}</span></button>
       <button class="primary" data-nav="${esc(a.s.id)}">${icon('nav')}<span>Portami lì</span></button>
-      <div class="others">${out.slice(1).map((x) => `<button class="other" data-id="${esc(x.s.id)}"><span class="t"><b>${esc(titolo(x.s))}</b><span>${affidabilita(x.s)[1]} · ${posti(x.s.posti)}</span></span><span class="d">${fmtDist(x.d)}</span>${icon('chev')}</button>`).join('')}</div>`;
+      <div class="others">${out.slice(1).map((x) => `<button class="other" data-id="${esc(x.s.id)}"><span class="t"><b>${esc(titolo(x.s))}</b><span>${affidabilita(x.s)[1]} · ${posti(x.s.posti)}</span></span><span class="d">${x.r ? `${fmtMin(x.r.sec)}<small>${fmtDist(x.r.m)}</small>` : fmtDist(x.d)}</span>${icon('chev')}</button>`).join('')}</div>`;
   }
   function espandi(si) {
     if (espanso === si) return; espanso = si; $('#near').classList.toggle('exp', si); $('#near .handle').setAttribute('aria-expanded', si); vicini();
@@ -198,8 +225,7 @@
     const eraAperta = !!selId; selId = id; disegna(); trovaVia(s);
     const [cls, lab] = affidabilita(s);
     $('#c-title').textContent = titolo(s);
-    const d = me ? dist(me.lat, me.lon, s.lat, s.lon) : null;
-    $('#c-sub').textContent = [s.comune, d != null ? fmtDist(d) + ' da te' : '', d != null ? fmtWalk(d) : ''].filter(Boolean).join(' · ');
+    sottotitolo(); if (me) tempi(me, [{ s }], 'car').then((ok) => { if (ok && selId === id) sottotitolo(); });
     const fonte = s.stato === 'ufficiale' ? (s.fonte === 'opendata' ? 'Dato ufficiale del Comune' : 'Ufficiale') : lab;
     $('#c-badges').innerHTML = `<span class="badge ${cls}">${cls === 'uff' ? icon('shield') : ''}${fonte}</span><span class="badge">${posti(s.posti)}</span><span class="badge">Per tutti i contrassegni</span>${s.coperto ? '<span class="badge">Coperto</span>' : ''}`;
     const nota = (s.note || '').replace(/;?\s*Dato ufficiale[^;]*\(open data[^)]*\)/i, '').replace(/^Accorpato in [^.]*\.\s*/i, '').trim();
@@ -208,6 +234,10 @@
     aggiornaConferma();
     mostra();
     seguo = false; map.easeTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 16.5), padding: { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }, duration: 500 });
+  }
+  function sottotitolo() {
+    const s = stalli.get(selId); if (!s) return; const r = me && suStrada(me, s, 'car'), d = me ? dist(me.lat, me.lon, s.lat, s.lon) : null;
+    $('#c-sub').textContent = [s.comune, r ? `${fmtDist(r.m)} · ${fmtMin(r.sec)} in auto` : (d != null ? fmtDist(d) + ' da te' : '')].filter(Boolean).join(' · ');
   }
   function aggiornaConferma() {
     const s = stalli.get(selId); if (!s) return;
@@ -286,16 +316,18 @@
     if (!dest) return;
     const tutti = attorno(dest.lat, dest.lon), dentro = tutti.filter((x) => x.d <= raggio), n = dentro.reduce((a, x) => a + (x.s.posti || 1), 0);
     lista = (dentro.length ? dentro : tutti.slice(0, 3)).slice(0, 8);
+    lista.forEach((x) => { x.r = suStrada(dest, x.s, 'foot'); }); lista.sort((a, b) => (a.r ? a.r.m : a.d * 1.3) - (b.r ? b.r.m : b.d * 1.3));
+    tempi(dest, lista, 'foot').then((ok) => { if (ok) arrivo(false); });
     $('#a-count').textContent = dentro.length ? posti(n) : 'Nessun posto';
-    $('#a-sub').textContent = dentro.length ? 'In ordine di distanza dalla destinazione' : (tutti.length ? `Il più vicino è a ${fmtDist(tutti[0].d)}. Ecco i più vicini, anche se fuori raggio.` : 'Nessun posto nemmeno entro 1 km da qui.');
+    $('#a-sub').textContent = dentro.length ? 'In ordine di distanza a piedi dalla destinazione' : (tutti.length ? `Il più vicino è a ${fmtDist(tutti[0].d)}. Ecco i più vicini, anche se fuori raggio.` : 'Nessun posto nemmeno entro 1 km da qui.');
     const att = Math.max(0, Math.min(inCorso, lista.length - 1));
-    $('#a-list').innerHTML = lista.map((x, i) => `<button class="arow${i === att ? ' on' : ''}" data-id="${esc(x.s.id)}"><span class="num">${i + 1}</span><span class="t"><b>${esc(titolo(x.s))}</b><span>${[affidabilita(x.s)[1], posti(x.s.posti), x.s.coperto ? 'coperto' : ''].filter(Boolean).join(' · ')}</span></span><span class="d">${fmtDist(x.d)}</span></button>`).join('');
+    $('#a-list').innerHTML = lista.map((x, i) => `<button class="arow${i === att ? ' on' : ''}" data-id="${esc(x.s.id)}"><span class="num">${i + 1}</span><span class="t"><b>${esc(titolo(x.s))}</b><span>${[affidabilita(x.s)[1], posti(x.s.posti), x.s.coperto ? 'coperto' : ''].filter(Boolean).join(' · ')}</span></span><span class="d">${x.r ? `${fmtDist(x.r.m)}<small>${fmtMin(x.r.sec)} a piedi</small>` : fmtDist(x.d)}</span></button>`).join('');
     const prox = inCorso + 1 < lista.length ? inCorso + 1 : -1;
     $('#a-nav').hidden = !lista.length;
     $('#a-nav span').textContent = inCorso < 0 ? 'Portami al numero 1' : prox >= 0 ? `Occupato? Portami al numero ${prox + 1}` : 'Riapri il navigatore';
     $('#a-hint').textContent = inCorso < 0 && lista.length > 1 ? 'Se è occupato, con un tocco passi al numero 2.' : '';
     numMk.forEach((m) => m.remove()); numMk = []; if (destMk) destMk.remove();
-    const de = document.createElement('div'); de.className = 'mdest'; de.innerHTML = icon('flag'); destMk = new maplibregl.Marker({ element: de }).setLngLat([dest.lon, dest.lat]).addTo(map);
+    const de = document.createElement('div'); de.className = 'mdest'; de.innerHTML = icon(dest.k === 'casa' ? 'casa' : dest.k === 'lavoro' ? 'lavoro' : 'flag'); destMk = new maplibregl.Marker({ element: de }).setLngLat([dest.lon, dest.lat]).addTo(map);
     lista.forEach((x, i) => { const el = document.createElement('div'); el.className = 'mnum' + (i === att ? ' on' : ''); el.textContent = i + 1; el.onclick = (e) => { e.stopPropagation(); apriScheda(x.s.id); }; numMk.push(new maplibregl.Marker({ element: el }).setLngLat([x.s.lon, x.s.lat]).addTo(map)); });
     if (inquadra) {
       const b = new maplibregl.LngLatBounds([dest.lon, dest.lat], [dest.lon, dest.lat]); lista.slice(0, 5).forEach((x) => b.extend([x.s.lon, x.s.lat]));
@@ -305,6 +337,7 @@
   }
   function chiudiDest() { dest = null; numMk.forEach((m) => m.remove()); numMk = []; if (destMk) destMk.remove(); destMk = null; mostra(); map.easeTo({ padding: padHome(), duration: 300 }); vicini(); }
   $('#d-back').onclick = chiudiDest;
+  $('#d-name').onclick = () => { if (dest) apriRicerca(dest.q || dest.t); };
   $('#a-r').onchange = () => { raggio = +$('#a-r').value; ls.set('dp.raggio', raggio); inCorso = -1; arrivo(true); };
   $('#a-list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id); });
   $('#a-nav').onclick = () => { if (!lista.length) return; if (inCorso + 1 < lista.length) inCorso++; naviga(lista[inCorso].s); setTimeout(() => arrivo(false), 600); };
@@ -312,8 +345,12 @@
   // ---------- schermata 3 · ricerca ----------
   let sCtl, sT, scelgo = null; // scelgo: 'casa' o 'lavoro' mentre si imposta la scorciatoia
   const luoghi = () => ls.get('dp.luoghi', {});
-  function ricorda(d) { const r = ls.get('dp.recenti', []).filter((x) => x.t !== d.t); r.unshift({ t: d.t, sub: d.sub || '', lat: d.lat, lon: d.lon }); ls.set('dp.recenti', r.slice(0, 5)); }
-  function apriRicerca() { $('#search').hidden = false; $('#s-q').value = ''; $('#s-x').hidden = true; scelgo = null; inizio(); setTimeout(() => $('#s-q').focus(), 60); }
+  function ricorda(d) { const r = ls.get('dp.recenti', []).filter((x) => x.t !== d.t); r.unshift({ t: d.t, sub: d.sub || '', lat: d.lat, lon: d.lon, q: d.q || '' }); ls.set('dp.recenti', r.slice(0, 5)); }
+  function apriRicerca(testo) {
+    $('#search').hidden = false; $('#s-q').value = testo || ''; $('#s-x').hidden = !testo; scelgo = null;
+    if (testo) { chipStato(); cerca(testo); } else inizio();
+    setTimeout(() => { $('#s-q').focus(); if (testo) $('#s-q').select(); }, 60);
+  }
   function chiudiRicerca() { $('#search').hidden = true; $('#s-q').blur(); if (sCtl) sCtl.abort(); }
   function chipStato() { document.querySelectorAll('.s-chips button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.k === scelgo)); $('#s-q').placeholder = scelgo ? `Cerca l'indirizzo ${scelgo === 'casa' ? 'di casa' : 'del lavoro'}` : 'Via, luogo o città'; }
   function inizio() {
@@ -330,19 +367,22 @@
       if (!r.ok) throw new Error('photon ' + r.status);
       const j = await r.json();
       return j.features.filter((f) => { const p = f.properties || {}; return !p.countrycode || p.countrycode === 'IT' || p.country === 'Italia'; }).slice(0, 6)
-        .map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }, etichetta(f.properties))).filter((x) => x.t);
+        .map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], strada: f.properties.osm_key === 'highway' }, etichetta(f.properties))).filter((x) => x.t);
     } catch (e) {
       if (e.name === 'AbortError') throw e;
       const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=it&accept-language=it&q=${encodeURIComponent(q)}&viewbox=${c[0] - .4},${c[1] + .3},${c[0] + .4},${c[1] - .3}`, { signal });
       if (!r.ok) throw new Error('nominatim ' + r.status);
       return (await r.json()).map((x) => { const a = x.address || {}, via = [a.road, a.house_number].filter(Boolean).join(' '), citta = a.city || a.town || a.village || a.municipality || '';
-        const t = x.name || via || citta; return { lat: +x.lat, lon: +x.lon, t, sub: [x.name && via, citta !== t && citta, a.county].filter(Boolean).join(', ') }; }).filter((x) => x.t);
+        const t = x.name || via || citta; return { lat: +x.lat, lon: +x.lon, strada: x.category === 'highway', t, sub: [x.name && via, citta !== t && citta, a.county].filter(Boolean).join(', ') }; }).filter((x) => x.t);
     }
   }
   async function cerca(q) {
     if (sCtl) sCtl.abort(); sCtl = new AbortController(); const c = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
     try {
       risultati = await geocodifica(q, c, sCtl.signal);
+      const civ = (q.match(/(?:^|[\s,])(\d{1,4}\s?[a-zA-Z]?)(?=$|[\s,])/) || [])[1]; // "via natisone 27": se la mappa conosce solo la via, tengo il 27 nel nome
+      if (civ) risultati.forEach((x) => { if (x.strada && !/\d/.test(x.t)) { x.t += ' ' + civ.trim(); x.sub = [x.sub, 'civico non in mappa: punto a metà via'].filter(Boolean).join(' · '); } });
+      risultati.forEach((x) => { x.q = q; });
       if (!risultati.length) { $('#s-body').innerHTML = '<div class="empty">Non trovo questo posto. Prova con la via e la città.</div>'; return; }
       $('#s-body').innerHTML = '<div class="eyebrow">Risultati</div>' + risultati.map((x, i) => `<div data-box="${i}"><button class="res" data-res="${i}"><span class="mk">${icon('pin')}</span><span class="t"><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></span>${scelgo ? '' : '<span class="n wait">…</span>'}</button></div>`).join('');
       if (!scelgo) risultati.forEach((x, i) => conta(x, i, sCtl.signal));
@@ -364,8 +404,9 @@
   $('#s-x').onclick = () => { $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus(); };
   $('#s-back').onclick = chiudiRicerca;
   function scegli(x) {
-    if (scelgo) { const l = luoghi(); l[scelgo] = { t: x.t, sub: x.sub || '', lat: x.lat, lon: x.lon }; ls.set('dp.luoghi', l); toast(`${scelgo === 'casa' ? 'Casa' : 'Lavoro'} impostato: ${x.t}`); scelgo = null; }
-    vaiA(x);
+    const k = scelgo;
+    if (k) { const l = luoghi(); l[k] = { t: x.t, sub: x.sub || '', lat: x.lat, lon: x.lon }; ls.set('dp.luoghi', l); toast(`${k === 'casa' ? 'Casa' : 'Lavoro'} impostato: ${x.t}`); scelgo = null; }
+    vaiA(k ? Object.assign({ k }, x) : x);
   }
   async function apriSalvato(id) {
     const v = salvati.get(id); chiudiRicerca();
@@ -388,7 +429,7 @@
       return;
     }
     const l = luoghi()[k];
-    if (l && scelgo !== k) { vaiA(l); return; }
+    if (l && scelgo !== k) { vaiA(Object.assign({ k }, l)); return; }
     scelgo = scelgo === k ? null : k; $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus();
   });
 
