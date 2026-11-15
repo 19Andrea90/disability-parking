@@ -401,31 +401,41 @@
   }
   function etichetta(p) { const via = [p.street, p.housenumber].filter(Boolean).join(' '), t = p.name || via || p.city || ''; return { t, sub: [p.name && via, p.city !== t && p.city, p.county].filter(Boolean).join(', ') }; }
   let risultati = [];
+  const attesa = (q) => { $('#s-body').innerHTML = `<div class="empty cerco">Cerco «${esc(q)}»…</div>`; };
   const norma = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '');
   // Due servizi di ricerca: Photon (veloce, adatto mentre scrivi) e, se non risponde, Nominatim di OpenStreetMap.
+  // fetch con un tempo massimo: se il servizio non risponde entro ms si passa oltre invece di restare in attesa
+  async function entro(url, signal, ms) {
+    const ctl = new AbortController(), ferma = () => ctl.abort(); let scaduto = false;
+    if (signal.aborted) ctl.abort(); else signal.addEventListener('abort', ferma);
+    const t = setTimeout(() => { scaduto = true; ctl.abort(); }, ms);
+    try { return await fetch(url, { signal: ctl.signal }); }
+    catch (e) { if (scaduto) throw new Error('tempo scaduto'); throw e; }
+    finally { clearTimeout(t); signal.removeEventListener('abort', ferma); }
+  }
   async function geocodifica(q, c, signal) {
     try {
-      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lat=${c[1]}&lon=${c[0]}&zoom=12&location_bias_scale=0.4`, { signal });
+      const r = await entro(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lat=${c[1]}&lon=${c[0]}&zoom=12&location_bias_scale=0.4`, signal, 4000);
       if (!r.ok) throw new Error('photon ' + r.status);
       const j = await r.json();
       return j.features.filter((f) => { const p = f.properties || {}; return !p.countrycode || p.countrycode === 'IT' || p.country === 'Italia'; }).slice(0, 6)
         .map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], strada: f.properties.osm_key === 'highway' }, etichetta(f.properties))).filter((x) => x.t);
     } catch (e) {
       if (e.name === 'AbortError') throw e;
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=it&accept-language=it&q=${encodeURIComponent(q)}&viewbox=${c[0] - .4},${c[1] + .3},${c[0] + .4},${c[1] - .3}`, { signal });
+      const r = await entro(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=it&accept-language=it&q=${encodeURIComponent(q)}&viewbox=${c[0] - .4},${c[1] + .3},${c[0] + .4},${c[1] - .3}`, signal, 8000);
       if (!r.ok) throw new Error('nominatim ' + r.status);
       return (await r.json()).map((x) => { const a = x.address || {}, via = [a.road, a.house_number].filter(Boolean).join(' '), citta = a.city || a.town || a.village || a.municipality || '';
         const t = x.name || via || citta; return { lat: +x.lat, lon: +x.lon, strada: x.category === 'highway', t, sub: [x.name && via, citta !== t && citta, a.county].filter(Boolean).join(', ') }; }).filter((x) => x.t);
     }
   }
   async function cerca(q) {
-    if (sCtl) sCtl.abort(); sCtl = new AbortController(); const c = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
+    if (sCtl) sCtl.abort(); sCtl = new AbortController(); const mio = sCtl; attesa(q); const c = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
     try {
-      risultati = await geocodifica(q, c, sCtl.signal);
+      const trovati = await geocodifica(q, c, mio.signal); if (sCtl !== mio) return; risultati = trovati;
       const civ = (q.match(/(?:^|[\s,])(\d{1,4}\s?[a-zA-Z]?)(?=$|[\s,])/) || [])[1]; // "via natisone 27": se la mappa conosce solo la via, tengo il 27 nel nome
       if (civ && TT) { // la mappa libera spesso non ha i civici: per quelli chiedo a TomTom la posizione esatta
         try {
-          const r = await fetch(`https://api.tomtom.com/search/2/geocode/${encodeURIComponent(q)}.json?key=${TT}&countrySet=IT&limit=1&language=it-IT&lat=${c[1]}&lon=${c[0]}`, { signal: sCtl.signal });
+          const r = await entro(`https://api.tomtom.com/search/2/geocode/${encodeURIComponent(q)}.json?key=${TT}&countrySet=IT&limit=1&language=it-IT&lat=${c[1]}&lon=${c[0]}`, mio.signal, 4000);
           const g = r.ok ? ((await r.json()).results || [])[0] : null;
           if (g && g.type === 'Point Address' && g.address.streetNumber) {
             const t = `${g.address.streetName} ${g.address.streetNumber}`;
@@ -435,11 +445,12 @@
         } catch (e) { if (e.name === 'AbortError') throw e; }
       }
       if (civ) risultati.forEach((x) => { if (x.strada && !/\d/.test(x.t)) { x.t += ' ' + civ.trim(); x.sub = [x.sub, 'civico non in mappa: punto a metà via'].filter(Boolean).join(' · '); } });
+      if (sCtl !== mio) return;
       risultati.forEach((x) => { x.q = q; });
       if (!risultati.length) { $('#s-body').innerHTML = '<div class="empty">Non trovo questo posto. Prova con la via e la città.</div>'; return; }
       $('#s-body').innerHTML = '<div class="eyebrow">Risultati</div>' + risultati.map((x, i) => `<div data-box="${i}"><button class="res" data-res="${i}"><span class="mk">${icon('pin')}</span><span class="t"><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></span>${scelgo ? '' : '<span class="n wait">…</span>'}</button></div>`).join('');
-      if (!scelgo) risultati.forEach((x, i) => conta(x, i, sCtl.signal));
-    } catch (e) { if (e.name !== 'AbortError') $('#s-body').innerHTML = `<div class="empty">La ricerca non risponde. Controlla la connessione e riprova.<br><span class="small">(${esc(e.message || e)})</span></div>`; }
+      if (!scelgo) risultati.forEach((x, i) => conta(x, i, mio.signal));
+    } catch (e) { if (e.name !== 'AbortError' && sCtl === mio) $('#s-body').innerHTML = `<div class="empty">La ricerca non risponde. Controlla la connessione e riprova.<br><span class="small">(${esc(e.message || e)})</span></div>`; }
   }
   async function conta(x, i, signal) { // quanti posti ci sono attorno a un risultato; se nessuno, propone il più vicino
     await carica(x.lat - 0.012, x.lon - 0.017, x.lat + 0.012, x.lon + 0.017, false);
@@ -452,7 +463,7 @@
     else d.innerHTML = '<div><b>Nessun posto entro 1 km.</b> Qui la mappa è ancora vuota.</div>';
     box.appendChild(d);
   }
-  $('#s-q').addEventListener('input', () => { const q = $('#s-q').value.trim(); $('#s-x').hidden = !q; clearTimeout(sT); if (q.length < 3) { if (sCtl) sCtl.abort(); inizio(); return; } sT = setTimeout(() => cerca(q), 500); });
+  $('#s-q').addEventListener('input', () => { const q = $('#s-q').value.trim(); $('#s-x').hidden = !q; clearTimeout(sT); if (sCtl) sCtl.abort(); if (q.length < 3) { inizio(); return; } attesa(q); sT = setTimeout(() => cerca(q), 450); });
   $('#s-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#s-q').blur(); const q = $('#s-q').value.trim(); clearTimeout(sT); if (q.length >= 2) cerca(q); } });
   $('#s-x').onclick = () => { $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus(); };
   $('#s-back').onclick = chiudiRicerca;
