@@ -1,6 +1,15 @@
 /* Disability Parking — app principale (vanilla JS, nessun build step) */
   // il server restituisce al massimo 1000 righe per richiesta: scarico a pagine
-  async function fetchAll(mk) { let out = []; for (let i = 0; ; i += 1000) { const { data, error } = await mk().range(i, i + 999); if (error) return { data: out, error }; out = out.concat(data); if (data.length < 1000) return { data: out }; } }
+  // (pagine scaricate 6 alla volta in parallelo: con decine di migliaia di stalli in sequenza ci vorrebbe troppo)
+  async function fetchAll(mk) {
+    const out = []; let i = 0, done = false, err = null;
+    while (!done && !err) {
+      const batch = await Promise.all([0, 1, 2, 3, 4, 5].map((k) => mk().range(i + k * 1000, i + k * 1000 + 999)));
+      for (const { data, error } of batch) { if (error) { err = error; break; } out.push(...data); if (data.length < 1000) { done = true; break; } }
+      i += 6000;
+    }
+    return err ? { data: out, error: err } : { data: out };
+  }
 (function () {
   'use strict';
   const C = window.DP_CONFIG;
@@ -57,21 +66,39 @@
   const GROUP_M = 30;
   const shown = new Map();            // id del rappresentante -> record mostrato (con _members)
   const RANK = { ufficiale: 3, verificato: 2, proposto: 1 };
+  // griglia di celle da ~30 m: ogni stallo confronta solo le 9 celle vicine (con tutta Italia il confronto "tutti con tutti" bloccava il telefono)
+  const CELL_LAT = GROUP_M / 111320, CELL_LON = GROUP_M / (111320 * Math.cos(42 * Math.PI / 180));
+  const cellKey = (la, lo) => Math.floor(la / CELL_LAT) + ':' + Math.floor(lo / CELL_LON);
   function rebuild() {
-    const all = [...stalli.values()]; const used = new Set(); shown.clear(); layer.clearLayers(); markers.clear();
+    const all = [...stalli.values()]; const used = new Set(); shown.clear();
     all.sort((a, b) => (RANK[b.stato] || 0) - (RANK[a.stato] || 0));
+    const grid = new Map();
+    for (const t of all) { const k = cellKey(t.lat, t.lon); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(t); }
+    const near = (p) => { const r = Math.floor(p.lat / CELL_LAT), c = Math.floor(p.lon / CELL_LON), out = []; for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const g = grid.get((r + i) + ':' + (c + j)); if (g) out.push(...g); } return out; };
     for (const s of all) {
       if (used.has(s.id)) continue;
       const grp = [s]; used.add(s.id);
-      for (let k = 0; k < grp.length; k++) for (const t of all) {
+      for (let k = 0; k < grp.length; k++) for (const t of near(grp[k])) {
         if (used.has(t.id) || t.tipo !== s.tipo || (t.stato === 'proposto') !== (s.stato === 'proposto')) continue;
         if (map.distance([grp[k].lat, grp[k].lon], [t.lat, t.lon]) <= GROUP_M) { grp.push(t); used.add(t.id); }
       }
       const rec = Object.assign({}, s, { lat: grp.reduce((a, g) => a + g.lat, 0) / grp.length, lon: grp.reduce((a, g) => a + g.lon, 0) / grp.length, _members: grp.map((g) => g.id) });
       ['nome', 'indirizzo', 'orari', 'note', 'foto_url', 'comune'].forEach((k) => { if (!rec[k]) { const g = grp.find((x) => x[k]); if (g) rec[k] = g[k]; } });
       shown.set(rec.id, rec);
+    }
+    draw();
+  }
+  // disegno solo i pin nella zona visibile (decine di migliaia di pin insieme rallenterebbero tutto)
+  const MAX_PINS = 1500;
+  function draw() {
+    layer.clearLayers(); markers.clear();
+    const b = map.getBounds().pad(0.3); let n = 0;
+    for (const rec of shown.values()) {
+      if (rec.id !== selectedId && !b.contains([rec.lat, rec.lon])) continue;
+      if (n++ >= MAX_PINS && rec.id !== selectedId) continue;
       const m = L.marker([rec.lat, rec.lon], { icon: icon(rec, rec.id === selectedId), keyboard: false }); m.on('click', () => openCard(rec.id)); layer.addLayer(m); markers.set(rec.id, m);
     }
+    if (n > MAX_PINS) toast('Avvicinati per vedere tutti i posti della zona', 2000);
   }
   const isFav = (r) => r._members.some((id) => favs.has(id));
   const recentOf = (r) => r._members.map((id) => recent.get(id)).filter(Boolean).sort((a, b) => (a.at < b.at ? 1 : -1))[0];
@@ -147,7 +174,7 @@
   $('#tabfav').onclick = () => { showFav = !showFav; $('#tabfav').setAttribute('aria-pressed', showFav); sheet.classList.remove('min'); refreshList(); };
 
   let moveT;
-  map.on('moveend', () => { ls.set('dp.view', { c: [map.getCenter().lat, map.getCenter().lng], z: map.getZoom() }); clearTimeout(moveT); moveT = setTimeout(refreshList, 250); });
+  map.on('moveend', () => { ls.set('dp.view', { c: [map.getCenter().lat, map.getCenter().lng], z: map.getZoom() }); clearTimeout(moveT); moveT = setTimeout(() => { draw(); refreshList(); }, 250); });
 
   // ---------- sheet ----------
   const sheet = $('#sheet');
@@ -160,7 +187,7 @@
   async function openCard(id, fromList) {
     const s = shown.get(id); if (!s) return;
     if (selectedId && markers.get(selectedId) && shown.get(selectedId)) markers.get(selectedId).setIcon(icon(shown.get(selectedId), false));
-    selectedId = id; markers.get(id).setIcon(icon(s, true));
+    selectedId = id; if (markers.get(id)) markers.get(id).setIcon(icon(s, true)); else draw();
     if (fromList) map.panTo([s.lat, s.lon]);
     $('#c-badges').innerHTML = `<span class="badge ${s.tipo}">${TIPO_LABEL[s.tipo]}</span><span class="badge ${s.stato}">${STATO_LABEL[s.stato] || s.stato}</span>${s.fonte === 'osm' ? '<span class="badge osm">da OpenStreetMap</span>' : ''}`;
     $('#c-title').textContent = s.nome || s.indirizzo || 'Posti riservati';

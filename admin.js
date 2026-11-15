@@ -1,6 +1,15 @@
 (function () {
   // il server restituisce al massimo 1000 righe per richiesta: scarico a pagine
-  async function fetchAll(mk) { let out = []; for (let i = 0; ; i += 1000) { const { data, error } = await mk().range(i, i + 999); if (error) return { data: out, error }; out = out.concat(data); if (data.length < 1000) return { data: out }; } }
+  // (6 pagine alla volta in parallelo: con tutta Italia gli stalli sono decine di migliaia)
+  async function fetchAll(mk) {
+    const out = []; let i = 0, done = false, err = null;
+    while (!done && !err) {
+      const batch = await Promise.all([0, 1, 2, 3, 4, 5].map((k) => mk().range(i + k * 1000, i + k * 1000 + 999)));
+      for (const { data, error } of batch) { if (error) { err = error; break; } out.push(...data); if (data.length < 1000) { done = true; break; } }
+      i += 6000;
+    }
+    return err ? { data: out, error: err } : { data: out };
+  }
   'use strict';
   const C = window.DP_CONFIG; const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -21,6 +30,7 @@
     map = L.map('amap').setView([C.HOME.lat, C.HOME.lon], 13);
     bases.osm.addTo(map); curBase = 'osm';
     layer = L.layerGroup().addTo(map); candLayer = L.layerGroup().addTo(map);
+    let mvT; map.on('moveend', () => { clearTimeout(mvT); mvT = setTimeout(() => { if (rows.length) drawPins(); }, 200); });
     document.querySelectorAll('input[name=base]').forEach((r) => r.onchange = () => setBase(r.value));
     
   }
@@ -38,9 +48,18 @@
 
   // ---------- dati ----------
   async function load() {
+    kpiFast();
+    if (!rows.length) $('#rows').innerHTML = '<div class="empty">Carico gli stalli…</div>';
     const { data, error } = await fetchAll(() => sb.from('stalli_con_conferme').select('*').order('created_at', { ascending: false }).order('id'));
     if (error) { $('#rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} (sei registrato come admin? controlla la tabella admins)</div>`; return; }
     rows = data; kpi(); render(); if (cands.length) renderCands();
+  }
+  // conteggi subito dal server, senza aspettare di aver scaricato tutti gli stalli
+  async function kpiFast() {
+    const c = async (f) => { const { count } = await f(sb.from('stalli_con_conferme').select('id', { count: 'exact', head: true })); return count ?? '…'; };
+    const [p, v, u, x, t] = await Promise.all([c((q) => q.eq('stato', 'proposto')), c((q) => q.eq('stato', 'verificato')), c((q) => q.eq('stato', 'ufficiale')),
+      c((q) => q.gt('conferme_non_esiste', 0).neq('stato', 'rifiutato')), c((q) => q.in('stato', ['proposto', 'verificato', 'ufficiale']))]);
+    if (!rows.length) $('#kpi').innerHTML = [['Da approvare', p], ['Verificati', v], ['Ufficiali', u], ['Con "non esiste"', x], ['Totale attivi', t]].map((k) => `<div>${k[0]}<b>${k[1]}</b></div>`).join('');
   }
   function kpi() {
     const n = (st) => rows.filter((r) => r.stato === st).length;
@@ -54,9 +73,17 @@
       <div><div class="n">${esc(r.nome || r.indirizzo || TIPO[r.tipo])} · ${r.posti} ${r.posti > 1 ? 'posti' : 'posto'}</div>
       <div class="s">${TIPO[r.tipo]} · ${r.comune || '—'} · ${r.fonte} · ${new Date(r.created_at).toLocaleDateString('it-IT')}${r.conferme_esiste ? ` · ✓${r.conferme_esiste}` : ''}${r.conferme_non_esiste ? ` · ✗${r.conferme_non_esiste}` : ''}${r.foto_url ? ' · 📷' : ''}</div></div>
       <div class="s">${r.stato}</div></div>`).join('') : '<div class="empty">Niente qui.</div>';
-    layer.clearLayers(); markers.clear();
-    v.forEach((r) => { const m = L.marker([r.lat, r.lon], { icon: icon(r, sel && sel.id === r.id) }); m.on('click', () => select(r.id)); layer.addLayer(m); markers.set(r.id, m); });
-    if (v.length && !sel) map.fitBounds(v.map((r) => [r.lat, r.lon]), { padding: [20, 20], maxZoom: 15 });
+    if (v.length && !sel && v.length <= 2000) map.fitBounds(v.map((r) => [r.lat, r.lon]), { padding: [20, 20], maxZoom: 15 });
+    drawPins();
+  }
+  // sulla mappa solo i pin della zona visibile (max 1500), ridisegnati quando sposti la mappa
+  function drawPins() {
+    layer.clearLayers(); markers.clear(); const b = map.getBounds().pad(0.2); let n = 0;
+    for (const r of visible()) {
+      const isSel = sel && sel.id === r.id;
+      if (!isSel && (!b.contains([r.lat, r.lon]) || n >= 1500)) continue; n++;
+      const m = L.marker([r.lat, r.lon], { icon: icon(r, isSel) }); m.on('click', () => select(r.id)); layer.addLayer(m); markers.set(r.id, m);
+    }
   }
   $('#rows').addEventListener('click', (e) => { const it = e.target.closest('.row-item'); if (it) select(it.dataset.id); });
 
