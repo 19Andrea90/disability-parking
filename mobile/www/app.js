@@ -148,13 +148,14 @@
   }
 
   // ---------- pannello "il più vicino" ----------
+  let espanso = false; // pannello tirato su: mostra fino a 15 posti invece di 3
   function elencoVicini() {
     const c = map.getCenter(); const usoMe = me && dist(me.lat, me.lon, c.lat, c.lng) < 1500;
     const ref = usoMe ? me : { lat: c.lat, lon: c.lng };
     const tutti = []; for (const s of stalli.values()) if (passa(s)) { const d = dist(ref.lat, ref.lon, s.lat, s.lon); if (d < 5000) tutti.push({ s, d }); }
     tutti.sort((a, b) => a.d - b.d);
     const out = []; // niente doppioni a pochi metri l'uno dall'altro
-    for (const x of tutti) { if (!out.some((y) => dist(x.s.lat, x.s.lon, y.s.lat, y.s.lon) < 25)) out.push(x); if (out.length === 3) break; }
+    for (const x of tutti) { if (!out.some((y) => dist(x.s.lat, x.s.lon, y.s.lat, y.s.lon) < 25)) out.push(x); if (out.length === (espanso ? 15 : 3)) break; }
     return { usoMe, out };
   }
   function vicini() {
@@ -169,6 +170,22 @@
       <button class="primary" data-nav="${esc(a.s.id)}">${icon('nav')}<span>Portami lì</span></button>
       <div class="others">${out.slice(1).map((x) => `<button class="other" data-id="${esc(x.s.id)}"><span class="t"><b>${esc(titolo(x.s))}</b><span>${affidabilita(x.s)[1]} · ${posti(x.s.posti)}</span></span><span class="d">${fmtDist(x.d)}</span>${icon('chev')}</button>`).join('')}</div>`;
   }
+  function espandi(si) {
+    if (espanso === si) return; espanso = si; $('#near').classList.toggle('exp', si); $('#near .handle').setAttribute('aria-expanded', si); vicini();
+    const o = document.querySelector('#near .others'); if (o) o.scrollTop = 0;
+    if (!selId && !dest) map.setPadding(padHome());
+  }
+  (function () { // trascina il pannello: su per vedere più posti, giù per richiuderlo; un tocco sulla maniglia fa lo stesso
+    const el = $('#near'); let y0 = null, daLista = false;
+    el.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; const o = e.target.closest('.others'); daLista = !!(o && espanso && o.scrollTop > 0); }, { passive: true });
+    let tocco = 0;
+    el.addEventListener('touchend', (e) => {
+      if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null;
+      if (dy < -40 && !espanso) espandi(true); else if (dy > 40 && espanso && !daLista) espandi(false);
+      else if (Math.abs(dy) < 10 && e.target.closest('.handle')) { tocco = Date.now(); espandi(!espanso); }
+    }, { passive: true });
+    $('#near .handle').addEventListener('click', () => { if (Date.now() - tocco > 700) espandi(!espanso); }); // con il mouse o la tastiera
+  })();
   $('#near-body').addEventListener('click', (e) => {
     const n = e.target.closest('[data-nav]'); if (n) { naviga(stalli.get(n.dataset.nav)); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);

@@ -156,3 +156,9 @@ button:focus-visible{outline:3px solid var(--giallo);outline-offset:2px}
 .mnum{width:38px;height:38px;border-radius:50%;background:var(--blu);color:#fff;border:3px solid #fff;box-shadow:0 3px 8px rgba(11,31,68,.35);display:grid;place-items:center;font:700 16px 'Atkinson',sans-serif;cursor:pointer}
 .mnum.on{width:46px;height:46px;background:var(--giallo);color:var(--giallo-ink);border-color:var(--ink);font-size:19px}
 .mdest{width:48px;height:48px;border-radius:50%;background:var(--ink);color:#fff;border:3px solid #fff;box-shadow:0 6px 14px rgba(11,31,68,.4);display:grid;place-items:center}
+
+/* --- pannello dei posti vicini: si tira su per vedere più risultati --- */
+button.handle{position:relative;border-radius:999px;background:var(--bordo)}
+button.handle::before{content:"";position:absolute;inset:-14px -60px}
+#near{touch-action:none}
+#near.exp .others{max-height:calc(100vh - var(--sat) - 430px);overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
