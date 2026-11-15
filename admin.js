@@ -15,7 +15,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
   const TIPO = { generico: 'Generico', personalizzato: 'Personalizzato', sconosciuto: 'Sconosciuto' };
-  let rows = [], filter = 'proposto', sel = null, map, layer, markers = new Map();
+  let rows = [], filter = 'utenti', sel = null, map, layer, markers = new Map();
 
   // ---------- auth ----------
   async function session() { const { data } = await sb.auth.getSession(); return data.session; }
@@ -47,32 +47,37 @@
   function icon(s, on) { return L.divIcon({ className: '', html: `<div class="pin ${pinClass(s)}${on ? ' sel' : ''}"><b>${s.posti > 1 ? s.posti : '♿'}</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] }); }
 
   // ---------- dati ----------
+  let tutti = false; // true quando sono arrivati tutti gli stalli, non solo le segnalazioni
   async function load() {
     kpiFast();
-    if (!rows.length) $('#rows').innerHTML = '<div class="empty">Carico gli stalli…</div>';
+    if (!rows.length) { // le segnalazioni degli utenti arrivano subito, senza aspettare tutti gli stalli
+      $('#rows').innerHTML = '<div class="empty">Carico gli stalli…</div>';
+      const u = await sb.from('stalli_con_conferme').select('*').eq('fonte', 'utente').eq('stato', 'proposto').order('created_at', { ascending: false });
+      if (!u.error && !tutti) { rows = u.data; render(); }
+    }
     const { data, error } = await fetchAll(() => sb.from('stalli_con_conferme').select('*').order('created_at', { ascending: false }).order('id'));
     if (error) { $('#rows').innerHTML = `<div class="empty">Errore: ${esc(error.message)} (sei registrato come admin? controlla la tabella admins)</div>`; return; }
-    rows = data; kpi(); render(); if (cands.length) renderCands();
+    rows = data; tutti = true; kpi(); render(); if (cands.length) renderCands();
   }
   // conteggi subito dal server, senza aspettare di aver scaricato tutti gli stalli
   async function kpiFast() {
     const c = async (f) => { const { count } = await f(sb.from('stalli_con_conferme').select('id', { count: 'exact', head: true })); return count ?? '…'; };
-    const [p, v, u, x, t] = await Promise.all([c((q) => q.eq('stato', 'proposto')), c((q) => q.eq('stato', 'verificato')), c((q) => q.eq('stato', 'ufficiale')),
+    const [s0, p, v, u, x, t] = await Promise.all([c((q) => q.eq('stato', 'proposto').eq('fonte', 'utente')), c((q) => q.eq('stato', 'proposto')), c((q) => q.eq('stato', 'verificato')), c((q) => q.eq('stato', 'ufficiale')),
       c((q) => q.gt('conferme_non_esiste', 0).neq('stato', 'rifiutato')), c((q) => q.in('stato', ['proposto', 'verificato', 'ufficiale']))]);
-    if (!rows.length) $('#kpi').innerHTML = [['Da approvare', p], ['Verificati', v], ['Ufficiali', u], ['Con "non esiste"', x], ['Totale attivi', t]].map((k) => `<div>${k[0]}<b>${k[1]}</b></div>`).join('');
+    if (!tutti) $('#kpi').innerHTML = [['Segnalazioni utenti', s0], ['Da approvare', p], ['Verificati', v], ['Ufficiali', u], ['Con "non esiste"', x], ['Totale attivi', t]].map((k) => `<div>${k[0]}<b>${k[1]}</b></div>`).join('');
   }
   function kpi() {
     const n = (st) => rows.filter((r) => r.stato === st).length;
-    $('#kpi').innerHTML = [['Da approvare', n('proposto')], ['Verificati', n('verificato')], ['Ufficiali', n('ufficiale')], ['Con "non esiste"', rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato').length], ['Totale attivi', rows.filter((r) => ['proposto', 'verificato', 'ufficiale'].includes(r.stato)).length]].map((k) => `<div>${k[0]}<b>${k[1]}</b></div>`).join('');
+    $('#kpi').innerHTML = [['Segnalazioni utenti', rows.filter((r) => r.fonte === 'utente' && r.stato === 'proposto').length], ['Da approvare', n('proposto')], ['Verificati', n('verificato')], ['Ufficiali', n('ufficiale')], ['Con "non esiste"', rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato').length], ['Totale attivi', rows.filter((r) => ['proposto', 'verificato', 'ufficiale'].includes(r.stato)).length]].map((k) => `<div>${k[0]}<b>${k[1]}</b></div>`).join('');
   }
   document.querySelectorAll('.tabs .btn').forEach((b) => b.onclick = () => { document.querySelectorAll('.tabs .btn').forEach((x) => x.classList.remove('active')); b.classList.add('active'); filter = b.dataset.f; render(); });
-  function visible() { return filter === 'segnalati' ? rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato') : rows.filter((r) => r.stato === filter); }
+  function visible() { return filter === 'utenti' ? rows.filter((r) => r.fonte === 'utente' && r.stato === 'proposto') : filter === 'segnalati' ? rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato') : rows.filter((r) => r.stato === filter); }
   function render() {
     const v = visible();
     $('#rows').innerHTML = v.length ? v.slice(0, 300).map((r) => `<div class="row-item${sel && sel.id === r.id ? ' sel' : ''}" data-id="${r.id}">
       <div><div class="n">${esc(r.nome || r.indirizzo || TIPO[r.tipo])} · ${r.posti} ${r.posti > 1 ? 'posti' : 'posto'}</div>
       <div class="s">${TIPO[r.tipo]} · ${r.comune || '—'} · ${r.fonte} · ${new Date(r.created_at).toLocaleDateString('it-IT')}${r.conferme_esiste ? ` · ✓${r.conferme_esiste}` : ''}${r.conferme_non_esiste ? ` · ✗${r.conferme_non_esiste}` : ''}${r.foto_url ? ' · 📷' : ''}</div></div>
-      <div class="s">${r.stato}</div></div>`).join('') : '<div class="empty">Niente qui.</div>';
+      <div class="s">${r.stato}</div></div>`).join('') : `<div class="empty">${filter === 'utenti' ? 'Nessuna segnalazione degli utenti da controllare.' : 'Niente qui.'}</div>`;
     if (v.length && !sel && v.length <= 2000) map.fitBounds(v.map((r) => [r.lat, r.lon]), { padding: [20, 20], maxZoom: 15 });
     drawPins();
   }
