@@ -14,8 +14,33 @@ import osmium
 sys.path.insert(0, os.path.dirname(__file__))
 import opendata_import as od  # noqa: E402
 
-PBF = '/home/claude/osm/lombardia.osm.pbf'
-URL = 'https://download.openstreetmap.fr/extracts/europe/italy/lombardia.osm.pbf'
+DATA = os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata')
+
+
+def piemonte_rows():
+    """CSV del Piemonte (api.smartdatanet.it non raggiungibile da qui): scaricati da Andrea il 15/11/2026 in data/opendata/."""
+    import csv
+    def split(s):  # "VIA TORINO, 79" -> ("VIA TORINO", "79")
+        s = (s or '').strip(); m = re.match(r'^(.*?)[,\s]+(?:FR\.?|FRONTE|INT\.?)?\s*(\d+[A-Z]?(?:[/_ -]\d+)?)\b', s)
+        return (m.group(1).strip(' ,'), m.group(2)) if m else (re.split(r'\(| ANG\.? | INT\.? ', s)[0].strip(' ,'), None)
+    for p in csv.DictReader(open(os.path.join(DATA, 'nichelino_stalli_generici_2025.csv'), encoding='utf-8', errors='replace'), delimiter=';'):
+        if not (p.get('localita') or '').strip() or p.get('datarevoca') or p.get('ordrevocata') or (p.get('rif') or '').strip() == '0': continue
+        v, c = split(p['localita']); n = (p.get('rif') or '1').strip()
+        yield dict(ds='nichelino-gen', id=p['NumProg'], comune='Nichelino', toponimo='', nome_via=v, civico=c, stalli=int(n) if n.isdigit() and int(n) > 0 else 1, tipo='generico')
+    for p in csv.DictReader(open(os.path.join(DATA, 'nichelino_stalli_personali_2025.csv'), encoding='utf-8', errors='replace'), delimiter=';'):
+        if (p.get('vigenti') or '').strip() != '1' or not (p.get('IndRich') or '').strip(): continue
+        v, c = split(p['IndRich'])
+        yield dict(ds='nichelino-pers', id=p['NumAut'], comune='Nichelino', toponimo='', nome_via=v, civico=c, stalli=1, tipo='personalizzato')
+    for p in csv.DictReader(open(os.path.join(DATA, 'chieri_stalli_disabili.csv'), encoding='utf-8', errors='replace'), delimiter=';'):
+        m = re.match(r'^\s*(.*?)\s*\((.*?)\)\s*$', p.get('Indirizzo') or ''); v = f'{m.group(2)} {m.group(1)}' if m else (p.get('Indirizzo') or '').strip()
+        civ = (p.get('Civico') or '').strip() or None; nota = (p.get('Annotazioni') or '').strip()
+        g = (p.get('stalligenerici') or '').strip(); pr = (p.get('Stalliprivatipubbl') or '').strip()
+        if g.isdigit() and int(g) > 0: yield dict(ds='chieri', id=p['N'] + 'g', comune='Chieri', toponimo='', nome_via=v, civico=civ, stalli=int(g), tipo='generico', nota=nota)
+        if (p.get('Stallinumerati') or '').strip(): yield dict(ds='chieri', id=p['N'] + 'n', comune='Chieri', toponimo='', nome_via=v, civico=civ, stalli=1, tipo='personalizzato', nota=nota)
+        if pr.isdigit() and int(pr) > 0: yield dict(ds='chieri', id=p['N'] + 'p', comune='Chieri', toponimo='', nome_via=v, civico=civ, stalli=int(pr), tipo='generico', nota=('area privata aperta al pubblico; ' + nota).strip('; '))
+
+
+REGIONI = {'lombardia': lambda: [r for r in od.lombardia_rows() if r['lat'] is None], 'piemonte': lambda: list(piemonte_rows())}
 TIPI = {'via', 'viale', 'piazza', 'piazzale', 'corso', 'largo', 'vicolo', 'strada', 'contrada', 'localita', 'loc', 'p', 'za', 'zza', 'pzza', 'pza', 'le', 'v', 'c', 'so',
         'vle', 'pl', 'p.le', 'piazzetta', 'galleria', 'lungo', 'sp', 'ss', 'provinciale', 'statale', 'comunale', 'vic', 'str', 'ex'}
 VUOTE = {'di', 'de', 'del', 'della', 'dei', 'degli', 'delle', 'da', 'e', 'la', 'il', 'lo', 'le', 'gli', 'i', 'san', 's', 'santa', 'santo', 'don', 'beato', 'papa', 'g', 'a', 'f'}
@@ -66,12 +91,13 @@ def dist(a, b): return math.hypot((a[0] - b[0]) * 111320, (a[1] - b[1]) * 111320
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('--dry-run', action='store_true')
+    ap = argparse.ArgumentParser(); ap.add_argument('regione', nargs='?', default='lombardia', choices=sorted(REGIONI)); ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--anche-vie', action='store_true', help='carica anche quelli trovati solo sulla via, come proposti (posizione imprecisa)'); a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']
-    rows = [r for r in od.lombardia_rows() if r['lat'] is None]; print(f'Righe con il solo indirizzo: {len(rows)}', flush=True)
+    rows = REGIONI[a.regione](); print(f'Righe con il solo indirizzo: {len(rows)}', flush=True)
+    PBF = f'/home/claude/osm/{a.regione}.osm.pbf'; URL = f'https://download.openstreetmap.fr/extracts/europe/italy/{a.regione}.osm.pbf'
     if not os.path.exists(PBF): urllib.request.urlretrieve(URL, PBF + '.part'); os.replace(PBF + '.part', PBF)
-    h = H(); h.apply_file(PBF, locations=True, idx='sparse_file_array,/home/claude/osm/lomb.idx')
-    os.remove('/home/claude/osm/lomb.idx')
+    h = H(); h.apply_file(PBF, locations=True, idx=f'sparse_file_array,/home/claude/osm/{a.regione}.idx')
+    os.remove(f'/home/claude/osm/{a.regione}.idx'); os.remove(PBF)
     print(f'OSM: {len(h.addr)} civici, {len(h.streets)} nomi di via, {len(h.places)} località', flush=True)
     inv_a, inv_s = {}, {}
     for k in h.addr:
@@ -99,7 +125,7 @@ def main():
         if not p: miss.append((r['comune'], r['nome_via'], 'via non trovata')); continue
         ind = od.via(r['toponimo'], r['nome_via'], r['civico'])
         nota = 'posizione dal numero civico (±20 m)' if how == 'civico' else 'posizione approssimata sulla via: da verificare'
-        rec = od.rec(r['comune'], f'{r["ds"]}:{r["id"]}:{norm(ind).replace(" ", "")[:40]}', p[0], p[1], r['stalli'], ind, nota, src='lombardia')
+        rec = od.rec(r['comune'], f'{r["ds"]}:{r["id"]}:{norm(ind).replace(" ", "")[:40]}', p[0], p[1], r['stalli'], ind, '; '.join(x for x in (r.get('nota'), nota) if x), r.get('tipo', 'generico'), src=a.regione)
         if how == 'via': rec['stato'] = 'proposto'
         out.append(rec); n_civ += how == 'civico'; n_via += how == 'via'
     print(f'Trovati: {n_civ} dal civico (ufficiali), {n_via} solo sulla via (da verificare), {len(miss)} non trovati', flush=True)
