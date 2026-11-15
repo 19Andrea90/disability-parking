@@ -3,7 +3,7 @@
 usando i numeri civici e le strade di OpenStreetMap (estratto regionale da download.openstreetmap.fr), senza servizi esterni.
 
   via + civico trovati su OSM          → stallo 'ufficiale' (nota: posizione dal numero civico, ±20 m)
-  solo la via (civico assente/non trovato) → stallo 'proposto' (nota: posizione approssimata sulla via, da verificare)
+  solo la via (civico assente/non trovato) → caricato solo con --anche-vie, come 'proposto' (posizione approssimata)
   via non trovata                       → saltato (elencato a fine run)
 
 Uso: SUPABASE_SERVICE_KEY=... python3 tools/opendata_geocode.py [--dry-run]
@@ -66,7 +66,8 @@ def dist(a, b): return math.hypot((a[0] - b[0]) * 111320, (a[1] - b[1]) * 111320
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('--dry-run', action='store_true'); a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']
+    ap = argparse.ArgumentParser(); ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--anche-vie', action='store_true', help='carica anche quelli trovati solo sulla via, come proposti (posizione imprecisa)'); a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']
     rows = [r for r in od.lombardia_rows() if r['lat'] is None]; print(f'Righe con il solo indirizzo: {len(rows)}', flush=True)
     if not os.path.exists(PBF): urllib.request.urlretrieve(URL, PBF + '.part'); os.replace(PBF + '.part', PBF)
     h = H(); h.apply_file(PBF, locations=True, idx='sparse_file_array,/home/claude/osm/lomb.idx')
@@ -104,7 +105,7 @@ def main():
     print(f'Trovati: {n_civ} dal civico (ufficiali), {n_via} solo sulla via (da verificare), {len(miss)} non trovati', flush=True)
     for m in miss[:40]: print('   ', *m)
     if a.dry_run: return
-    recs = list({r['osm_id']: r for r in out}.values())
+    recs = list({r['osm_id']: r for r in out if a.anche_vie or r['stato'] != 'proposto'}.values())
     for i in range(0, len(recs), 200): od.sb('POST', '/rest/v1/stalli?on_conflict=osm_id', key, recs[i:i + 200], prefer='resolution=ignore-duplicates,return=minimal')
     print('Caricati.')
 
