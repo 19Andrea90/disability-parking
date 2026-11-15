@@ -271,7 +271,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#search').hidden) chiudiRicerca(); else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -280,7 +280,7 @@
   $('#c-save').onclick = () => {
     const s = stalli.get(selId); if (!s) return;
     if (salvati.has(selId)) salvati.delete(selId); else salvati.set(selId, { id: s.id, lat: s.lat, lon: s.lon, t: titolo(s), c: s.comune || '' });
-    ls.set('dp.salvati', [...salvati.values()]); const on = salvati.has(selId);
+    ls.set('dp.salvati', [...salvati.values()]); toccato(); const on = salvati.has(selId);
     $('#c-save').setAttribute('aria-pressed', on); $('#c-save').querySelector('span').textContent = on ? 'Salvato' : 'Salva'; toast(on ? 'Salvato tra i tuoi posti' : 'Tolto dai tuoi posti');
   };
   $('#c-share').onclick = async () => {
@@ -311,7 +311,7 @@
     seguo = true; const ok = await attivaPosizione(true); if (!ok) toast('Per trovarti serve il permesso alla posizione. Lo trovi nelle impostazioni del telefono.', 4500);
   };
   const presto = () => toast('Arriva nella prossima versione di prova.');
-  $('#b-search').onclick = () => apriRicerca(); $('#b-add').onclick = () => apriAggiungi(); $('#b-menu').onclick = presto;
+  $('#b-search').onclick = () => apriRicerca(); $('#b-add').onclick = () => apriAggiungi(); $('#b-menu').onclick = () => apriMenu();
 
 
   // ---------- schermata 4 · posti vicino alla destinazione ----------
@@ -363,8 +363,8 @@
   let sCtl, sT, scelgo = null; // scelgo: 'casa' o 'lavoro' mentre si imposta la scorciatoia
   const luoghi = () => ls.get('dp.luoghi', {});
   function ricorda(d) { const r = ls.get('dp.recenti', []).filter((x) => x.t !== d.t); r.unshift({ t: d.t, sub: d.sub || '', lat: d.lat, lon: d.lon, q: d.q || '' }); ls.set('dp.recenti', r.slice(0, 5)); }
-  function apriRicerca(testo) {
-    $('#search').hidden = false; $('#s-q').value = testo || ''; $('#s-x').hidden = !testo; scelgo = null;
+  function apriRicerca(testo, imposta) {
+    $('#search').hidden = false; $('#s-q').value = testo || ''; $('#s-x').hidden = !testo; scelgo = imposta || null;
     if (testo) { chipStato(); cerca(testo); } else inizio();
     setTimeout(() => { $('#s-q').focus(); if (testo) $('#s-q').select(); }, 60);
   }
@@ -434,7 +434,7 @@
   $('#s-back').onclick = chiudiRicerca;
   function scegli(x) {
     const k = scelgo;
-    if (k) { const l = luoghi(); l[k] = { t: x.t, sub: x.sub || '', lat: x.lat, lon: x.lon }; ls.set('dp.luoghi', l); toast(`${k === 'casa' ? 'Casa' : 'Lavoro'} impostato: ${x.t}`); scelgo = null; }
+    if (k) { const l = luoghi(); l[k] = { t: x.t, sub: x.sub || '', lat: x.lat, lon: x.lon }; ls.set('dp.luoghi', l); toccato(); toast(`${k === 'casa' ? 'Casa' : 'Lavoro'} impostato: ${x.t}`); scelgo = null; }
     vaiA(k ? Object.assign({ k }, x) : x);
   }
   async function apriSalvato(id) {
@@ -525,6 +525,140 @@
     } catch (err) { toast('Non sono riuscito a inviare la segnalazione. Controlla la connessione e riprova.', 4500); }
     lab.textContent = 'Invia la segnalazione'; btn.disabled = nuovo.doppio;
   };
+
+
+  // ---------- account facoltativo e sincronizzazione ----------
+  // Senza account tutto resta sul telefono. Con l'account, posti salvati, Casa/Lavoro e scadenza del contrassegno
+  // vengono copiati nel profilo dell'utente (dati dell'account Supabase) e ritrovati su un altro telefono.
+  let sessione = ls.get('dp.sessione', null), sincT;
+  const profilo = () => Object.assign({ scadenza: '', giorni: 60, notifica: false }, ls.get('dp.profilo', {}));
+  async function aut(path, opt) {
+    if (sessione && sessione.scade - 60 < Date.now() / 1000) {
+      const r = await fetch(`${CFG.SB}/auth/v1/token?grant_type=refresh_token`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: sessione.refresh }) });
+      if (r.ok) entra2(await r.json()); else if (r.status === 400 || r.status === 401) { sessione = null; ls.set('dp.sessione', null); throw new Error('sessione scaduta'); }
+    }
+    return fetch(CFG.SB + path, Object.assign({}, opt, { headers: Object.assign({ apikey: CFG.KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + (sessione ? sessione.token : CFG.KEY) }, (opt || {}).headers) }));
+  }
+  function entra2(j) { sessione = { token: j.access_token, refresh: j.refresh_token, scade: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sessione && sessione.email) || '' }; ls.set('dp.sessione', sessione); }
+  const pacchetto = () => ({ salvati: [...salvati.values()], luoghi: luoghi(), profilo: profilo(), agg: ls.get('dp.agg', 0) });
+  function applica(d) {
+    salvati.clear(); (d.salvati || []).forEach((x) => salvati.set(x.id, x)); ls.set('dp.salvati', [...salvati.values()]);
+    ls.set('dp.luoghi', d.luoghi || {}); ls.set('dp.profilo', d.profilo || {}); ls.set('dp.agg', d.agg || Date.now()); programmaAvvisi();
+  }
+  function toccato() { ls.set('dp.agg', Date.now()); if (!sessione) return; clearTimeout(sincT); sincT = setTimeout(() => { aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }).catch(() => {}); }, 1200); }
+  async function allinea() { // dopo l'accesso: vince la copia più recente tra telefono e account
+    try {
+      const r = await aut('/auth/v1/user'); if (!r.ok) return; const u = await r.json(), remoto = (u.user_metadata || {}).dp;
+      const locale = pacchetto(), vuoto = !locale.salvati.length && !Object.keys(locale.luoghi).length && !locale.profilo.scadenza;
+      if (remoto && (vuoto || (remoto.agg || 0) > locale.agg)) applica(remoto); else if (!vuoto) { ls.set('dp.agg', locale.agg || Date.now()); await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); }
+    } catch (e) { /* si riprova al prossimo cambiamento */ }
+  }
+  async function accedi(email, password, nuovoAccount) {
+    const r = await fetch(`${CFG.SB}/auth/v1/${nuovoAccount ? 'signup' : 'token?grant_type=password'}`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? 'La password deve avere almeno 6 caratteri.' : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
+    if (!j.access_token) return 'conferma'; // account creato: serve il clic sul link ricevuto per email
+    entra2(j); await allinea(); return 'ok';
+  }
+  function esci() { if (sessione) fetch(`${CFG.SB}/auth/v1/logout`, { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + sessione.token } }).catch(() => {}); sessione = null; ls.set('dp.sessione', null); }
+
+  // ---------- schermata 7 · i tuoi posti ----------
+  let formAperto = false;
+  function apriMenu() { formAperto = false; $('#menu').hidden = false; menu(); }
+  function menu(msg) {
+    const l = luoghi(), v = [...salvati.values()];
+    const acc = sessione
+      ? `<div class="chi"><span class="av">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span><button class="bsm" data-a="esci">Esci</button></div>`
+      : `<div class="acc"><div class="b">Accedi per non perderli</div><p>I posti salvati ti seguono se cambi telefono. È facoltativo: l'app funziona anche senza.</p>${formAperto
+        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><input id="a-pass" type="password" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password"><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
+        : `<button class="bw" data-a="form">Usa la tua email</button><p>L'accesso con Google e con Apple arriva presto.</p>`}</div>`;
+    const luogo = (k, nome, ic) => l[k]
+      ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}">Cambia</button><button data-a="togli" data-k="${k}">Togli</button></div></div>`
+      : `<div class="luogo vuoto"><button class="vai" data-a="imposta" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>Imposta l'indirizzo</span></span></button></div>`;
+    $('#m-body').innerHTML = `${acc}
+      <div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>
+      <button class="vaip" data-a="profilo"><span class="mk">${icon('wc')}</span><span class="t">Il mio contrassegno e gli avvisi</span>${icon('chev')}</button>
+      <div><div class="eyebrow">Posti salvati</div>${v.length ? v.map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('') : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>'}</div>
+      <div class="piede"><button data-a="fonti">Fonti e avvertenze</button></div>`;
+  }
+  $('#m-back').onclick = () => { $('#menu').hidden = true; };
+  $('#m-body').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a, k = b.dataset.k;
+    if (a === 'form') { formAperto = true; menu(); $('#a-email').focus(); }
+    else if (a === 'entra' || a === 'crea') {
+      const email = $('#a-email').value.trim(), pass = $('#a-pass').value;
+      if (!/^\S+@\S+\.\S+$/.test(email) || pass.length < 6) { $('#m-body .msg').textContent = 'Scrivi la tua email e una password di almeno 6 caratteri.'; return; }
+      b.disabled = true; $('#m-body .msg').textContent = 'Un momento…';
+      try { const esito = await accedi(email, pass, a === 'crea'); if (esito === 'conferma') { $('#m-body .msg').textContent = 'Ti abbiamo mandato un\'email: apri il link di conferma, poi torna qui e tocca "Accedi".'; b.disabled = false; } else { formAperto = false; menu(); toast('Accesso fatto. I tuoi posti ora ti seguono.'); } }
+      catch (err) { $('#m-body .msg').textContent = err.message; b.disabled = false; }
+    }
+    else if (a === 'esci') { esci(); menu(); toast('Sei uscito. I posti restano su questo telefono.'); }
+    else if (a === 'vai') { $('#menu').hidden = true; vaiA(Object.assign({ k }, luoghi()[k])); }
+    else if (a === 'imposta') { $('#menu').hidden = true; apriRicerca('', k); }
+    else if (a === 'togli') { const l = luoghi(); delete l[k]; ls.set('dp.luoghi', l); toccato(); menu(); }
+    else if (a === 'salvato') { $('#menu').hidden = true; apriSalvato(b.dataset.id); }
+    else if (a === 'via') { salvati.delete(b.dataset.id); ls.set('dp.salvati', [...salvati.values()]); toccato(); menu(); }
+    else if (a === 'profilo') { $('#profilo').hidden = false; scheda8(); }
+    else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-ver').textContent = 'Disability Parking, versione di prova ' + (window.DP_VERSIONE || ''); }
+  });
+  $('#f-back').onclick = () => { $('#fonti').hidden = true; };
+
+  // ---------- schermata 8 · profilo e contrassegno ----------
+  const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+  const dataLunga = (iso) => { const [y, m, d] = iso.split('-').map(Number); return `${d} ${MESI[m - 1]} ${y}`; };
+  const giorniA = (iso) => Math.round((new Date(iso + 'T00:00:00') - new Date(new Date().toDateString())) / 864e5);
+  function salvaProfilo(pz) { ls.set('dp.profilo', Object.assign(profilo(), pz)); toccato(); programmaAvvisi(); scheda8(); }
+  let altroAperto = false;
+  function scheda8() {
+    const pr = profilo(), foto = ls.get('dp.contrassegno', ''), g = pr.scadenza ? giorniA(pr.scadenza) : null;
+    const stato = g == null ? '' : g < 0 ? `<span class="stato scaduto">Scaduto da ${-g === 1 ? '1 giorno' : -g + ' giorni'}</span>` : g <= pr.giorni ? `<span class="stato presto">${icon('bell')}${g === 0 ? 'Scade oggi' : g === 1 ? 'Scade domani' : 'Scade tra ' + g + ' giorni'}</span>` : `<span class="stato">${icon('check')}Valido · mancano ${g} giorni</span>`;
+    const std = [30, 60, 90].includes(pr.giorni) && !altroAperto;
+    $('#p-body').innerHTML = `
+      ${sessione ? `<div class="chi"><span class="av">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>Accesso fatto</span></span></div>` : ''}
+      <div class="cont"><div class="eyebrow">Il mio contrassegno</div>
+        <div class="su"><span class="ft">${foto ? `<img src="${foto}" alt="Foto del tuo contrassegno">` : icon('wc')}</span><span class="dt">${pr.scadenza ? `<span>Scade il</span><b>${dataLunga(pr.scadenza)}</b>` : '<span>Scadenza non impostata</span><b>Aggiungila qui sotto</b>'}</span></div>
+        ${stato}
+        <div class="azioni"><label>${icon('edit')}<span>${pr.scadenza ? 'Cambia data' : 'Imposta la data'}</span><input id="p-data" type="date" value="${esc(pr.scadenza)}" aria-label="Data di scadenza del contrassegno"></label><button data-p="foto">${icon('camera')}<span>${foto ? 'Rifai la foto' : 'Aggiungi foto'}</span></button></div>
+      </div>
+      <div class="campo"><div class="b" style="font-size:17px">Avvisami prima della scadenza</div>
+        <div class="giorni">${[30, 60, 90].map((n) => `<button data-g="${n}" aria-pressed="${std && pr.giorni === n}">${n} gg</button>`).join('')}<button data-g="altro" aria-pressed="${!std}">Altro</button></div>
+        ${!std ? `<label class="altro"><input id="p-altro" type="number" inputmode="numeric" min="1" max="365" value="${pr.giorni}"> giorni prima</label>` : ''}
+        <div><div class="sw"><span class="t">Notifica sul telefono<span>${pr.scadenza ? 'Un avviso alla data scelta e uno il giorno della scadenza' : 'Imposta prima la data di scadenza'}</span></span><button role="switch" data-p="notifica" aria-checked="${!!pr.notifica}" aria-label="Notifica sul telefono" ${pr.scadenza ? '' : 'disabled'}><i></i></button></div>
+        <div class="sw"><span class="t">Email<span>Arriva con un prossimo aggiornamento</span></span><button role="switch" aria-checked="false" aria-label="Avviso via email" disabled><i></i></button></div></div>
+      </div>
+      <p class="small muted" style="margin:0">La foto del contrassegno resta solo su questo telefono. Nell'account viene salvata soltanto la data di scadenza.</p>`;
+  }
+  $('#p-back').onclick = () => { $('#profilo').hidden = true; altroAperto = false; };
+  $('#p-body').addEventListener('change', (e) => {
+    if (e.target.id === 'p-data') salvaProfilo({ scadenza: e.target.value || '' });
+    if (e.target.id === 'p-altro') { const n = Math.max(1, Math.min(365, parseInt(e.target.value, 10) || 60)); altroAperto = ![30, 60, 90].includes(n); salvaProfilo({ giorni: n }); }
+  });
+  $('#p-body').addEventListener('click', async (e) => {
+    const g = e.target.closest('[data-g]'); if (g) { if (g.dataset.g === 'altro') { altroAperto = true; scheda8(); const i = $('#p-altro'); if (i) { i.focus(); i.select(); } } else { altroAperto = false; salvaProfilo({ giorni: +g.dataset.g }); } return; }
+    const b = e.target.closest('[data-p]'); if (!b) return;
+    if (b.dataset.p === 'foto') $('#p-foto').click();
+    if (b.dataset.p === 'notifica') {
+      const on = !profilo().notifica;
+      if (on && !(await permessoAvvisi())) { toast('Per ricevere l\'avviso serve il permesso alle notifiche. Lo trovi nelle impostazioni del telefono.', 4500); return; }
+      salvaProfilo({ notifica: on }); if (on) toast('Avviso programmato.');
+    }
+  });
+  $('#p-foto').onchange = async () => { const f = $('#p-foto').files[0]; if (!f) return; try { const blob = await rimpicciolisci(f, 1000); const r = new FileReader(); r.onload = () => { ls.set('dp.contrassegno', r.result); scheda8(); }; r.readAsDataURL(blob); } catch (e) { toast('Non riesco a leggere la foto. Riprova.'); } };
+  // avvisi sul telefono: programmati sul dispositivo, funzionano anche senza rete e senza account
+  const LN = () => { const cap = window.Capacitor; return cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.LocalNotifications; };
+  async function permessoAvvisi() { const p = LN(); if (!p) return true; try { let s = await p.checkPermissions(); if (s.display !== 'granted') s = await p.requestPermissions(); return s.display === 'granted'; } catch (e) { return false; } }
+  async function programmaAvvisi() {
+    const p = LN(); if (!p) return; const pr = profilo();
+    try {
+      await p.cancel({ notifications: [{ id: 1 }, { id: 2 }] }).catch(() => {});
+      if (!pr.notifica || !pr.scadenza) return;
+      const fine = new Date(pr.scadenza + 'T09:00:00'), prima = new Date(fine.getTime() - pr.giorni * 864e5), n = [];
+      if (prima > new Date()) n.push({ id: 1, title: 'Il contrassegno sta per scadere', body: `Scade il ${dataLunga(pr.scadenza)}, tra ${pr.giorni} giorni. Il rinnovo si chiede al tuo Comune.`, schedule: { at: prima, allowWhileIdle: true } });
+      if (fine > new Date()) n.push({ id: 2, title: 'Il contrassegno scade oggi', body: 'Ricordati di rinnovarlo al tuo Comune.', schedule: { at: fine, allowWhileIdle: true } });
+      if (n.length) await p.schedule({ notifications: n });
+    } catch (e) { /* senza permesso non si programma nulla */ }
+  }
+  if (sessione) allinea();
 
   // ---------- primo avvio ----------
   if (!ls.get('dp.benvenuto', false)) $('#welcome').hidden = false; else attivaPosizione(false);

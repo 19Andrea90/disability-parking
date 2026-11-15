@@ -38,7 +38,7 @@ jobs:
       - name: Chiavi dei servizi (dai segreti del deposito; senza segreto l'app usa i servizi gratuiti)
         env:
           TOMTOM_KEY: ${{ secrets.TOMTOM_KEY }}
-        run: printf "window.DP_TOMTOM = '%s';\n" "$TOMTOM_KEY" > www/chiavi.js
+        run: printf "window.DP_TOMTOM = '%s';\nwindow.DP_VERSIONE = '0.1.%s';\n" "$TOMTOM_KEY" "${{ github.run_number }}" > www/chiavi.js
       - name: Crea il progetto Android
         run: npx cap add android
       - name: Permessi per la posizione

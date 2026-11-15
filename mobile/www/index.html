@@ -32,6 +32,8 @@
     <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4h11l-2 4 2 4H5"/></symbol>
     <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
     <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 1 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></symbol>
   </defs>
 </svg>
@@ -160,6 +162,36 @@
       <div id="c-conf-far" class="muted small"></div>
     </div>
   </section>
+</div>
+
+<!-- Schermata 7 · I tuoi posti e accesso facoltativo -->
+<div id="menu" class="page" hidden>
+  <div class="p-top"><button id="m-back" aria-label="Torna alla mappa"><svg class="ic"><use href="#i-back"/></svg></button><h1>I tuoi posti</h1></div>
+  <div id="m-body"></div>
+</div>
+
+<!-- Schermata 8 · Il mio profilo e il contrassegno -->
+<div id="profilo" class="page" hidden>
+  <div class="p-top"><button id="p-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1>Il mio profilo</h1></div>
+  <div id="p-body"></div>
+  <input id="p-foto" type="file" accept="image/*" capture="environment" class="vh">
+</div>
+
+<!-- Fonti e avvertenze -->
+<div id="fonti" class="page" hidden>
+  <div class="p-top"><button id="f-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Fonti e avvertenze</h1></div>
+  <div class="testo">
+    <p><b>I dati possono contenere errori.</b> Un posto segnato in mappa può essere stato spostato, tolto o riservato a una sola targa. Controlla sempre la segnaletica sul posto: è quella che vale.</p>
+    <p><b>Da dove arrivano i posti</b></p>
+    <p>Dati ufficiali pubblicati dai Comuni come open data (licenza CC BY), tra cui Bologna, Firenze, Torino, Verona, Modena, Trento, Livorno, Prato, Ferrara, Cesena, Siena, Matera e diversi comuni lombardi e piemontesi.</p>
+    <p>OpenStreetMap, la mappa libera costruita da volontari (© OpenStreetMap contributors, licenza ODbL).</p>
+    <p>Riconoscimento automatico sulle foto aeree della Regione Friuli Venezia Giulia e segnalazioni di chi usa l'app.</p>
+    <p><b>Affidabilità</b></p>
+    <p>"Ufficiale": viene dal Comune. "Verificato": presente su OpenStreetMap o confermato da più persone. "Da verificare": segnalato da poco, non ancora confermato.</p>
+    <p><b>Mappa e percorsi</b></p>
+    <p>Sfondo della mappa: OpenFreeMap, dati OpenStreetMap. Tempi in auto e ricerca dei civici: TomTom. Ricerca dei luoghi: Photon e Nominatim.</p>
+    <p id="f-ver" class="small muted"></p>
+  </div>
 </div>
 
 <!-- Schermata 1 · Primo avvio -->
