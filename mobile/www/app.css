@@ -19,6 +19,7 @@ button:focus-visible{outline:3px solid var(--giallo);outline-offset:2px}
 
 #map{position:fixed;inset:0}
 .maplibregl-ctrl-bottom-right{bottom:auto;top:calc(var(--sat) + 140px);right:6px}
+#map:has(~ #arrivo:not([hidden])) .maplibregl-ctrl-bottom-right,#map:has(~ #card:not([hidden])) .maplibregl-ctrl-bottom-right{top:calc(var(--sat) + 84px)}
 .maplibregl-ctrl-attrib{font-size:11px}
 .me{width:44px;height:44px;border-radius:50%;background:rgba(22,61,124,.18);display:grid;place-items:center}
 .me i{width:18px;height:18px;border-radius:50%;background:#1d5fd1;border:3px solid #fff;box-shadow:0 2px 6px rgba(11,31,68,.4)}
@@ -269,3 +270,8 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .testo{font-size:16px;line-height:1.45}.testo p{margin:0 0 12px}
 
 .italia{font-size:17px;margin:2px 0 6px}.italia b{font-size:26px;font-weight:700;color:var(--blu);margin-right:4px}
+
+#arrivo{touch-action:none}
+#arrivo #a-list{touch-action:pan-y;overscroll-behavior:contain}
+#arrivo.min .arow:not(.on),#arrivo.min #a-sub,#arrivo.min #a-hint{display:none}
+#arrivo.min #a-list{overflow:visible}

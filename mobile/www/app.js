@@ -126,6 +126,7 @@
     map.addLayer({ id: 'sel-i', type: 'symbol', source: 'sel', layout: { 'icon-image': 'wc-d', 'icon-size': 1.15, 'icon-allow-overlap': true } });
     map.on('click', 'pin', (e) => apriScheda(e.features[0].properties.id));
     map.on('click', 'gruppi', (e) => { const f = e.features[0]; Promise.resolve(map.getSource('stalli').getClusterExpansionZoom(f.properties.cluster_id)).then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(z, 18) })); });
+    const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { at.classList.remove('maplibregl-compact-show'); at.removeAttribute('open'); } // i crediti della mappa partono chiusi (si aprono dalla i)
     pronta = true; map.setPadding(padHome()); disegna(); zone(); caricaVista();
   });
   map.on('error', (e) => { if (!pronta && e && e.error && /style|Failed to fetch|load/i.test(String(e.error.message))) toast('La mappa non si carica. Controlla la connessione.', 5000); });
@@ -376,6 +377,23 @@
       map.fitBounds(b, { padding: { top: 110, bottom: $('#arrivo').offsetHeight + 40, left: 50, right: 50 }, maxZoom: 17, duration: 500 });
     }
   }
+  // elenco dei posti attorno alla destinazione: si può ridurre al solo posto scelto per lasciare spazio alla mappa
+  let ridotto = false;
+  function riduci(si) {
+    if (ridotto === si) return; ridotto = si; $('#arrivo').classList.toggle('min', si); $('#a-handle').setAttribute('aria-expanded', !si);
+    if (!si) $('#a-list').scrollTop = 0;
+    if (dest && !selId) arrivo(true);
+  }
+  (function () { // trascina giù per ridurre, su per riaprire; un tocco sulla maniglia fa lo stesso
+    const el = $('#arrivo'); let y0 = null, daLista = false, tocco = 0;
+    el.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; const o = e.target.closest('#a-list'); daLista = !!(o && !ridotto && o.scrollHeight > o.clientHeight + 2); }, { passive: true });
+    el.addEventListener('touchend', (e) => {
+      if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null;
+      if (dy > 40 && !ridotto && !daLista) riduci(true); else if (dy < -40 && ridotto) riduci(false);
+      else if (Math.abs(dy) < 10 && e.target.closest('.handle')) { tocco = Date.now(); riduci(!ridotto); }
+    }, { passive: true });
+    $('#a-handle').addEventListener('click', () => { if (Date.now() - tocco > 700) riduci(!ridotto); });
+  })();
   function chiudiDest() { dest = null; numMk.forEach((m) => m.remove()); numMk = []; if (destMk) destMk.remove(); destMk = null; mostra(); map.easeTo({ padding: padHome(), duration: 300 }); vicini(); }
   $('#d-back').onclick = chiudiDest;
   $('#d-name').onclick = () => { if (dest) apriRicerca(dest.q || dest.t); };
