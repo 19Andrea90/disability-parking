@@ -163,7 +163,6 @@
     if (map.getZoom() < CFG.MIN_ZOOM_DATI) { el.innerHTML = '<div class="eyebrow">Mappa troppo lontana</div><div class="empty">Avvicinati con due dita per vedere i posti della zona.</div>'; return; }
     const { usoMe, out } = elencoVicini();
     if (!out.length) { el.innerHTML = `<div class="eyebrow">${usoMe ? 'Vicino a te' : 'In questa zona'}</div><div class="empty">Nessun posto qui${filtri.ver || filtri.cop || filtri.multi ? ' con questi filtri' : ''}. Sposta la mappa${filtri.ver || filtri.cop || filtri.multi ? ' o togli un filtro' : ''}.</div>`; return; }
-    out.forEach((x) => trovaVia(x.s));
     const a = out[0], [cls, lab] = affidabilita(a.s), w = usoMe ? fmtWalk(a.d) : '';
     el.innerHTML = `<div class="eyebrow">${usoMe ? 'Il più vicino a te' : 'Il più vicino in questa zona'}</div>
       <button class="first" data-id="${esc(a.s.id)}"><span class="tile">${icon('wc')}</span><span class="t"><b>${esc(titolo(a.s))}</b><span>${[fmtDist(a.d), w, posti(a.s.posti)].filter(Boolean).join(' · ')}</span></span><span class="badge ${cls}">${lab}</span></button>
@@ -280,7 +279,7 @@
     $('#a-hint').textContent = inCorso < 0 && lista.length > 1 ? 'Se è occupato, con un tocco passi al numero 2.' : '';
     numMk.forEach((m) => m.remove()); numMk = []; if (destMk) destMk.remove();
     const de = document.createElement('div'); de.className = 'mdest'; de.innerHTML = icon('flag'); destMk = new maplibregl.Marker({ element: de }).setLngLat([dest.lon, dest.lat]).addTo(map);
-    lista.forEach((x, i) => { const el = document.createElement('div'); el.className = 'mnum' + (i === att ? ' on' : ''); el.textContent = i + 1; el.onclick = (e) => { e.stopPropagation(); apriScheda(x.s.id); }; numMk.push(new maplibregl.Marker({ element: el }).setLngLat([x.s.lon, x.s.lat]).addTo(map)); trovaVia(x.s); });
+    lista.forEach((x, i) => { const el = document.createElement('div'); el.className = 'mnum' + (i === att ? ' on' : ''); el.textContent = i + 1; el.onclick = (e) => { e.stopPropagation(); apriScheda(x.s.id); }; numMk.push(new maplibregl.Marker({ element: el }).setLngLat([x.s.lon, x.s.lat]).addTo(map)); });
     if (inquadra) {
       const b = new maplibregl.LngLatBounds([dest.lon, dest.lat], [dest.lon, dest.lat]); lista.slice(0, 5).forEach((x) => b.extend([x.s.lon, x.s.lat]));
       map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }); // fitBounds somma il suo margine a quello già impostato
@@ -307,16 +306,30 @@
   }
   function etichetta(p) { const via = [p.street, p.housenumber].filter(Boolean).join(' '), t = p.name || via || p.city || ''; return { t, sub: [p.name && via, p.city !== t && p.city, p.county].filter(Boolean).join(', ') }; }
   let risultati = [];
+  // Due servizi di ricerca: Photon (veloce, adatto mentre scrivi) e, se non risponde, Nominatim di OpenStreetMap.
+  async function geocodifica(q, c, signal) {
+    try {
+      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lat=${c[1]}&lon=${c[0]}&zoom=12&location_bias_scale=0.4`, { signal });
+      if (!r.ok) throw new Error('photon ' + r.status);
+      const j = await r.json();
+      return j.features.filter((f) => { const p = f.properties || {}; return !p.countrycode || p.countrycode === 'IT' || p.country === 'Italia'; }).slice(0, 6)
+        .map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }, etichetta(f.properties))).filter((x) => x.t);
+    } catch (e) {
+      if (e.name === 'AbortError') throw e;
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=it&accept-language=it&q=${encodeURIComponent(q)}&viewbox=${c[0] - .4},${c[1] + .3},${c[0] + .4},${c[1] - .3}`, { signal });
+      if (!r.ok) throw new Error('nominatim ' + r.status);
+      return (await r.json()).map((x) => { const a = x.address || {}, via = [a.road, a.house_number].filter(Boolean).join(' '), citta = a.city || a.town || a.village || a.municipality || '';
+        const t = x.name || via || citta; return { lat: +x.lat, lon: +x.lon, t, sub: [x.name && via, citta !== t && citta, a.county].filter(Boolean).join(', ') }; }).filter((x) => x.t);
+    }
+  }
   async function cerca(q) {
     if (sCtl) sCtl.abort(); sCtl = new AbortController(); const c = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
     try {
-      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lat=${c[1]}&lon=${c[0]}&bbox=6.6,35.4,18.6,47.2`, { signal: sCtl.signal });
-      const j = await r.json();
-      risultati = j.features.filter((f) => (f.properties.countrycode || 'IT') === 'IT').slice(0, 6).map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }, etichetta(f.properties))).filter((x) => x.t);
+      risultati = await geocodifica(q, c, sCtl.signal);
       if (!risultati.length) { $('#s-body').innerHTML = '<div class="empty">Non trovo questo posto. Prova con la via e la città.</div>'; return; }
       $('#s-body').innerHTML = '<div class="eyebrow">Risultati</div>' + risultati.map((x, i) => `<div data-box="${i}"><button class="res" data-res="${i}"><span class="mk">${icon('pin')}</span><span class="t"><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></span>${scelgo ? '' : '<span class="n wait">…</span>'}</button></div>`).join('');
       if (!scelgo) risultati.forEach((x, i) => conta(x, i, sCtl.signal));
-    } catch (e) { if (e.name !== 'AbortError') $('#s-body').innerHTML = '<div class="empty">La ricerca non risponde. Controlla la connessione e riprova.</div>'; }
+    } catch (e) { if (e.name !== 'AbortError') $('#s-body').innerHTML = `<div class="empty">La ricerca non risponde. Controlla la connessione e riprova.<br><span class="small">(${esc(e.message || e)})</span></div>`; }
   }
   async function conta(x, i, signal) { // quanti posti ci sono attorno a un risultato; se nessuno, propone il più vicino
     await carica(x.lat - 0.012, x.lon - 0.017, x.lat + 0.012, x.lon + 0.017, false);
@@ -325,12 +338,12 @@
     if (dentro.length) { b.className = 'n'; b.textContent = posti(n); return; }
     b.remove(); const rg = raggio >= 1000 ? '1 km' : raggio + ' m';
     const d = document.createElement('div'); d.className = 'lontano';
-    if (tutti.length) { const v = tutti[0]; trovaVia(v.s); d.innerHTML = `<div><b>Nessun posto entro ${rg}.</b> Il più vicino è a ${fmtDist(v.d)}${v.s.indirizzo ? ', in ' + esc(v.s.indirizzo) : ''}.</div><button data-nav="${esc(v.s.id)}">${icon('nav')}<span>Portami lì</span></button>`; }
+    if (tutti.length) { const v = tutti[0]; d.innerHTML = `<div><b>Nessun posto entro ${rg}.</b> Il più vicino è a ${fmtDist(v.d)}${v.s.indirizzo ? ', in ' + esc(v.s.indirizzo) : ''}.</div><button data-nav="${esc(v.s.id)}">${icon('nav')}<span>Portami lì</span></button>`; }
     else d.innerHTML = '<div><b>Nessun posto entro 1 km.</b> Qui la mappa è ancora vuota.</div>';
     box.appendChild(d);
   }
-  $('#s-q').addEventListener('input', () => { const q = $('#s-q').value.trim(); $('#s-x').hidden = !q; clearTimeout(sT); if (q.length < 3) { if (sCtl) sCtl.abort(); inizio(); return; } sT = setTimeout(() => cerca(q), 350); });
-  $('#s-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#s-q').blur(); } });
+  $('#s-q').addEventListener('input', () => { const q = $('#s-q').value.trim(); $('#s-x').hidden = !q; clearTimeout(sT); if (q.length < 3) { if (sCtl) sCtl.abort(); inizio(); return; } sT = setTimeout(() => cerca(q), 500); });
+  $('#s-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#s-q').blur(); const q = $('#s-q').value.trim(); clearTimeout(sT); if (q.length >= 2) cerca(q); } });
   $('#s-x').onclick = () => { $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus(); };
   $('#s-back').onclick = chiudiRicerca;
   function scegli(x) {
