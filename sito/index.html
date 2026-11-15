@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Disability Parking · Tutti i posti riservati d'Italia, in una mappa</title>
+<meta name="description" content="L'app gratuita che mostra i parcheggi riservati alle persone con disabilità in tutta Italia: trova il più vicino a te o alla tua destinazione e fatti portare lì.">
+<meta property="og:title" content="Disability Parking">
+<meta property="og:description" content="Tutti i posti riservati d'Italia, in una mappa.">
+<meta property="og:image" content="https://19andrea90.github.io/disability-parking/sito/icona.png">
+<meta name="theme-color" content="#0b2a5b">
+<link rel="icon" href="icona.png">
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-display:swap;src:url(atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-display:swap;src:url(atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+:root{--blu:#0b2a5b;--ink:#0b1f44;--giallo:#ffcc00;--giallo-ink:#2b2300;--muted:#4a5668;--soft:#eef2f8;--line:#d9e0ec;--bg:#ffffff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg);font-size:18px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img,svg{max-width:100%}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.12;margin:0;text-wrap:balance}
+h2{font-size:clamp(28px,4.2vw,42px);letter-spacing:-.01em}
+.eyebrow{font-size:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blu);margin-bottom:12px}
+.lead{font-size:20px;color:var(--muted);max-width:60ch}
+section{padding:84px 0}
+:focus-visible{outline:3px solid var(--giallo);outline-offset:3px;border-radius:6px}
+
+/* intestazione */
+header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:20px;height:68px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;text-decoration:none}
+.logo img{width:38px;height:38px;border-radius:10px}
+nav{margin-left:auto;display:flex;gap:26px;font-size:16px}
+nav a{text-decoration:none;color:var(--muted);font-weight:700}
+nav a:hover{color:var(--blu)}
+.btn{display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 24px;border-radius:16px;font-weight:700;font-size:18px;text-decoration:none;border:2px solid transparent;transition:transform .12s ease,box-shadow .12s ease}
+.btn:hover{transform:translateY(-2px)}
+.btn svg{width:22px;height:22px;flex:none}
+.btn.giallo{background:var(--giallo);color:var(--giallo-ink);box-shadow:0 6px 0 #c79f00}
+.btn.giallo:hover{box-shadow:0 8px 0 #c79f00}
+.btn.chiaro{background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+.btn.blu{background:var(--blu);color:#fff}
+.btn.piccolo{min-height:44px;padding:0 16px;font-size:16px;border-radius:13px;box-shadow:none}
+
+/* apertura */
+.hero{background:var(--blu);color:#fff;padding:0;overflow:hidden;position:relative}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(900px 500px at 85% 20%,rgba(255,204,0,.16),transparent 60%),
+  linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px) 0 0/100% 56px,
+  linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px) 0 0/56px 100%}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding-top:72px}
+.hero h1{font-size:clamp(40px,6.4vw,72px);letter-spacing:-.02em}
+.hero h1 em{font-style:normal;color:var(--giallo)}
+.hero p{font-size:21px;color:#d6dff0;max-width:34ch;margin:22px 0 30px}
+.cta{display:flex;flex-wrap:wrap;gap:14px}
+.nota{font-size:15px;color:#b9c6de;margin-top:18px}
+.conta{display:flex;gap:34px;margin:44px 0 72px;flex-wrap:wrap}
+.conta div b{display:block;font-size:38px;line-height:1;color:var(--giallo);font-variant-numeric:tabular-nums}
+.conta div span{font-size:15px;color:#b9c6de}
+.telefono{justify-self:center;align-self:end;width:min(330px,82vw);margin-bottom:-70px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.4))}
+
+/* come funziona */
+.passi{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:44px}
+.passo{background:var(--soft);border-radius:26px;padding:28px;position:relative}
+.passo .n{width:46px;height:46px;border-radius:50%;background:var(--giallo);color:var(--giallo-ink);font-weight:700;font-size:22px;display:grid;place-items:center;margin-bottom:18px}
+.passo h3{font-size:23px;margin-bottom:8px}
+.passo p{margin:0;color:var(--muted)}
+
+/* funzioni */
+.scuro{background:var(--ink);color:#fff}
+.scuro .eyebrow{color:var(--giallo)}
+.scuro .lead{color:#c4cfe4}
+.griglia{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px}
+.carta{border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:24px;background:rgba(255,255,255,.04)}
+.carta .ic{width:50px;height:50px;border-radius:15px;background:var(--giallo);color:var(--giallo-ink);display:grid;place-items:center;margin-bottom:16px}
+.carta .ic svg{width:26px;height:26px}
+.carta h3{font-size:20px;margin-bottom:6px}
+.carta p{margin:0;color:#c4cfe4;font-size:16.5px}
+
+/* numeri */
+.numeri .wrap{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:start}
+.grande{font-size:clamp(54px,8vw,92px);font-weight:700;line-height:1;color:var(--blu);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.barre{display:grid;gap:9px}
+.riga{display:grid;grid-template-columns:170px 1fr 64px;gap:12px;align-items:center;font-size:16px}
+.riga .b{height:16px;border-radius:8px;background:var(--soft);overflow:hidden}
+.riga .b i{display:block;height:100%;border-radius:8px;background:var(--blu);width:0;transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.riga:nth-child(-n+3) .b i{background:linear-gradient(90deg,var(--blu) 70%,var(--giallo))}
+.riga .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.agg{font-size:14.5px;color:var(--muted);margin-top:16px}
+
+/* dati */
+.dati{background:var(--soft)}
+.fonti{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+.fonte{background:#fff;border-radius:20px;padding:22px;border:1px solid var(--line)}
+.fonte b{display:block;font-size:19px;margin-bottom:4px}
+.fonte span{color:var(--muted);font-size:16px}
+.avviso{margin-top:26px;border-left:6px solid var(--giallo);background:#fff;border-radius:0 18px 18px 0;padding:18px 22px;font-size:17px}
+
+/* sostieni */
+.due{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.box{border-radius:28px;padding:36px}
+.box.g{background:var(--giallo);color:var(--giallo-ink)}
+.box.b{background:var(--blu);color:#fff}
+.box h2{font-size:30px;margin-bottom:12px}
+.box p{margin:0 0 22px}
+.box.b p{color:#d6dff0}
+.box .btn.blu{background:var(--ink)}
+.box .btn.giallo{box-shadow:none}
+
+footer{background:var(--ink);color:#b9c6de;padding:44px 0;font-size:15.5px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:18px 34px;align-items:center}
+footer a{color:#fff;font-weight:700;text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .fine{flex-basis:100%;border-top:1px solid rgba(255,255,255,.14);padding-top:18px;margin-top:6px}
+
+@media (max-width:900px){
+  nav{display:none}
+  header .btn{margin-left:auto}
+  section{padding:60px 0}
+  .hero .wrap{grid-template-columns:1fr;padding-top:48px}
+  .conta{margin-bottom:36px}
+  .passi,.griglia,.due{grid-template-columns:1fr}
+  .numeri .wrap{grid-template-columns:1fr;gap:30px}
+  .fonti{grid-template-columns:1fr 1fr}
+  .riga{grid-template-columns:118px 1fr 54px;font-size:15px}
+}
+@media (max-width:520px){.conta{gap:22px}.conta div b{font-size:30px}.fonti{grid-template-columns:1fr}.btn{width:100%;justify-content:center}header .btn{width:auto}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="wc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="4.5" r="1.8"/><path d="M10 8.5v5.5h5l2.5 5"/><path d="M7.5 11.5a5.5 5.5 0 1 0 7.5 7"/></symbol>
+  <symbol id="i-android" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></symbol>
+  <symbol id="i-cerca" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-casa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></symbol>
+  <symbol id="i-occhio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+  <symbol id="i-campana" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4"/></symbol>
+  <symbol id="i-piu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-lucchetto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-freccia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<header>
+  <div class="wrap">
+    <a class="logo" href="#top"><img src="icona.png" alt="">Disability Parking</a>
+    <nav aria-label="Sezioni">
+      <a href="#come">Come funziona</a><a href="#funzioni">Cosa fa</a><a href="#numeri">Copertura</a><a href="#dati">I dati</a><a href="#sostieni">Sostieni</a>
+    </nav>
+    <a class="btn giallo piccolo" href="#scarica">Scarica</a>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>Tutti i posti riservati d'Italia, <em>in una mappa.</em></h1>
+      <p>Trova il parcheggio per persone con disabilità più vicino a te o alla tua destinazione, e fatti portare lì. Gratis.</p>
+      <div class="cta" id="scarica">
+        <a class="btn giallo" href="https://github.com/19Andrea90/disability-parking/releases/download/app-prova/disability-parking.apk"><svg><use href="#i-android"/></svg>Scarica per Android</a>
+        <a class="btn chiaro" href="../">Apri la versione web<svg><use href="#i-freccia"/></svg></a>
+      </div>
+      <div class="nota">Versione di prova, in sviluppo. A breve su Google Play.</div>
+      <div class="conta" aria-live="polite">
+        <div><b id="n-posti">53.000+</b><span>posti riservati in mappa</span></div>
+        <div><b id="n-comuni">2.900+</b><span>comuni coperti</span></div>
+        <div><b>20</b><span>regioni</span></div>
+      </div>
+    </div>
+
+    <!-- telefono disegnato: la schermata principale dell'app -->
+    <svg class="telefono" viewBox="0 0 330 640" role="img" aria-label="La schermata dell'app: una mappa con i posti riservati e il più vicino in evidenza">
+      <defs><clipPath id="schermo"><rect x="14" y="14" width="302" height="640" rx="34"/></clipPath></defs>
+      <rect x="2" y="2" width="326" height="670" rx="46" fill="#0b1f44" stroke="#3b4d73" stroke-width="3"/>
+      <g clip-path="url(#schermo)">
+        <rect x="14" y="14" width="302" height="640" fill="#eef1f4"/>
+        <!-- isolati -->
+        <g fill="#dfe5ec">
+          <rect x="14" y="96" width="70" height="92" rx="6"/><rect x="100" y="96" width="96" height="60" rx="6"/><rect x="212" y="96" width="104" height="110" rx="6"/>
+          <rect x="14" y="204" width="70" height="120" rx="6"/><rect x="100" y="172" width="96" height="76" rx="6"/><rect x="100" y="264" width="96" height="60" rx="6"/>
+          <rect x="212" y="222" width="104" height="102" rx="6"/><rect x="14" y="340" width="130" height="70" rx="6"/><rect x="160" y="340" width="156" height="70" rx="6"/>
+        </g>
+        <rect x="112" y="184" width="72" height="52" rx="8" fill="#cfe6d2"/>
+        <!-- strade -->
+        <g stroke="#ffffff" stroke-linecap="round" fill="none">
+          <path d="M92 80v340M204 80v340" stroke-width="14"/><path d="M14 196h302M14 332h302" stroke-width="14"/><path d="M14 164h180M204 214h112M92 256h112" stroke-width="8"/><path d="M152 332v90" stroke-width="8"/>
+        </g>
+        <!-- percorso -->
+        <path d="M152 300V332H204V214h30" fill="none" stroke="#0b2a5b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 10"/>
+        <!-- posizione -->
+        <circle cx="152" cy="300" r="20" fill="#2f7df6" opacity=".18"/><circle cx="152" cy="300" r="9" fill="#2f7df6" stroke="#fff" stroke-width="3.5"/>
+        <!-- pin -->
+        <g color="#fff">
+          <g transform="translate(50 150)"><circle r="16" fill="#0b2a5b" stroke="#fff" stroke-width="3"/><use href="#wc" x="-10" y="-10" width="20" height="20"/></g>
+          <g transform="translate(270 300)"><circle r="16" fill="#0b2a5b" stroke="#fff" stroke-width="3"/><use href="#wc" x="-10" y="-10" width="20" height="20"/></g>
+          <g transform="translate(60 372)"><circle r="16" fill="#0b2a5b" stroke="#fff" stroke-width="3"/><use href="#wc" x="-10" y="-10" width="20" height="20"/></g>
+          <g transform="translate(150 128)"><circle r="16" fill="#fff" stroke="#0b2a5b" stroke-width="3"/><use href="#wc" x="-10" y="-10" width="20" height="20" color="#0b2a5b"/></g>
+        </g>
+        <g transform="translate(238 214)" color="#2b2300"><circle r="30" fill="#ffcc00" opacity=".3"/><circle r="22" fill="#ffcc00" stroke="#0b1f44" stroke-width="3"/><use href="#wc" x="-13" y="-13" width="26" height="26"/></g>
+        <!-- ricerca -->
+        <rect x="28" y="34" width="274" height="52" rx="18" fill="#fff" stroke="#d9e0ec"/>
+        <use href="#i-cerca" x="42" y="49" width="22" height="22" color="#0b2a5b"/>
+        <text x="74" y="66" font-size="16" fill="#4a5668" font-family="Atkinson Hyperlegible,sans-serif">Dove vuoi andare?</text>
+        <!-- pannello -->
+        <rect x="14" y="424" width="302" height="240" rx="28" fill="#fff"/>
+        <rect x="145" y="434" width="40" height="5" rx="2.5" fill="#c9d2e0"/>
+        <g font-family="Atkinson Hyperlegible,sans-serif">
+          <text x="34" y="466" font-size="11.5" font-weight="700" letter-spacing="1.4" fill="#0b2a5b">IL PIÙ VICINO A TE</text>
+          <text x="34" y="496" font-size="22" font-weight="700" fill="#0b1f44">Via Mercatovecchio 4</text>
+          <text x="34" y="520" font-size="15" fill="#4a5668">2 min in auto · 2 posti</text>
+          <rect x="34" y="532" width="86" height="24" rx="12" fill="#e2f3e6"/><text x="77" y="549" font-size="12.5" font-weight="700" fill="#17663a" text-anchor="middle">Verificato</text>
+          <rect x="34" y="570" width="262" height="52" rx="16" fill="#ffcc00"/>
+          <text x="165" y="602" font-size="18" font-weight="700" fill="#2b2300" text-anchor="middle">Portami lì</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<section id="come">
+  <div class="wrap">
+    <div class="eyebrow">Come funziona</div>
+    <h2>Tre tocchi, e sei parcheggiato.</h2>
+    <div class="passi">
+      <div class="passo"><div class="n">1</div><h3>Apri la mappa</h3><p>Vedi subito i posti riservati attorno a te, senza registrarti e senza impostare nulla.</p></div>
+      <div class="passo"><div class="n">2</div><h3>Scegli il posto</h3><p>Il più vicino è già in evidenza, con distanza e minuti in auto. Oppure cerca un indirizzo e guarda i posti lì attorno.</p></div>
+      <div class="passo"><div class="n">3</div><h3>Fatti portare lì</h3><p>Un tocco su «Portami lì» e parte il navigatore che usi di solito.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="scuro" id="funzioni">
+  <div class="wrap">
+    <div class="eyebrow">Cosa fa</div>
+    <h2>Pensata per chi la usa davvero.</h2>
+    <p class="lead">Caratteri grandi e leggibili, pulsanti ampi, poche schermate. Fa quello che serve, in fretta.</p>
+    <div class="griglia">
+      <div class="carta"><div class="ic"><svg><use href="#i-cerca"/></svg></div><h3>Cerca dove stai andando</h3><p>Scrivi la destinazione e vedi i posti nel raggio che scegli tu. Se non ce ne sono, ti propone il più vicino.</p></div>
+      <div class="carta"><div class="ic"><svg><use href="#i-casa"/></svg></div><h3>Casa, lavoro e posti salvati</h3><p>I luoghi di tutti i giorni a portata di tocco, e i parcheggi che usi più spesso sempre in elenco.</p></div>
+      <div class="carta"><div class="ic"><svg><use href="#i-occhio"/></svg></div><h3>Vedi il posto prima di partire</h3><p>Apri la vista dalla strada per controllare com'è lo stallo e come ci si arriva.</p></div>
+      <div class="carta"><div class="ic"><svg><use href="#i-campana"/></svg></div><h3>Promemoria del contrassegno</h3><p>Inserisci la scadenza e ti avvisiamo per tempo. La foto del contrassegno resta solo sul tuo telefono.</p></div>
+      <div class="carta"><div class="ic"><svg><use href="#i-piu"/></svg></div><h3>Segnala un posto che manca</h3><p>Aggiungi uno stallo in pochi secondi o conferma che c'è ancora: la mappa migliora per tutti.</p></div>
+      <div class="carta"><div class="ic"><svg><use href="#i-lucchetto"/></svg></div><h3>Gratis, senza pubblicità</h3><p>Nessun tracciamento. L'account è facoltativo e serve solo a ritrovare i tuoi posti su un altro telefono.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="numeri" id="numeri">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Copertura</div>
+      <div class="grande" id="g-posti">53.000+</div>
+      <h2 style="font-size:28px;margin:10px 0 16px">posti riservati già in mappa</h2>
+      <p class="lead" style="font-size:18px">La mappa cresce ogni settimana: nuovi comuni, nuovi elenchi ufficiali, nuove segnalazioni. L'obiettivo è coprire tutti i comuni d'Italia.</p>
+    </div>
+    <div>
+      <div class="barre" id="barre" aria-label="Posti in mappa per regione"></div>
+      <div class="agg" id="agg"></div>
+    </div>
+  </div>
+</section>
+
+<section class="dati" id="dati">
+  <div class="wrap">
+    <div class="eyebrow">I dati</div>
+    <h2>Da dove arrivano i posti.</h2>
+    <div class="fonti">
+      <div class="fonte"><b>Elenchi dei Comuni</b><span>I dati aperti pubblicati dalle amministrazioni che li rendono disponibili.</span></div>
+      <div class="fonte"><b>OpenStreetMap</b><span>La mappa libera costruita da migliaia di volontari in tutta Italia.</span></div>
+      <div class="fonte"><b>Foto aeree</b><span>Un sistema di riconoscimento automatico individua gli stalli nelle immagini dall'alto.</span></div>
+      <div class="fonte"><b>Chi usa l'app</b><span>Segnalazioni e conferme di chi parcheggia lì ogni giorno.</span></div>
+    </div>
+    <div class="avviso"><b>Da sapere.</b> I dati non sono garantiti al 100%: un posto può essere stato spostato o rimosso, o non essere ancora in mappa. Ogni posto indica se è verificato o da verificare. Sul posto vale sempre la segnaletica.</div>
+  </div>
+</section>
+
+<section id="sostieni">
+  <div class="wrap due">
+    <div class="box g">
+      <h2>Sostieni il progetto</h2>
+      <p>Disability Parking è gratuita e senza pubblicità, ed è sviluppata da un privato. Mappe, server e pubblicazione hanno un costo: presto potrai contribuire con una donazione.</p>
+      <a class="btn blu" href="https://github.com/19Andrea90/disability-parking">Segui il progetto<svg><use href="#i-freccia"/></svg></a>
+    </div>
+    <div class="box b">
+      <h2>Comuni e associazioni</h2>
+      <p>Hai l'elenco degli stalli del tuo Comune, o rappresenti un'associazione che vuole far conoscere l'app? Con i dati ufficiali la mappa diventa più precisa per tutti.</p>
+      <a class="btn giallo" href="https://github.com/19Andrea90/disability-parking/issues/new">Scrivici<svg><use href="#i-freccia"/></svg></a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="logo" href="#top" style="color:#fff"><img src="icona.png" alt="">Disability Parking</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="https://github.com/19Andrea90/disability-parking">Codice sorgente</a>
+    <a href="../">Versione web</a>
+    <div class="fine">Dati cartografici © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> e contributori, licenza ODbL. Dati comunali dai rispettivi portali open data. I dati non sono garantiti: sul posto vale sempre la segnaletica.</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var num = function (n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+$)/g, '.'); };
+  fetch('https://wwereqrojlwktgwlrsib.supabase.co/storage/v1/object/public/foto/copertura/riepilogo.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    if (!d || !d.regioni) return;
+    document.getElementById('n-posti').textContent = num(d.totale);
+    document.getElementById('g-posti').textContent = num(d.totale);
+    document.getElementById('n-comuni').textContent = num(d.comuni.length);
+    var reg = d.regioni.slice().sort(function (a, b) { return b.t - a.t; }), max = reg[0].t, box = document.getElementById('barre');
+    box.innerHTML = reg.map(function (r) { return '<div class="riga"><span>' + r.n.replace(/</g, '') + '</span><span class="b"><i data-w="' + Math.max(1.5, 100 * r.t / max).toFixed(1) + '"></i></span><span class="v">' + num(r.t) + '</span></div>'; }).join('');
+    var parti = function () { box.querySelectorAll('i').forEach(function (i) { i.style.width = i.dataset.w + '%'; }); };
+    if ('IntersectionObserver' in window) { var o = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { parti(); o.disconnect(); } }, { threshold: .15 }); o.observe(box); } else parti();
+    var g = new Date(d.creato); if (!isNaN(g)) document.getElementById('agg').textContent = 'Posti in mappa per regione · aggiornato il ' + g.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>
