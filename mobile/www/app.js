@@ -169,6 +169,21 @@
     } catch (e) { manca.forEach((x) => cacheT.delete(kT(o, x.s, prof))); pausaT = Date.now() + 60000; return false; }
   }
 
+  // Traffico reale (TomTom): solo per il posto in cima all'elenco e per la scheda aperta, così il piano gratuito basta.
+  const TT = window.DP_TOMTOM || '', cacheTT = new Map();
+  const fresco = (c) => c && me && Date.now() - c.t < 120000 && dist(me.lat, me.lon, c.lat, c.lon) < 300;
+  function traffico(s) { const c = cacheTT.get(s.id); return fresco(c) && c.sec != null ? c : null; }
+  async function chiediTraffico(s) {
+    if (!TT || !me || fresco(cacheTT.get(s.id))) return false;
+    const c = { t: Date.now(), lat: me.lat, lon: me.lon }; cacheTT.set(s.id, c);
+    try {
+      const r = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/${me.lat},${me.lon}:${s.lat},${s.lon}/json?key=${TT}&traffic=true&travelMode=car&routeType=fastest`);
+      if (!r.ok) throw new Error(r.status); const su = (await r.json()).routes[0].summary;
+      c.m = su.lengthInMeters; c.sec = su.travelTimeInSeconds; c.rit = su.trafficDelayInSeconds || 0; return true;
+    } catch (e) { return false; }
+  }
+  const inAuto = (r) => `${fmtDist(r.m)} · ${fmtMin(r.sec)} in auto${r.rit >= 120 ? ` (traffico +${Math.round(r.rit / 60)} min)` : ''}`;
+
   let espanso = false; // pannello tirato su: mostra fino a 15 posti invece di 3
   function elencoVicini() {
     const c = map.getCenter(); const usoMe = me && dist(me.lat, me.lon, c.lat, c.lng) < 1500;
@@ -181,10 +196,11 @@
       out.forEach((x) => { x.r = suStrada(me, x.s, 'car'); });
       out.sort((a, b) => (a.r ? a.r.sec : a.d / 7) - (b.r ? b.r.sec : b.d / 7));
       tempi(me, out, 'car').then((ok) => { if (ok) { vicini(); if (selId) sottotitolo(); } });
+      if (out[0]) { const tr = traffico(out[0].s); if (tr) out[0].r = tr; chiediTraffico(out[0].s).then((ok) => { if (ok) vicini(); }); }
     }
     return { usoMe, out: out.slice(0, quanti) };
   }
-  const quanto = (x) => x.r ? `${fmtDist(x.r.m)} · ${fmtMin(x.r.sec)} in auto` : fmtDist(x.d);
+  const quanto = (x) => x.r ? inAuto(x.r) : fmtDist(x.d);
   function vicini() {
     if (!pronta || dest) return;
     const el = $('#near-body');
@@ -225,7 +241,7 @@
     const eraAperta = !!selId; selId = id; disegna(); trovaVia(s);
     const [cls, lab] = affidabilita(s);
     $('#c-title').textContent = titolo(s);
-    sottotitolo(); if (me) tempi(me, [{ s }], 'car').then((ok) => { if (ok && selId === id) sottotitolo(); });
+    sottotitolo(); if (me) { tempi(me, [{ s }], 'car').then((ok) => { if (ok && selId === id) sottotitolo(); }); chiediTraffico(s).then((ok) => { if (ok && selId === id) sottotitolo(); }); }
     const fonte = s.stato === 'ufficiale' ? (s.fonte === 'opendata' ? 'Dato ufficiale del Comune' : 'Ufficiale') : lab;
     $('#c-badges').innerHTML = `<span class="badge ${cls}">${cls === 'uff' ? icon('shield') : ''}${fonte}</span><span class="badge">${posti(s.posti)}</span><span class="badge">Per tutti i contrassegni</span>${s.coperto ? '<span class="badge">Coperto</span>' : ''}`;
     const nota = (s.note || '').replace(/;?\s*Dato ufficiale[^;]*\(open data[^)]*\)/i, '').replace(/^Accorpato in [^.]*\.\s*/i, '').trim();
@@ -236,8 +252,8 @@
     seguo = false; map.easeTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 16.5), padding: { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }, duration: 500 });
   }
   function sottotitolo() {
-    const s = stalli.get(selId); if (!s) return; const r = me && suStrada(me, s, 'car'), d = me ? dist(me.lat, me.lon, s.lat, s.lon) : null;
-    $('#c-sub').textContent = [s.comune, r ? `${fmtDist(r.m)} · ${fmtMin(r.sec)} in auto` : (d != null ? fmtDist(d) + ' da te' : '')].filter(Boolean).join(' · ');
+    const s = stalli.get(selId); if (!s) return; const r = me && (traffico(s) || suStrada(me, s, 'car')), d = me ? dist(me.lat, me.lon, s.lat, s.lon) : null;
+    $('#c-sub').textContent = [s.comune, r ? inAuto(r) : (d != null ? fmtDist(d) + ' da te' : '')].filter(Boolean).join(' · ');
   }
   function aggiornaConferma() {
     const s = stalli.get(selId); if (!s) return;
@@ -360,6 +376,7 @@
   }
   function etichetta(p) { const via = [p.street, p.housenumber].filter(Boolean).join(' '), t = p.name || via || p.city || ''; return { t, sub: [p.name && via, p.city !== t && p.city, p.county].filter(Boolean).join(', ') }; }
   let risultati = [];
+  const norma = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '');
   // Due servizi di ricerca: Photon (veloce, adatto mentre scrivi) e, se non risponde, Nominatim di OpenStreetMap.
   async function geocodifica(q, c, signal) {
     try {
@@ -381,6 +398,17 @@
     try {
       risultati = await geocodifica(q, c, sCtl.signal);
       const civ = (q.match(/(?:^|[\s,])(\d{1,4}\s?[a-zA-Z]?)(?=$|[\s,])/) || [])[1]; // "via natisone 27": se la mappa conosce solo la via, tengo il 27 nel nome
+      if (civ && TT) { // la mappa libera spesso non ha i civici: per quelli chiedo a TomTom la posizione esatta
+        try {
+          const r = await fetch(`https://api.tomtom.com/search/2/geocode/${encodeURIComponent(q)}.json?key=${TT}&countrySet=IT&limit=1&language=it-IT&lat=${c[1]}&lon=${c[0]}`, { signal: sCtl.signal });
+          const g = r.ok ? ((await r.json()).results || [])[0] : null;
+          if (g && g.type === 'Point Address' && g.address.streetNumber) {
+            const t = `${g.address.streetName} ${g.address.streetNumber}`;
+            risultati = risultati.filter((x) => !(x.strada && !/\d/.test(x.t) && norma(x.t) === norma(g.address.streetName)));
+            risultati.unshift({ lat: g.position.lat, lon: g.position.lon, t, sub: [g.address.municipalitySubdivision, g.address.municipality].filter(Boolean).join(', ') });
+          }
+        } catch (e) { if (e.name === 'AbortError') throw e; }
+      }
       if (civ) risultati.forEach((x) => { if (x.strada && !/\d/.test(x.t)) { x.t += ' ' + civ.trim(); x.sub = [x.sub, 'civico non in mappa: punto a metà via'].filter(Boolean).join(' · '); } });
       risultati.forEach((x) => { x.q = q; });
       if (!risultati.length) { $('#s-body').innerHTML = '<div class="empty">Non trovo questo posto. Prova con la via e la città.</div>'; return; }

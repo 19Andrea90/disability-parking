@@ -35,6 +35,10 @@ jobs:
           java-version: 21
       - run: npm ci
       - run: npm run build
+      - name: Chiavi dei servizi (dai segreti del deposito; senza segreto l'app usa i servizi gratuiti)
+        env:
+          TOMTOM_KEY: ${{ secrets.TOMTOM_KEY }}
+        run: printf "window.DP_TOMTOM = '%s';\n" "$TOMTOM_KEY" > www/chiavi.js
       - name: Crea il progetto Android
         run: npx cap add android
       - name: Permessi per la posizione
