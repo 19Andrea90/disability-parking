@@ -28,6 +28,7 @@
   let seguo = true;                   // al primo fix la mappa va sulla posizione, finché non la sposti tu
   let selId = null;
   const salvati = new Map(ls.get('dp.salvati', []).map((x) => typeof x === 'string' ? [x, { id: x }] : [x.id, x])); // id -> {id, lat, lon, t, c}
+  let aggiungo = false;               // sto segnalando un posto nuovo
   let dest = null;                    // destinazione scelta dalla ricerca: {t, sub, lat, lon}
   let raggio = ls.get('dp.raggio', 300);
 
@@ -48,8 +49,8 @@
       if (via) { s._via = via; vicini(); if (dest) arrivo(false); if (selId === s.id) $('#c-title').textContent = titolo(s); }
     } catch (e) { /* senza rete resta "Posto riservato" */ }
   }
-  const padHome = () => ({ top: dest ? 90 : 150, bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 });
-  function mostra() { const c = !!selId, d = !!dest; $('#card').hidden = !c; $('#home').hidden = c || d; $('#top').hidden = c || d; $('#destbar').hidden = c || !d; $('#arrivo').hidden = c || !d; }
+  const padHome = () => aggiungo ? { top: 90, bottom: $('#add .sheet').offsetHeight || 0, left: 0, right: 0 } : { top: dest ? 90 : 150, bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 };
+  function mostra() { const c = !!selId, d = !!dest, n = aggiungo; $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
   function affidabilita(s) { return s.stato === 'ufficiale' ? ['uff', 'Ufficiale'] : s.stato === 'verificato' ? ['ver', 'Verificato'] : ['prop', 'Da verificare']; }
   function posti(n) { return n === 1 ? '1 posto' : n + ' posti'; }
   let toastT;
@@ -110,7 +111,7 @@
   map.on('error', (e) => { if (!pronta && e && e.error && /style|Failed to fetch|load/i.test(String(e.error.message))) toast('La mappa non si carica. Controlla la connessione.', 5000); });
   let pronta = false, moveT;
   map.on('dragstart', () => { seguo = false; });
-  map.on('moveend', () => { clearTimeout(moveT); moveT = setTimeout(caricaVista, 300); });
+  map.on('moveend', () => { clearTimeout(moveT); moveT = setTimeout(caricaVista, 300); if (aggiungo) qui(); });
 
   function disegna() {
     if (!pronta) return;
@@ -270,7 +271,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#search').hidden) chiudiRicerca(); else if (selId) chiudiScheda(true); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#search').hidden) chiudiRicerca(); else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -310,7 +311,7 @@
     seguo = true; const ok = await attivaPosizione(true); if (!ok) toast('Per trovarti serve il permesso alla posizione. Lo trovi nelle impostazioni del telefono.', 4500);
   };
   const presto = () => toast('Arriva nella prossima versione di prova.');
-  $('#b-search').onclick = () => apriRicerca(); $('#b-add').onclick = presto; $('#b-menu').onclick = presto;
+  $('#b-search').onclick = () => apriRicerca(); $('#b-add').onclick = () => apriAggiungi(); $('#b-menu').onclick = presto;
 
 
   // ---------- schermata 4 · posti vicino alla destinazione ----------
@@ -460,6 +461,70 @@
     if (l && scelgo !== k) { vaiA(Object.assign({ k }, l)); return; }
     scelgo = scelgo === k ? null : k; $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus();
   });
+
+
+  // ---------- schermata 6 · segnala un posto nuovo ----------
+  const nuovo = { tipo: 'generico', posti: 1, via: '', comune: '', doppio: false };
+  let quiT, quiCtl;
+  function apriAggiungi() {
+    const oggi = new Date().toISOString().slice(0, 10), fatti = ls.get('dp.segnalati', {});
+    if ((fatti[oggi] || 0) >= 10) { toast('Per oggi hai già segnalato 10 posti. Grazie! Riprova domani.', 4000); return; }
+    aggiungo = true; nuovo.tipo = 'generico'; nuovo.posti = 1; $('#n-foto').value = ''; fotoStato(); segStato(); $('#n-posti').textContent = '1'; mostra();
+    const c = me && dist(me.lat, me.lon, map.getCenter().lat, map.getCenter().lng) < 400 ? [me.lon, me.lat] : map.getCenter();
+    seguo = false; map.easeTo({ center: c, zoom: Math.max(map.getZoom(), 18), padding: padHome(), duration: 400 });
+    const pad = padHome(); $('#n-pin').style.top = (pad.top + (window.innerHeight - pad.top - pad.bottom) / 2) + 'px';
+    qui();
+  }
+  function chiudiAggiungi() { aggiungo = false; mostra(); map.easeTo({ padding: padHome(), duration: 300 }); vicini(); }
+  function segStato() { document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.tipo === nuovo.tipo)); $('#n-nota').textContent = nuovo.tipo === 'personalizzato' ? 'I posti riservati a una sola targa vengono registrati ma non compaiono sulla mappa.' : 'Compare subito sulla mappa come "da verificare".'; }
+  function fotoStato() { const f = $('#n-foto').files[0]; document.querySelector('.foto').classList.toggle('ok', !!f); $('#n-foto-t').textContent = f ? 'Foto pronta' : 'Scatta una foto'; $('#n-foto-s').textContent = f ? 'Tocca per rifarla' : 'Facoltativa, ma aiuta a verificarlo prima'; }
+  function qui() { // cosa c'è sotto il segnaposto: indirizzo, ed eventuale posto già presente
+    const c = map.getCenter(); let vicino = null;
+    for (const s of stalli.values()) { const d = dist(c.lat, c.lng, s.lat, s.lon); if (d <= 12 && (!vicino || d < vicino.d)) vicino = { s, d }; }
+    nuovo.doppio = !!vicino; $('#n-invia').disabled = !!vicino;
+    if (vicino) { $('#n-dove').textContent = 'Qui c\'è già un posto in mappa. Sposta il segnaposto, oppure torna indietro e apri quel posto.'; return; }
+    $('#n-dove').textContent = nuovo.via ? 'Vicino a ' + nuovo.via : 'Cerco l\'indirizzo…';
+    clearTimeout(quiT); quiT = setTimeout(async () => {
+      if (quiCtl) quiCtl.abort(); quiCtl = new AbortController();
+      try {
+        let via = '', comune = '';
+        if (TT) { const r = await fetch(`https://api.tomtom.com/search/2/reverseGeocode/${c.lat},${c.lng}.json?key=${TT}&language=it-IT&radius=60`, { signal: quiCtl.signal }); const a = (((await r.json()).addresses || [])[0] || {}).address || {}; via = [a.streetName, a.streetNumber].filter(Boolean).join(' '); comune = a.municipality || ''; }
+        else { const r = await fetch(`https://photon.komoot.io/reverse?lat=${c.lat}&lon=${c.lng}`, { signal: quiCtl.signal }); const q = ((await r.json()).features[0] || {}).properties || {}; via = q.street ? [q.street, q.housenumber].filter(Boolean).join(' ') : (q.name || ''); comune = q.city || ''; }
+        nuovo.via = via; nuovo.comune = comune;
+        if (aggiungo && !nuovo.doppio) $('#n-dove').textContent = via ? `Vicino a ${via}${comune ? ', ' + comune : ''}` : 'Posizione scelta sulla mappa';
+      } catch (e) { if (e.name !== 'AbortError' && aggiungo && !nuovo.doppio) $('#n-dove').textContent = 'Posizione scelta sulla mappa'; }
+    }, 500);
+  }
+  async function rimpicciolisci(file, max) { // le foto del telefono sono enormi: bastano 1280 px
+    const img = await createImageBitmap(file), k = Math.min(1, (max || 1280) / Math.max(img.width, img.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    return new Promise((res) => cv.toBlob(res, 'image/jpeg', 0.82));
+  }
+  $('#n-close').onclick = chiudiAggiungi;
+  $('#n-foto').onchange = fotoStato;
+  document.querySelector('.seg').addEventListener('click', (e) => { const b = e.target.closest('[data-tipo]'); if (b) { nuovo.tipo = b.dataset.tipo; segStato(); } });
+  $('#n-meno').onclick = () => { nuovo.posti = Math.max(1, nuovo.posti - 1); $('#n-posti').textContent = nuovo.posti; };
+  $('#n-piu').onclick = () => { nuovo.posti = Math.min(20, nuovo.posti + 1); $('#n-posti').textContent = nuovo.posti; };
+  $('#n-invia').onclick = async () => {
+    const btn = $('#n-invia'), lab = btn.querySelector('span'), c = map.getCenter(); if (btn.disabled) return;
+    btn.disabled = true; lab.textContent = 'Invio…';
+    try {
+      let foto_url = null; const f = $('#n-foto').files[0];
+      if (f) {
+        const blob = await rimpicciolisci(f), path = `${new Date().toISOString().slice(0, 10)}/${deviceId}-${Date.now()}.jpg`;
+        const u = await fetch(`${CFG.SB}/storage/v1/object/foto/${path}`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'image/jpeg' }, H), body: blob });
+        if (!u.ok) throw new Error('foto ' + u.status); foto_url = `${CFG.SB}/storage/v1/object/public/foto/${path}`;
+      }
+      const rec = { lat: +c.lat.toFixed(7), lon: +c.lng.toFixed(7), tipo: nuovo.tipo, posti: nuovo.posti, indirizzo: nuovo.via || null, comune: nuovo.comune || null, foto_url, stato: 'proposto', fonte: 'utente', device_id: deviceId };
+      const r = await fetch(`${CFG.SB}/rest/v1/stalli`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'return=representation' }, H), body: JSON.stringify(rec) });
+      if (!r.ok) throw new Error('invio ' + r.status);
+      const s = (await r.json())[0]; if (s && s.tipo !== 'personalizzato') stalli.set(s.id, Object.assign({ conferme_esiste: 0, conferme_non_esiste: 0, ultima_conferma: null }, s));
+      const oggi = new Date().toISOString().slice(0, 10), fatti = ls.get('dp.segnalati', {}); ls.set('dp.segnalati', { [oggi]: (fatti[oggi] || 0) + 1 });
+      chiudiAggiungi(); disegna(); toast(nuovo.tipo === 'personalizzato' ? 'Grazie! Posto registrato.' : 'Grazie! Il posto è in mappa come "da verificare".', 3500);
+    } catch (err) { toast('Non sono riuscito a inviare la segnalazione. Controlla la connessione e riprova.', 4500); }
+    lab.textContent = 'Invia la segnalazione'; btn.disabled = nuovo.doppio;
+  };
 
   // ---------- primo avvio ----------
   if (!ls.get('dp.benvenuto', false)) $('#welcome').hidden = false; else attivaPosizione(false);

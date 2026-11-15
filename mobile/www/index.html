@@ -30,6 +30,8 @@
     <symbol id="i-lavoro" viewBox="0 0 24 24"><path d="M4 8h16v12H4z"/><path d="M9 8V5h6v3"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
     <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4h11l-2 4 2 4H5"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></symbol>
   </defs>
 </svg>
@@ -99,6 +101,36 @@
     <button data-k="salvati"><svg class="ic"><use href="#i-save"/></svg><span>Salvati</span></button>
   </div>
   <div id="s-body"></div>
+</div>
+
+<!-- Schermata 6 · Segnala un posto nuovo -->
+<div id="add" hidden>
+  <div class="add-top">
+    <button id="n-close" class="round" aria-label="Annulla e torna alla mappa"><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="add-hint">Sposta la mappa finché il segnaposto è sopra lo stallo</div>
+  </div>
+  <div id="n-pin" aria-hidden="true"><i></i></div>
+  <section class="sheet" aria-label="Segnala un posto nuovo">
+    <div class="handle"></div>
+    <div>
+      <h1>Segnala un posto nuovo</h1>
+      <div id="n-dove" class="muted"></div>
+    </div>
+    <label class="foto" for="n-foto"><svg class="ic"><use href="#i-camera"/></svg><span><b id="n-foto-t">Scatta una foto</b><span id="n-foto-s">Facoltativa, ma aiuta a verificarlo prima</span></span></label>
+    <input id="n-foto" type="file" accept="image/*" capture="environment" class="vh">
+    <div class="campo">
+      <div class="lab">Chi può usarlo?</div>
+      <div class="two seg"><button data-tipo="generico" aria-pressed="true">Tutti i contrassegni</button><button data-tipo="personalizzato" aria-pressed="false">Solo una targa</button></div>
+    </div>
+    <div class="quanti">
+      <div class="lab">Quanti posti?</div>
+      <button id="n-meno" aria-label="Un posto in meno"><svg class="ic"><use href="#i-minus"/></svg></button>
+      <output id="n-posti" aria-live="polite">1</output>
+      <button id="n-piu" aria-label="Un posto in più"><svg class="ic"><use href="#i-plus"/></svg></button>
+    </div>
+    <button id="n-invia" class="primary"><svg class="ic"><use href="#i-check"/></svg><span>Invia la segnalazione</span></button>
+    <div id="n-nota" class="muted small center">Compare subito sulla mappa come "da verificare".</div>
+  </section>
 </div>
 
 <!-- Schermata 5 · Scheda del posto -->

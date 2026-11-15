@@ -167,3 +167,27 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 #d-name{height:56px;text-align:left}
 .other .d,.arow .d{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
 .d small{font-size:13px;font-weight:400;color:var(--muted)}
+
+/* --- schermata 6 · segnala un posto nuovo --- */
+#add{position:fixed;inset:0;z-index:8;pointer-events:none;display:flex;flex-direction:column;justify-content:flex-end}
+#add>*{pointer-events:auto}
+.add-top{position:absolute;left:16px;right:16px;top:calc(var(--sat) + 12px);display:flex;gap:10px;align-items:center}
+.add-hint{flex:1;min-width:0;min-height:48px;border-radius:16px;background:var(--blu);color:#fff;box-shadow:0 6px 20px rgba(11,31,68,.25);padding:10px 14px;font-size:15px;font-weight:700;line-height:1.25;display:flex;align-items:center}
+#n-pin{position:absolute;left:50%;width:52px;height:52px;margin:-66px 0 0 -26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--giallo);border:3px solid var(--ink);box-shadow:0 8px 16px rgba(11,31,68,.4);display:grid;place-items:center;pointer-events:none}
+#n-pin i{width:14px;height:14px;border-radius:50%;background:var(--ink)}
+#add h1{margin:0;font-size:24px;line-height:1.15}
+#n-dove{font-size:15px;margin-top:4px;min-height:20px}
+.foto{height:72px;border:2px dashed var(--blu);border-radius:18px;background:var(--soft);color:var(--blu);display:flex;align-items:center;gap:14px;padding:0 16px;cursor:pointer}
+.foto .ic{width:30px;height:30px;stroke-width:2}
+.foto>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.foto b{font-size:18px}.foto span span{font-size:14px;color:var(--muted)}
+.foto.ok{border-style:solid;background:#fff8d6;border-color:var(--ink);color:var(--ink)}
+.campo{display:flex;flex-direction:column;gap:8px}
+.lab{font-size:15px;font-weight:700}
+.seg button{min-height:56px;height:auto;border:1px solid var(--bordo);background:#fff;color:var(--ink);padding:6px 10px}
+.seg button[aria-pressed="true"]{border:2px solid var(--ink);background:var(--giallo);color:var(--giallo-ink)}
+.quanti{display:flex;align-items:center;gap:12px}
+.quanti .lab{flex:1}
+.quanti button{width:52px;height:52px;border:1px solid var(--bordo);border-radius:16px;display:grid;place-items:center}
+#n-posti{width:36px;text-align:center;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.primary:disabled{opacity:.5}
