@@ -431,11 +431,17 @@
   const mglog = (t) => { const el = $('#g-log'); el.textContent += t + '\n'; el.scrollTop = el.scrollHeight; };
   const mDist = (a, b) => Math.hypot((a.lat - b.lat) * 111320, (a.lon - b.lon) * 111320 * Math.cos(a.lat * Math.PI / 180));
   const mRank = (s) => { const auto = (s.note || '').startsWith('Confermato in automatico'); return ({ ufficiale: 4, verificato: auto ? 2 : 3, proposto: 1 })[s.stato] || 0; };
-  // lavora SOLO sulla zona visibile sulla mappa, mai su tutta Italia
-  async function mPlanMerge(R, b) {
-    const { data: st, error } = await fetchAll(() => sb.from('stalli').select('id,lat,lon,tipo,stato,note,created_at').in('stato', ['proposto', 'verificato', 'ufficiale'])
-      .gte('lat', b.getSouth()).lte('lat', b.getNorth()).gte('lon', b.getWest()).lte('lon', b.getEast()).order('id'));
+  // lavora SOLO sugli stalli dei comuni del Friuli-Venezia Giulia (elenco dei comuni preparati per la scansione), mai su tutta Italia
+  async function mPlanMerge(R) {
+    const el = await (await fetch(C.SUPABASE_URL + '/storage/v1/object/public/foto/contesto/_elenco_fvg.json')).json();
+    if (!Array.isArray(el) || el.length < 200) throw new Error('elenco dei comuni del FVG non disponibile');
+    const bb = el.map((c) => c.bbox.split(',').map(Number)), nomi = el.map((c) => c.nome.split(' / ')[0]);
+    const S = Math.min(...bb.map((b) => b[0])), W = Math.min(...bb.map((b) => b[1])), N = Math.max(...bb.map((b) => b[2])), E = Math.max(...bb.map((b) => b[3]));
+    const interi = new Set(el.map((c) => c.nome).concat(nomi)), fvg = (n) => !!n && (interi.has(n) || nomi.some((x) => n.startsWith(x + '-')));
+    const { data, error } = await fetchAll(() => sb.from('stalli').select('id,lat,lon,tipo,stato,note,created_at,comune').in('stato', ['proposto', 'verificato', 'ufficiale'])
+      .gte('lat', S).lte('lat', N).gte('lon', W).lte('lon', E).order('id'));
     if (error) throw error;
+    const st = data.filter((s) => fvg(s.comune)); // il riquadro del FVG comprende pezzi di Veneto: tengo solo i comuni della regione
     const merges = [];
     for (const fam of ['generico', 'personalizzato']) {
       const rest = st.filter((s) => (s.tipo === 'personalizzato' ? 'personalizzato' : 'generico') === fam)
@@ -458,10 +464,8 @@
   $('#g-prev').onclick = async () => {
     const R = Number($('#g-r').value) || 40; $('#g-log').textContent = ''; $('#g-go').disabled = true; mPlan = null;
     try {
-      const b = map.getBounds(), kmNS = (b.getNorth() - b.getSouth()) * 111, kmEO = (b.getEast() - b.getWest()) * 111 * Math.cos(b.getCenter().lat * Math.PI / 180);
-      if (kmNS > 40 || kmEO > 40) { mglog(`La zona sulla mappa è troppo grande (${Math.round(kmEO)} × ${Math.round(kmNS)} km). Avvicinati a un comune o a una città (massimo 40 km per lato) e riprova: il raggruppamento lavora solo sulla zona visibile.`); return; }
-      mglog(`Calcolo sulla zona visibile (${Math.round(kmEO)} × ${Math.round(kmNS)} km)…`); const p = await mPlanMerge(R, b); const n = p.merges.reduce((a, [, g]) => a + g.length, 0);
-      mglog(`Entro ${R} m, nella zona visibile: ${p.total} stalli attivi → ${p.total - n} (${p.merges.length} gruppi, ${n} stalli da togliere dalla mappa).`);
+      mglog('Calcolo sui comuni del Friuli-Venezia Giulia…'); const p = await mPlanMerge(R); const n = p.merges.reduce((a, [, g]) => a + g.length, 0);
+      mglog(`Entro ${R} m, solo in Friuli-Venezia Giulia: ${p.total} stalli attivi → ${p.total - n} (${p.merges.length} gruppi, ${n} stalli da togliere dalla mappa).`);
       if (n) { mPlan = { R, merges: p.merges }; $('#g-go').disabled = false; mglog('Premi "Raggruppa" per applicare.'); } else mglog('Niente da raggruppare.');
     } catch (e) { mglog('Errore: ' + (e.message || e)); }
   };
