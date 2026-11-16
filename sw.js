@@ -1,7 +1,9 @@
 /* Service worker: app shell offline + cache delle tile già viste */
-const VERSION = 'dp-v0.6.6';
-const SHELL = ['./', './index.html', './admin.html', './app.css', './app.js', './admin.js', './config.js', './model.json', './manifest.json', './icons/icon-192.png', './icons/icon-512.png',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'];
+const WEB = 'ad9840da';
+const VERSION = 'dp-v0.7.0-' + WEB;
+const W = './mobile/www/';
+const SHELL = ['./', './index.html', './admin.html', './app.css', './admin.js', './config.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png',
+  W + 'app.js?v=' + WEB, W + 'app.css?v=' + WEB, W + 'chiavi.js?v=' + WEB, W + 'vendor/maplibre-gl.js?v=' + WEB, W + 'vendor/maplibre-gl.css?v=' + WEB, W + 'vendor/atkinson-400.woff2', W + 'vendor/atkinson-700.woff2'];
 const TILE_CACHE = 'dp-tiles'; const TILE_MAX = 1500;
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
@@ -10,8 +12,8 @@ self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) =
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
-  if (u.hostname.includes('supabase.co') || u.hostname.includes('nominatim')) return; // sempre in rete
-  const isTile = /tile\.openstreetmap\.org|arcgisonline\.com/.test(u.hostname);
+  if (/supabase\.co|nominatim|photon|tomtom|openstreetmap\.de/.test(u.hostname)) return; // sempre in rete
+  const isTile = /tile\.openstreetmap\.org|arcgisonline\.com|tiles\.openfreemap\.org/.test(u.hostname);
   if (isTile) {
     e.respondWith(caches.open(TILE_CACHE).then(async (c) => {
       const hit = await c.match(e.request); if (hit) return hit;
