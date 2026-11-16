@@ -221,7 +221,10 @@
   // punteggio di confidenza della rete (dal testo "punteggio N%"); i candidati senza punteggio vanno in fondo
   const score = (c) => { const m = /punteggio (\d+)%/.exec(c.classe || ''); return m ? +m[1] : -1; };
   const AUTO = 'Confermato in automatico';
-  const stOf = (c) => c.stallo_id && rows.find((r) => r.id === c.stallo_id);
+  // indice degli stalli per id: cercarli uno a uno tra decine di migliaia a ogni clic rendeva lenta la verifica
+  let idxRows = null, idxN = -1, idx = new Map();
+  const rowById = (id) => { if (idxRows !== rows || idxN !== rows.length) { idx = new Map(rows.map((r) => [r.id, r])); idxRows = rows; idxN = rows.length; } return idx.get(id); };
+  const stOf = (c) => c.stallo_id && rowById(c.stallo_id);
   const isAutoTodo = (c) => { if (c.stato !== 'accettato') return false; const st = stOf(c); return !!(st && (st.note || '').startsWith(AUTO) && !/controllato/.test(st.note) && st.stato === 'verificato'); };
   const inView = (c) => cfilter === 'auto' ? isAutoTodo(c) : c.stato === cfilter;
   const candView = () => cands.filter(inView).sort((a, b) => score(b) - score(a) || String(b.created_at).localeCompare(String(a.created_at)));
@@ -258,7 +261,7 @@
     if (cmarker) map.removeLayer(cmarker);
     cmarker = L.marker([c.lat, c.lon], { draggable: true, icon: L.divIcon({ className: '', html: '<div class="pin generico sel"><b>♿</b></div>', iconSize: [30, 30], iconAnchor: [15, 30] }), zIndexOffset: 2000 }).addTo(map);
     map.setView([c.lat, c.lon], 20); setBase('fvg');
-    const near = rows.filter((r) => r.stato !== 'rifiutato' && distM(r, c) <= 40);
+    const near = rows.filter((r) => r.stato !== 'rifiutato' && Math.abs(r.lat - c.lat) < 0.0005 && Math.abs(r.lon - c.lon) < 0.0008 && distM(r, c) <= 40);
     $('#cand-edit').innerHTML = `
       <div class="badges"><span class="badge proposto" style="background:#7c3aed">${esc(CLASSE_LABEL[c.classe] || c.classe)}</span><span class="badge osm">${c.fonte}</span><span class="badge osm">${c.stato}</span></div>
       <div class="sub">${c.lat.toFixed(6)}, ${c.lon.toFixed(6)} · visto dal ${c.first_seen ? new Date(c.first_seen).toLocaleDateString('it-IT') : '—'} al ${c.last_seen ? new Date(c.last_seen).toLocaleDateString('it-IT') : '—'}
@@ -286,8 +289,10 @@
       $('#c-msg').textContent = 'Creo lo stallo…';
       const { data, error } = await sb.from('stalli').insert(rec).select().single();
       if (error) { $('#c-msg').textContent = 'Errore: ' + error.message; return; }
-      await sb.from('candidati').update({ stato: 'accettato', stallo_id: data.id }).eq('id', c.id);
-      c.stato = 'accettato'; c.stallo_id = data.id; load(); goNext(c.id, order, 'Stallo creato.');
+      sb.from('candidati').update({ stato: 'accettato', stallo_id: data.id }).eq('id', c.id).then((r) => { if (r.error) alert('Stallo creato, ma il candidato non è stato aggiornato: ' + r.error.message); }); // non aspetto la risposta per passare al prossimo
+      c.stato = 'accettato'; c.stallo_id = data.id;
+      rows.unshift(Object.assign({ conferme_esiste: 0, conferme_non_esiste: 0, ultima_conferma: null }, data)); if (tutti) kpi(); // aggiungo lo stallo all'elenco senza riscaricare tutto
+      goNext(c.id, order, 'Stallo creato.');
     };
     $('#c-reject').onclick = async () => {
       $('#c-msg').textContent = 'Scarto…';
