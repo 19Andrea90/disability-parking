@@ -287,9 +287,3 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .esito.att{background:#fff3c4;color:#5a4300}
 .esito.ok{background:#e2f3e6;color:#17663a}
 .esito.no{background:#fde3e1;color:#8f1d15}
-
-.confriga{display:flex;align-items:center;gap:12px;min-height:48px}
-.confriga span.muted{flex:1}
-.confriga .mini{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid var(--bordo);background:#fff;font-weight:700;font-size:15px;color:var(--blu)}
-.confriga .mini .ic{width:18px;height:18px}
-.confriga[hidden]{display:none}
