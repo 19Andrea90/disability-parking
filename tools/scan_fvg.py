@@ -96,9 +96,12 @@ for c in todo:
            '--label', c['nome'], '--batch', '150', '--progress', f'{STATE}/scan_progress_{c["slug"]}.json']
     if a.auto: cmd += ['--auto', str(a.auto)]
     if a.scarta: cmd += ['--scarta', str(a.scarta)]
-    r = subprocess.run(cmd)
+    for prova in range(4):  # un errore di rete non deve fermare la macchina: riprovo, il comune riparte dal blocco salvato
+        r = subprocess.run(cmd)
+        if r.returncode == 0: break
+        print(f'  {c["nome"]}: uscito con codice {r.returncode} (tentativo {prova + 1} di 4)', flush=True); time.sleep(60 * (prova + 1))
     if r.returncode != 0:
-        print(f'  {c["nome"]}: uscito con codice {r.returncode}, lo riprendo al prossimo lancio', flush=True); sys.exit(r.returncode)
+        print(f'  {c["nome"]}: non riesco a finirlo, passo al prossimo e lo riprendo a un altro lancio', flush=True); continue
     fatti.add(c['slug']); json.dump(sorted(fatti), open(FATTI, 'w')); segna(c['slug'])
     try:  # un pin per zona: accorpo gli stalli entro 30 m anche dopo ogni comune
         sys.path.insert(0, 'tools'); import merge_stalli; merge_stalli.run(KEY, 30.0, bbox=c['bbox'])  # solo il comune appena fatto, mai tutta Italia
