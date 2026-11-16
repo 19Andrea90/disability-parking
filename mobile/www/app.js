@@ -281,13 +281,16 @@
     const s = stalli.get(selId); if (!s) return; const r = me && (traffico(s) || suStrada(me, s, 'car')), d = me ? dist(me.lat, me.lon, s.lat, s.lon) : null;
     $('#c-sub').textContent = [s.comune, r ? inAuto(r) : (d != null ? fmtDist(d) + ' da te' : '')].filter(Boolean).join(' · ');
   }
+  let confAperta = null; // id del posto per cui ho aperto la domanda da lontano
   function aggiornaConferma() {
     const s = stalli.get(selId); if (!s) return;
     const vicino = me && dist(me.lat, me.lon, s.lat, s.lon) <= CFG.VICINO_M, n = s.conferme_esiste || 0;
     const info = n ? `Confermato da ${n === 1 ? '1 persona' : n + ' persone'}${s.ultima_conferma ? ', l\'ultima ' + quando(s.ultima_conferma) : ''}.` : (s.stato === 'proposto' ? 'Nessuno lo ha ancora confermato.' : '');
     const fatto = ls.get('dp.conf', {})[s.id];
-    $('#c-confirm').hidden = !vicino || !!fatto; $('#c-conf-info').textContent = info;
-    $('#c-conf-far').textContent = fatto ? 'Grazie, hai già risposto per questo posto.' : (vicino ? '' : info); $('#c-conf-far').hidden = !$('#c-conf-far').textContent;
+    // da vicino la domanda è già aperta; da lontano resta una riga discreta con "Conferma", che apre la stessa domanda
+    const aperto = !fatto && (vicino || confAperta === s.id);
+    $('#c-confirm').hidden = !aperto; $('#c-conf-info').textContent = info; $('#c-conf-q').textContent = vicino ? 'Sei qui? Il posto c\'è ancora?' : 'Conosci questo posto? C\'è ancora?';
+    $('#c-conf-far').hidden = aperto; $('#c-conf-txt').textContent = fatto ? 'Grazie, hai già risposto per questo posto.' : (info || 'Conosci questo posto?'); $('#c-conf-open').hidden = !!fatto;
   }
   function chiudiScheda(daIndietro) {
     if (!selId) return; selId = null; mostra(); disegna();
@@ -318,6 +321,7 @@
       else { await navigator.clipboard.writeText(text + ' ' + url); toast('Link copiato'); }
     } catch (e) { /* condivisione annullata */ }
   };
+  $('#c-conf-open').onclick = () => { confAperta = selId; aggiornaConferma(); $('#c-confirm').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
   $('#c-confirm').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-esito]'); const s = stalli.get(selId); if (!b || !s) return;
     try {
