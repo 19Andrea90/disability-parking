@@ -2,8 +2,8 @@ name: Scansione FVG (in parallelo)
 
 # Scansiona i comuni del FVG ancora da fare con la rete neurale, su più macchine insieme.
 # Parte dalla fine dell'alfabeto (l'altra scansione parte dall'inizio) e ogni lavoro prende comuni diversi.
-# Si avvia a mano da Actions → "Scansione FVG (in parallelo)" → Run workflow. Si può rilanciare quante volte serve:
-# i comuni finiti non vengono rifatti e quelli interrotti riprendono dal punto salvato.
+# Si avvia a mano da Actions → "Scansione FVG (in parallelo)" → Run workflow, poi si rilancia da solo finché restano comuni
+# (al massimo 12 giri). I comuni finiti non vengono rifatti e quelli interrotti riprendono dal punto salvato.
 
 on:
   workflow_dispatch:
@@ -17,6 +17,9 @@ on:
       minuti:
         description: Dopo quanti minuti non iniziare nuovi comuni
         default: '300'
+      giro:
+        description: Numero del giro (si rilancia da solo finché restano comuni, al massimo 12 giri)
+        default: '1'
 
 permissions:
   contents: read
@@ -60,3 +63,28 @@ jobs:
           export DP_STATE="$RUNNER_TEMP"
           python3 -u tools/scan_fvg.py --auto 85 --scarta 30 --rovescio --primi "" \
             --parte "${{ matrix.parte }}/${{ strategy.job-total }}" --minuti "${{ inputs.minuti }}" --solo "$SOLO"
+
+  rilancio:
+    needs: scansione
+    if: ${{ always() && inputs.solo == '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Se restano comuni, avvia il giro successivo
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          GIRO: ${{ inputs.giro }}
+        run: |
+          restano=$(DP_STATE="$RUNNER_TEMP" python3 tools/scan_fvg.py --elenco | head -1 | sed 's/.*da fare //')
+          echo "Comuni ancora da fare: $restano · giro $GIRO"
+          if [ "$restano" -gt 0 ] && [ "$GIRO" -lt 12 ]; then
+            gh api -X POST "repos/${{ github.repository }}/actions/workflows/scan-fvg.yml/dispatches" -f ref=main \
+              -f "inputs[lavori]=${{ inputs.lavori }}" -f "inputs[minuti]=${{ inputs.minuti }}" -f "inputs[giro]=$((GIRO + 1))"
+            echo "Avviato il giro $((GIRO + 1))"
+          else
+            echo "Niente da rilanciare"
+          fi
