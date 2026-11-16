@@ -49,8 +49,12 @@
       if (via) { s._via = via; vicini(); if (dest) arrivo(false); if (selId === s.id) $('#c-title').textContent = titolo(s); }
     } catch (e) { /* senza rete resta "Posto riservato" */ }
   }
-  const padHome = () => aggiungo ? { top: 90, bottom: $('#add .sheet').offsetHeight || 0, left: 0, right: 0 } : { top: dest ? 90 : 150, bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 };
+  // computer: pannello fisso a sinistra e mappa a tutto schermo; telefono: pannelli dal basso
+  const LARGO = () => window.matchMedia('(min-width:900px)').matches, COL = 448;
+  const padPC = (m) => ({ top: 30 + (m || 0), bottom: 30 + (m || 0), left: COL + (m || 0), right: 30 + (m || 0) });
+  const padHome = () => LARGO() ? padPC() : (aggiungo ? { top: 90, bottom: $('#add .sheet').offsetHeight || 0, left: 0, right: 0 } : { top: dest ? 90 : 150, bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 });
   function mostra() { const c = !!selId, d = !!dest, n = aggiungo; $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
+  window.addEventListener('resize', () => { if (!pronta) return; map.resize(); if (LARGO()) espandi(true); if (!selId) map.setPadding(padHome()); });
   function affidabilita(s) { return s.stato === 'ufficiale' ? ['uff', 'Ufficiale'] : s.stato === 'verificato' ? ['ver', 'Verificato'] : ['prop', 'Da verificare']; }
   function posti(n) { return n === 1 ? '1 posto' : n + ' posti'; }
   let toastT;
@@ -127,7 +131,8 @@
     map.on('click', 'pin', (e) => apriScheda(e.features[0].properties.id));
     map.on('click', 'gruppi', (e) => { const f = e.features[0]; Promise.resolve(map.getSource('stalli').getClusterExpansionZoom(f.properties.cluster_id)).then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(z, 18) })); });
     const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { at.classList.remove('maplibregl-compact-show'); at.removeAttribute('open'); } // i crediti della mappa partono chiusi (si aprono dalla i)
-    pronta = true; map.setPadding(padHome()); disegna(); zone(); caricaVista();
+    pronta = true; if (LARGO()) { map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right'); espandi(true); }
+    map.setPadding(padHome()); disegna(); zone(); caricaVista();
   });
   map.on('error', (e) => { if (!pronta && e && e.error && /style|Failed to fetch|load/i.test(String(e.error.message))) toast('La mappa non si carica. Controlla la connessione.', 5000); });
   let pronta = false, moveT;
@@ -240,6 +245,7 @@
       <div class="others">${out.slice(1).map((x) => `<button class="other" data-id="${esc(x.s.id)}"><span class="t"><b>${esc(titolo(x.s))}</b><span>${affidabilita(x.s)[1]} · ${posti(x.s.posti)}</span></span><span class="d">${x.r ? `${fmtMin(x.r.sec)}<small>${fmtDist(x.r.m)}</small>` : fmtDist(x.d)}</span>${icon('chev')}</button>`).join('')}</div>`;
   }
   function espandi(si) {
+    if (LARGO()) si = true; // sul computer l'elenco è sempre completo
     if (espanso === si) return; espanso = si; $('#near').classList.toggle('exp', si); $('#near .handle').setAttribute('aria-expanded', si); vicini();
     const o = document.querySelector('#near .others'); if (o) o.scrollTop = 0;
     if (!selId && !dest) map.setPadding(padHome());
@@ -275,7 +281,7 @@
     $('#c-save').setAttribute('aria-pressed', salvati.has(id)); $('#c-save').querySelector('span').textContent = salvati.has(id) ? 'Salvato' : 'Salva';
     aggiornaConferma();
     mostra();
-    seguo = false; map.easeTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 16.5), padding: { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }, duration: 500 });
+    seguo = false; map.easeTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 16.5), padding: LARGO() ? padPC() : { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }, duration: 500 });
   }
   function sottotitolo() {
     const s = stalli.get(selId); if (!s) return; const r = me && (traffico(s) || suStrada(me, s, 'car')), d = me ? dist(me.lat, me.lon, s.lat, s.lon) : null;
@@ -374,7 +380,7 @@
     if (inquadra) {
       const b = new maplibregl.LngLatBounds([dest.lon, dest.lat], [dest.lon, dest.lat]); lista.slice(0, 5).forEach((x) => b.extend([x.s.lon, x.s.lat]));
       map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }); // fitBounds somma il suo margine a quello già impostato
-      map.fitBounds(b, { padding: { top: 110, bottom: $('#arrivo').offsetHeight + 40, left: 50, right: 50 }, maxZoom: 17, duration: 500 });
+      map.fitBounds(b, { padding: LARGO() ? padPC(50) : { top: 110, bottom: $('#arrivo').offsetHeight + 40, left: 50, right: 50 }, maxZoom: 17, duration: 500 });
     }
   }
   // elenco dei posti attorno alla destinazione: si può ridurre al solo posto scelto per lasciare spazio alla mappa
@@ -525,7 +531,7 @@
     aggiungo = true; nuovo.tipo = 'generico'; nuovo.posti = 1; $('#n-foto').value = ''; fotoStato(); segStato(); $('#n-posti').textContent = '1'; mostra();
     const c = me && dist(me.lat, me.lon, map.getCenter().lat, map.getCenter().lng) < 400 ? [me.lon, me.lat] : map.getCenter();
     seguo = false; map.easeTo({ center: c, zoom: Math.max(map.getZoom(), 18), padding: padHome(), duration: 400 });
-    const pad = padHome(); $('#n-pin').style.top = (pad.top + (window.innerHeight - pad.top - pad.bottom) / 2) + 'px';
+    const pad = padHome(); $('#n-pin').style.top = (pad.top + (window.innerHeight - pad.top - pad.bottom) / 2) + 'px'; $('#n-pin').style.left = (pad.left + (window.innerWidth - pad.left - pad.right) / 2) + 'px';
     qui();
   }
   function chiudiAggiungi() { aggiungo = false; mostra(); map.easeTo({ padding: padHome(), duration: 300 }); vicini(); }
