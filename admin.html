@@ -84,7 +84,7 @@ body{overflow:auto;background:var(--bg)}
     <details class="edit" style="margin-top:16px">
       <summary style="cursor:pointer;font-weight:600">Strumenti</summary>
       <div class="sub" style="margin:10px 0 4px;font-weight:600;color:var(--fg)">Raggruppa stalli vicini</div>
-      <div class="sub">Unisce in un solo pin gli stalli a pochi metri l\'uno dall\'altro, <b>solo nella zona visibile sulla mappa</b> (massimo 40 km per lato): avvicinati al comune che ti interessa, poi premi Anteprima. Non lavora mai su tutta Italia.</div>
+      <div class="sub">Lavora <b>solo sulla zona visibile sulla mappa</b> (massimo 40 km per lato), mai su tutta Italia: avvicinati al comune che ti interessa e premi Anteprima. Entro la distanza scelta resta un solo pin (il più affidabile: ufficiale &gt; verificato a mano &gt; automatico &gt; proposto). Gli altri passano a "rimosso" con la nota "Accorpato in …" e si possono ripristinare. Gli stalli personalizzati (con targa) restano a parte. La scansione lo fa già da sola a 30 m.</div>
       <div class="actions" style="margin-top:6px;flex-wrap:wrap"><label class="sub" for="g-r">Distanza (m)</label><input type="number" id="g-r" value="30" min="5" max="100" step="5" style="width:80px"><button class="btn" id="g-prev">Anteprima</button><button class="btn primary" id="g-go" disabled>Raggruppa</button></div>
       <pre id="g-log" class="sub" style="white-space:pre-wrap;margin:6px 0 0;max-height:220px;overflow:auto"></pre>
       <div class="sub" style="margin:14px 0 4px;font-weight:600;color:var(--fg)">OpenStreetMap</div>
