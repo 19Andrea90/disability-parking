@@ -244,7 +244,7 @@ def main():
                 sc.append(float(s_[np.hypot(gx - 200, gy - 200) * T.RES <= 2.5].max()))
             sc = np.array(sc); res[name] = sc
             order = np.argsort(-sc); top = ys[order]
-            log(f"Candidati di Udine mai visti ({len(cands)}: {ys.sum()} veri): rete {name} · AUC {roc_auc_score(ys, sc):.2f} · tra i primi 20 veri {top[:20].sum()} · tra i primi 40 veri {top[:40].sum()} · scartati sotto 0.2 {(sc[~ys] < 0.2).mean():.0%} perdendo {(sc[ys] < 0.2).sum()} veri")
+            log(f"Candidati verificati mai visti ({len(cands)}: {ys.sum()} veri): rete {name} · AUC {roc_auc_score(ys, sc):.2f} · tra i primi 20 veri {top[:20].sum()} · tra i primi 40 veri {top[:40].sum()} · scartati sotto 0.2 {(sc[~ys] < 0.2).mean():.0%} perdendo {(sc[ys] < 0.2).sum()} veri")
         names = list(res)
         if len(names) > 1:  # combinazioni (media dei punteggi), come nello scanner
             import itertools
