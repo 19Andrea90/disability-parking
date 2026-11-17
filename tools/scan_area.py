@@ -169,8 +169,10 @@ def main():
         # fine blocco: confronto con ciò che è già in database (anche quanto caricato nei blocchi precedenti) e carico
         # un pin per zona: niente candidati entro ZONA m da uno stallo (anche accorpato/rimosso) o da un altro candidato nuovo,
         # né entro EXCL m da un candidato già in database
-        ks = np.array([(r['lat'], r['lon']) for r in sb_all('/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&order=id', key)] or np.zeros((0, 2)))
-        kc = np.array([(r['lat'], r['lon']) for r in sb_all('/rest/v1/candidati?select=lat,lon&order=id', key)] or np.zeros((0, 2)))
+        # solo la zona in esame (con margine): scaricare ogni volta tutta Italia consumava il traffico di Supabase
+        QZ = f'&lat=gte.{S0 - .01}&lat=lte.{N0 + .01}&lon=gte.{W0 - .015}&lon=lte.{E0 + .015}'
+        ks = np.array([(r['lat'], r['lon']) for r in sb_all(f'/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&order=id{QZ}', key)] or np.zeros((0, 2)))
+        kc = np.array([(r['lat'], r['lon']) for r in sb_all(f'/rest/v1/candidati?select=lat,lon&order=id{QZ}', key)] or np.zeros((0, 2)))
         def mind(arr, la, lo): return np.hypot((arr[:, 0] - la) * 111320, (arr[:, 1] - lo) * 111320 * math.cos(math.radians(la))).min() if len(arr) else 1e9
         found.sort(key=lambda f: -f['score']); keep = []
         for f in found:
