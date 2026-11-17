@@ -32,7 +32,7 @@ class Net(torch.nn.Module):
         return self.head(self.pooled(x))[:, 0]
     @torch.no_grad()
     def dense(self, img):
-        x = torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1)[None]
+        x = torch.from_numpy(np.ascontiguousarray(img, dtype=np.float32)).permute(2, 0, 1)[None]
         x = torch.nn.functional.interpolate(x, scale_factor=T.UP, mode='bilinear', align_corners=False)
         y = self.f((x - T.MEAN) / T.STD)
         F = torch.cat([torch.nn.functional.avg_pool2d(y, T.WIN, 1), torch.nn.functional.max_pool2d(y, T.WIN, 1)], 1)
@@ -211,6 +211,8 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument('crops'); ap.add_argument('out'); ap.add_argument('--steps', type=int, default=2500); ap.add_argument('--holdout-only', action='store_true'); ap.add_argument('--final-only', action='store_true'); ap.add_argument('--extra', action='store_true'); ap.add_argument('--compare', default='')
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); log = lambda m: print(m, flush=True)
     items = T.load_items(a.crops, os.environ['SUPABASE_SERVICE_KEY'], 0)
+    for it in items:  # in float16 occupano metà memoria: con i dati della v5 in float32 il processo superava gli 8 GB
+        if it.get('img') is not None: it['img'] = it['img'].astype(np.float16)
     rng = np.random.default_rng(0); zones = sorted({T.zone(i) for i in items}); rng.shuffle(zones); hold = set(zones[0::4])
     tr = [i for i in items if T.zone(i) not in hold]; te = [i for i in items if T.zone(i) in hold and not i['id'].startswith('neg-')]
     key = os.environ['SUPABASE_SERVICE_KEY']
