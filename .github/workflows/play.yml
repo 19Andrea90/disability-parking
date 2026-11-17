@@ -1,0 +1,81 @@
+name: App Android (versione per Google Play)
+
+# Compila il file .aab firmato da caricare nella Play Console. Parte solo a mano.
+# Servono i segreti PLAY_KEYSTORE (chiave di caricamento in base64) e PLAY_KEYSTORE_PASSWORD.
+# Risultato: https://github.com/19Andrea90/disability-parking/releases/download/app-play/disability-parking.aab
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-play
+  cancel-in-progress: true
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Numero di versione
+        id: v
+        run: |
+          echo "code=$((1000 + ${{ github.run_number }}))" >> "$GITHUB_OUTPUT"
+          echo "name=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+      - run: npm ci
+      - run: npm run build
+      - name: Chiavi dei servizi
+        env:
+          TOMTOM_KEY: ${{ secrets.TOMTOM_KEY }}
+        run: printf "window.DP_TOMTOM = '%s';\nwindow.DP_VERSIONE = '%s';\n" "$TOMTOM_KEY" "${{ steps.v.outputs.name }}" > www/chiavi.js
+      - name: Crea il progetto Android
+        run: npx cap add android
+      - name: Permessi per la posizione
+        run: |
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
+      - name: Versione
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ steps.v.outputs.code }}/; s/versionName \"1.0\"/versionName \"${{ steps.v.outputs.name }}\"/" android/app/build.gradle
+          grep -n "versionCode\|versionName\|applicationId" android/app/build.gradle
+          grep -n "Sdk" android/variables.gradle
+      - name: Icona e schermata di avvio
+        run: npx --yes @capacitor/assets@3 generate --android
+      - run: npx cap sync android
+      - name: Compila
+        run: cd android && ./gradlew bundleRelease --no-daemon
+      - name: Firma con la chiave di caricamento
+        id: firma
+        env:
+          KS: ${{ secrets.PLAY_KEYSTORE }}
+          KP: ${{ secrets.PLAY_KEYSTORE_PASSWORD }}
+        run: |
+          cp android/app/build/outputs/bundle/release/app-release.aab disability-parking.aab
+          if [ -z "$KS" ] || [ -z "$KP" ]; then echo "::warning::Mancano i segreti PLAY_KEYSTORE / PLAY_KEYSTORE_PASSWORD: compilazione riuscita, ma il file non è firmato e non viene pubblicato."; echo "ok=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          printf '%s' "$KS" | tr -d ' \n\r' | base64 -d > "$RUNNER_TEMP/k.jks"
+          jarsigner -keystore "$RUNNER_TEMP/k.jks" -storepass:env KP -sigalg SHA256withRSA -digestalg SHA-256 disability-parking.aab upload
+          jarsigner -verify disability-parking.aab | tail -2
+          rm -f "$RUNNER_TEMP/k.jks"
+          echo "ok=si" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        if: steps.firma.outputs.ok == 'si'
+        with:
+          tag_name: app-play
+          name: App Android · file per Google Play
+          body: "Versione ${{ steps.v.outputs.name }} (codice ${{ steps.v.outputs.code }}). File da caricare nella Play Console, non installabile direttamente sul telefono."
+          prerelease: true
+          make_latest: false
+          files: mobile/disability-parking.aab
