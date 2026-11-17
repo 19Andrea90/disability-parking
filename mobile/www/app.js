@@ -443,19 +443,22 @@
       if (!r.ok) throw new Error('photon ' + r.status);
       const j = await r.json();
       return j.features.filter((f) => { const p = f.properties || {}; return !p.countrycode || p.countrycode === 'IT' || p.country === 'Italia'; }).slice(0, 6)
-        .map((f) => Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], strada: f.properties.osm_key === 'highway' }, etichetta(f.properties))).filter((x) => x.t);
+        .map((f) => { const p = f.properties; return Object.assign({ lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], strada: p.osm_key === 'highway', citta: p.type === 'city' || (p.osm_key === 'place' && ['city', 'town', 'village'].includes(p.osm_value)), zona: p.type === 'county' || p.type === 'state' }, etichetta(p)); }).filter((x) => x.t);
     } catch (e) {
       if (e.name === 'AbortError') throw e;
       const r = await entro(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=it&accept-language=it&q=${encodeURIComponent(q)}&viewbox=${c[0] - .4},${c[1] + .3},${c[0] + .4},${c[1] - .3}`, signal, 8000);
       if (!r.ok) throw new Error('nominatim ' + r.status);
       return (await r.json()).map((x) => { const a = x.address || {}, via = [a.road, a.house_number].filter(Boolean).join(' '), citta = a.city || a.town || a.village || a.municipality || '';
-        const t = x.name || via || citta; return { lat: +x.lat, lon: +x.lon, strada: x.category === 'highway', t, sub: [x.name && via, citta !== t && citta, a.county].filter(Boolean).join(', ') }; }).filter((x) => x.t);
+        const t = x.name || via || citta; return { lat: +x.lat, lon: +x.lon, strada: x.category === 'highway', citta: ['city', 'town', 'village', 'municipality'].includes(x.addresstype), zona: ['county', 'state', 'province'].includes(x.addresstype), t, sub: [x.name && via, citta !== t && citta, a.county].filter(Boolean).join(', ') }; }).filter((x) => x.t);
     }
   }
   async function cerca(q) {
     if (sCtl) sCtl.abort(); sCtl = new AbortController(); const mio = sCtl; attesa(q); const c = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
     try {
-      const trovati = await geocodifica(q, c, mio.signal); if (sCtl !== mio) return; risultati = trovati;
+      const trovati = await geocodifica(q, c, mio.signal); if (sCtl !== mio) return;
+      // niente righe uguali, e niente provincia o regione quando c'è già la città con lo stesso nome
+      const visti = new Set(), nomiCitta = new Set(trovati.filter((x) => x.citta).map((x) => norma(x.t)));
+      risultati = trovati.filter((x) => { if (x.zona && nomiCitta.has(norma(x.t))) return false; const k = norma(x.t) + '|' + norma(x.sub); if (visti.has(k)) return false; visti.add(k); return true; });
       const civ = (q.match(/(?:^|[\s,])(\d{1,4}\s?[a-zA-Z]?)(?=$|[\s,])/) || [])[1]; // "via natisone 27": se la mappa conosce solo la via, tengo il 27 nel nome
       if (civ && TT) { // la mappa libera spesso non ha i civici: per quelli chiedo a TomTom la posizione esatta
         try {
@@ -477,6 +480,10 @@
     } catch (e) { if (e.name !== 'AbortError' && sCtl === mio) $('#s-body').innerHTML = `<div class="empty">La ricerca non risponde. Controlla la connessione e riprova.<br><span class="small">(${esc(e.message || e)})</span></div>`; }
   }
   async function conta(x, i, signal) { // quanti posti ci sono attorno a un risultato; se nessuno, propone il più vicino
+    if (x.citta && riepilogo) { // per una città conta tutto il comune, non solo il cerchio attorno al centro
+      const c = riepilogo.comuni.filter((v) => norma(v.n) === norma(x.t) && Math.abs(v.lat - x.lat) < 0.15 && Math.abs(v.lon - x.lon) < 0.2)[0], box = document.querySelector(`[data-box="${i}"]`);
+      if (c && c.t && box) { const b = box.querySelector('.n'); b.className = 'n'; b.textContent = num(c.t) + ' nel comune'; return; }
+    }
     await carica(x.lat - 0.012, x.lon - 0.017, x.lat + 0.012, x.lon + 0.017, false);
     const box = document.querySelector(`[data-box="${i}"]`); if (signal.aborted || !box) return;
     const tutti = attorno(x.lat, x.lon), dentro = tutti.filter((y) => y.d <= raggio), n = dentro.reduce((a, y) => a + (y.s.posti || 1), 0), b = box.querySelector('.n');
