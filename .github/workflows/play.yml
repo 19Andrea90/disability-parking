@@ -44,6 +44,8 @@ jobs:
         run: printf "window.DP_TOMTOM = '%s';\nwindow.DP_VERSIONE = '%s';\n" "$TOMTOM_KEY" "${{ steps.v.outputs.name }}" > www/chiavi.js
       - name: Crea il progetto Android
         run: npx cap add android
+      - name: Android minimo 7.0 (richiesto dalla protezione automatica di Play)
+        run: sed -i 's/minSdkVersion = 23/minSdkVersion = 24/' android/variables.gradle && grep -n minSdk android/variables.gradle
       - name: Permessi per la posizione
         run: |
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
