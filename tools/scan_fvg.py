@@ -17,7 +17,8 @@ import re
 import argparse, datetime, json, os, subprocess, sys, time, urllib.request
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
-MODELS = 'models/stalli_mobilenetv3_ft_v1.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v4.pt'
+MODELS = 'models/stalli_mobilenetv3_ft_v5.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v4.pt'  # votano
+DETECTOR = 'models/stalli_mobilenetv3_ft_v1.pt'  # scorre l'immagine: la v5 come rilevatore propone 10 volte più falsi
 STATE = os.environ.get('DP_STATE', '/home/claude')
 FATTI = f'{STATE}/scan_fvg_fatti.json'
 FRESCO_MIN = 40  # un avanzamento aggiornato da meno di così da un'altra macchina = comune in lavorazione altrove
@@ -92,7 +93,7 @@ for c in todo:
     if not os.path.exists(f'{STATE}/scan_progress_{c["slug"]}.json') and eta.get(c['slug'], 1e9) < FRESCO_MIN:
         print(f'  {c["nome"]}: in lavorazione su un\'altra macchina ({eta[c["slug"]]:.0f} min fa), salto', flush=True); continue
     print(f'=== {c["nome"]} ({c["slug"]}) ===', flush=True)
-    cmd = [sys.executable, '-I', '-u', 'tools/scan_area.py', MODELS, '--bbox', c['bbox'], '--thr', '0.2', '--context', c['slug'],
+    cmd = [sys.executable, '-I', '-u', 'tools/scan_area.py', MODELS, '--detector', DETECTOR, '--bbox', c['bbox'], '--thr', '0.2', '--context', c['slug'],
            '--label', c['nome'], '--batch', '150', '--progress', f'{STATE}/scan_progress_{c["slug"]}.json']
     if a.auto: cmd += ['--auto', str(a.auto)]
     if a.scarta: cmd += ['--scarta', str(a.scarta)]

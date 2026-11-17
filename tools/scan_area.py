@@ -62,24 +62,25 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument('model', help='uno o più file .pt separati da virgola (media dei punteggi)'); ap.add_argument('--bbox', required=True); ap.add_argument('--thr', type=float, default=0.05)
     ap.add_argument('--save-dir', default='', help='con --dry-run salva qui i ritagli dei candidati'); ap.add_argument('--cell', type=int, default=400, help='lato delle celle in px (0 = riquadro intero)'); ap.add_argument('--auto', type=int, default=0, help='conferma in automatico i candidati con punteggio >= N%% (0 = no)'); ap.add_argument('--scarta', type=int, default=0, help='scarta in automatico i candidati con punteggio < N%% (0 = no)')
     ap.add_argument('--tta', action='store_true'); ap.add_argument('--label', default=''); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--context', default='', help='comune (es. udine): usa edifici/strade salvati dall\'admin')
-    ap.add_argument('--batch', type=int, default=150); ap.add_argument('--exclude', default='', help='S,W,N,E;S,W,N,E aree già scansionate'); ap.add_argument('--progress', default='')
+    ap.add_argument('--batch', type=int, default=150); ap.add_argument('--exclude', default='', help='S,W,N,E;S,W,N,E aree già scansionate'); ap.add_argument('--progress', default=''); ap.add_argument('--detector', default='', help='rete che scorre l\'immagine; le reti in elenco votano soltanto (senza: scorre la prima e vota anche lei)')
     a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']; t0 = time.time()
     S0, W0, N0, E0 = map(float, a.bbox.split(','))
     class Ensemble:  # media dei punteggi di più reti (stessa griglia)
-        def __init__(self, paths):
-            self.nets = []
-            for pth in paths:
-                n_ = Fm.Net(); n_.load_state_dict(torch.load(pth)); n_.eval(); self.nets.append(n_)
+        def __init__(self, paths, detector=''):
+            load = lambda pth: (lambda n_: (n_.load_state_dict(torch.load(pth)), n_.eval(), n_)[2])(Fm.Net())
+            self.nets = [load(p_) for p_ in paths]
+            self.det = load(detector) if detector else None  # rilevatore separato: non vota
+            self.scan = self.det or self.nets[0]
         def detect(self, img, thr, need=None, CELL=400, MARG=48):
             """Scansione densa con la prima rete, a celle di 40 m (+4,8 m di margine): 1,6× più veloce del riquadro intero
             e misurata con la stessa precisione sugli stalli reali di Udine. need(y0, x0, cell) → False salta la cella."""
             h, w_, _ = img.shape; got = []; skipped = 0
-            if not CELL: return T.nms(*self.nets[0].dense(img), thr), 0
+            if not CELL: return T.nms(*self.scan.dense(img), thr), 0
             for y0 in range(0, h, CELL):
                 for x0 in range(0, w_, CELL):
                     if need is not None and not need(y0, x0, CELL): skipped += 1; continue
                     ya, xa = max(0, y0 - MARG), max(0, x0 - MARG); yb, xb = min(h, y0 + CELL + MARG), min(w_, x0 + CELL + MARG)
-                    s_, cx_, cy_ = self.nets[0].dense(np.ascontiguousarray(img[ya:yb, xa:xb]))
+                    s_, cx_, cy_ = self.scan.dense(np.ascontiguousarray(img[ya:yb, xa:xb]))
                     for v, x, y in T.nms(s_, cx_, cy_, thr):
                         X, Y = x + xa, y + ya
                         if x0 <= X < x0 + CELL and y0 <= Y < y0 + CELL: got.append((v, X, Y))
@@ -88,14 +89,14 @@ def main():
                 if all(math.hypot(x - a_, y - b_) * T.RES > T.NMS for _, a_, b_ in k): k.append((v, x, y))
             return k, skipped
         def rescore(self, img, x, y, v0):  # le altre reti valutano solo un ritaglio di 24 m attorno al candidato
-            if len(self.nets) == 1: return v0
+            if len(self.nets) == 1 and self.det is None: return v0
             r = 120; h, w_, _ = img.shape; x0, y0 = int(max(0, min(w_ - 2 * r, x - r))), int(max(0, min(h - 2 * r, y - r)))
-            sub = np.ascontiguousarray(img[y0:y0 + 2 * r, x0:x0 + 2 * r]); vals = [v0]
-            for n_ in self.nets[1:]:
+            sub = np.ascontiguousarray(img[y0:y0 + 2 * r, x0:x0 + 2 * r]); vals = [] if self.det else [v0]
+            for n_ in (self.nets if self.det else self.nets[1:]):
                 s_, cx_, cy_ = n_.dense(sub); gx, gy = np.meshgrid(cx_ + x0, cy_ + y0); m_ = np.hypot(gx - x, gy - y) * T.RES <= 2.5
                 vals.append(float(s_[m_].max()) if m_.any() else 0.0)
             return sum(vals) / len(vals)
-    net = Ensemble(a.model.split(','))
+    net = Ensemble(a.model.split(','), a.detector)
     print(f'Reti in media: {len(net.nets)}', flush=True)
     ctx = None
     if a.context:

@@ -57,5 +57,9 @@ Prova sul campo (candidati FVG verificati, metà mai vista: 1096, 760 veri): v5 
 scartati sotto 0,2 il 76% perdendo 37 veri (v4: 250, v2: 207).
 Medie: v5+v2+v4 AUC 0,936, sopra 0,55 555 veri con precisione 97%, ne perde 38 sotto 0,2; attuale v1+v2+v4 AUC 0,839, 425 con 96%, ne perde 118.
 Zone tenute fuori (dense): soglia 0,8 recall 74%, 0,64 falsi per ritaglio senza stalli.
-Non ancora in produzione: prima va provata come rilevatore su "zona qualsiasi" (come per v3/v4), perché `scan_area.py` usa il primo modello per scorrere l'immagine.
+Prova "zona qualsiasi" (17 novembre, a secco su centro di Udine, Trieste e Pordenone, zone già verificate per intero):
+v1+v2+v4 attuale 4 candidati nuovi (0 sopra 0,55); v5 come rilevatore con v2+v4: 57 (4 sopra 0,55), quasi tutti alberi, tetti, ombre;
+v1 come rilevatore e v5+v2+v4 che votano (`--detector`): 3 (1 sopra 0,55).
+Uso in produzione dal 17 novembre: v1 scorre l'immagine e non vota, v5+v2+v4 votano (è la combinazione misurata sui candidati verificati):
+`python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v5.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v4.pt --detector models/stalli_mobilenetv3_ft_v1.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> [--auto 55]`
 Copie: Supabase `modelli/v5/`.
