@@ -210,9 +210,7 @@ def evaluate(net, te, thrs=(0.5, 0.7, 0.8, 0.9, 0.95)):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('crops'); ap.add_argument('out'); ap.add_argument('--steps', type=int, default=2500); ap.add_argument('--holdout-only', action='store_true'); ap.add_argument('--final-only', action='store_true'); ap.add_argument('--extra', action='store_true'); ap.add_argument('--compare', default='')
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True); log = lambda m: print(m, flush=True)
-    items = T.load_items(a.crops, os.environ['SUPABASE_SERVICE_KEY'], 0)
-    for it in items:  # in float16 occupano metà memoria: con i dati della v5 in float32 il processo superava gli 8 GB
-        if it.get('img') is not None: it['img'] = it['img'].astype(np.float16)
+    items = T.load_items(a.crops, os.environ['SUPABASE_SERVICE_KEY'], 0, np.float16)  # float16: metà memoria, in float32 la v5 superava gli 8 GB
     rng = np.random.default_rng(0); zones = sorted({T.zone(i) for i in items}); rng.shuffle(zones); hold = set(zones[0::4])
     tr = [i for i in items if T.zone(i) not in hold]; te = [i for i in items if T.zone(i) in hold and not i['id'].startswith('neg-')]
     key = os.environ['SUPABASE_SERVICE_KEY']

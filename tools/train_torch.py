@@ -59,7 +59,7 @@ def wms(lat, lon, side, px, path):
     return False
 
 
-def load_items(crops, key, fake):
+def load_items(crops, key, fake, dtype=np.float32):
     stalli = {r['id']: r for r in json.load(open(os.path.join(crops, 'stalli.json')))}
     items = []
     if fake:
@@ -71,7 +71,7 @@ def load_items(crops, key, fake):
         fn = os.path.join(crops, f"{l['ref_id']}.jpg")
         if not os.path.exists(fn) and not wms(l['centro_lat'], l['centro_lon'], l['crop_m'], 400, fn): continue
         side = float(l['crop_m']); S = int(round(side / RES))
-        img = np.asarray(Image.open(fn).convert('RGB').resize((S, S), Image.BILINEAR), dtype=np.float32) / 255
+        img = (np.asarray(Image.open(fn).convert('RGB').resize((S, S), Image.BILINEAR), dtype=np.float32) / 255).astype(dtype)
         s, w, n, e = bbox(l['centro_lat'], l['centro_lon'], side)
         pts = np.array([[(lo - w) / (e - w) * S, (n - la) / (n - s) * S] for la, lo in (l['punti'] or [])], np.float32).reshape(-1, 2)
         items.append(dict(id=l['ref_id'], kind='label' if l['esito'] == 'stalli' else 'empty', img=img, pts=pts, lat=l['centro_lat'], lon=l['centro_lon']))
@@ -81,7 +81,7 @@ def load_items(crops, key, fake):
         if (c.get('classe') or '').startswith('zona nera') or 'scartato in automatico' in (c.get('classe') or ''): continue  # ortofoto mancante, non è un esempio utile
         fn = os.path.join(negdir, f"{c['id']}.jpg")
         if not wms(c['lat'], c['lon'], 24, 240, fn): continue
-        img = np.asarray(Image.open(fn).convert('RGB'), dtype=np.float32) / 255
+        img = (np.asarray(Image.open(fn).convert('RGB'), dtype=np.float32) / 255).astype(dtype)
         items.append(dict(id='neg-' + c['id'], kind='empty', img=img, pts=np.zeros((0, 2), np.float32), lat=c['lat'], lon=c['lon']))
     return items
 
