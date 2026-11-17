@@ -49,3 +49,13 @@ Prova "zona qualsiasi" (64 riquadri di Udine già verificati, ogni rete da sola 
 Uso in produzione: v1 scorre l'immagine, v1+v2+v4 votano:
 `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v1.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v4.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> [--auto 55]`
 Copie: Supabase `modelli/v4/`.
+
+## stalli_mobilenetv3_ft_v5.pt (17 novembre 2026)
+Addestrata dopo la scansione completa del FVG (215 comuni), con tutte le verifiche manuali: 753 stalli confermati, 397 falsi scartati,
+400 riquadri casuali di città da 120 m (`N_CITY=400`), 2500 passi; immagini caricate in float16 per stare negli 8 GB del contenitore.
+Prova sul campo (candidati FVG verificati, metà mai vista: 1096, 760 veri): v5 AUC 0,95 (v1 0,67, v2 0,84, v4 0,86);
+scartati sotto 0,2 il 76% perdendo 37 veri (v4: 250, v2: 207).
+Medie: v5+v2+v4 AUC 0,936, sopra 0,55 555 veri con precisione 97%, ne perde 38 sotto 0,2; attuale v1+v2+v4 AUC 0,839, 425 con 96%, ne perde 118.
+Zone tenute fuori (dense): soglia 0,8 recall 74%, 0,64 falsi per ritaglio senza stalli.
+Non ancora in produzione: prima va provata come rilevatore su "zona qualsiasi" (come per v3/v4), perché `scan_area.py` usa il primo modello per scorrere l'immagine.
+Copie: Supabase `modelli/v5/`.
