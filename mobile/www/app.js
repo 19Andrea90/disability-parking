@@ -9,6 +9,9 @@
     HOME: [13.236, 46.063], // Udine, finché non c'è la posizione
     MIN_ZOOM_DATI: 12,      // sotto questo zoom i posti sarebbero troppi: si chiede di avvicinarsi
     VICINO_M: 80,           // entro questa distanza si può confermare "c'è / non c'è più"
+    GOOGLE: false,          // accesso con Google: si accende quando il fornitore Google è configurato su Supabase
+    PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
+    SITO: 'https://19andrea90.github.io/disability-parking/sito/',
   };
   const $ = (s) => document.querySelector(s);
   const ls = {
@@ -25,13 +28,21 @@
   // Solo il codice casuale del telefono, il tipo di azione e al massimo il comune: niente posizione, niente dati personali.
   // Servono al cruscotto del pannello admin (quante persone usano l'app, quante si fanno portare a un posto, dove mancano posti).
   const PIATTAFORMA = (() => { const cap = window.Capacitor; if (cap && cap.isNativePlatform && cap.isNativePlatform()) return (cap.getPlatform && cap.getPlatform()) === 'ios' ? 'ios' : 'android'; return window.matchMedia('(min-width:900px)').matches ? 'pc' : 'web'; })();
-  function traccia(tipo, x) {
+  const statAttive = () => ls.get('dp.stat', true) !== false;
+  function traccia(tipo, x, sempre) {
+    if (!sempre && !statAttive()) return;
     try {
       const corpo = Object.assign({ device_id: deviceId, tipo, piattaforma: PIATTAFORMA, versione: String(window.DP_VERSIONE || '').slice(0, 40) || null }, x || {});
       if (corpo.comune) corpo.comune = String(corpo.comune).slice(0, 80);
       fetch(CFG.SB + '/rest/v1/eventi', { method: 'POST', keepalive: true, headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(corpo) }).catch(() => {});
     } catch (e) { /* le statistiche non devono mai disturbare l'app */ }
   }
+  (function () { // errori dell'app: arrivano nel pannello admin (al massimo 5 per apertura, senza ripetizioni)
+    const visti = new Set();
+    const manda = (m) => { m = String(m || 'errore sconosciuto').replace(/https?:\/\/[^\s)]+\/(?=[^/\s)]+)/g, '').slice(0, 300); if (visti.size >= 5 || visti.has(m)) return; visti.add(m); traccia('errore', { dettaglio: m }); };
+    window.addEventListener('error', (e) => { if (e && e.message) manda(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno || 0}`); });
+    window.addEventListener('unhandledrejection', (e) => { const r = e && e.reason; if (r && r.name === 'AbortError') return; manda('promessa: ' + (r && (r.message || r)) ); });
+  })();
   (function () { // "online adesso": un segnale ogni 2 minuti mentre l'app è aperta e in primo piano
     let nascosta = 0;
     setTimeout(() => traccia('avvio'), 1500); // dopo che la pagina ha scritto il numero di versione
@@ -286,7 +297,7 @@
     const n = e.target.closest('[data-nav]'); if (n) { naviga(stalli.get(n.dataset.nav)); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
   });
-  function naviga(s) { if (s) traccia('naviga', { comune: s.comune || null }); if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
+  function naviga(s) { if (s) { traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); } if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
 
   // ---------- scheda del posto ----------
   function apriScheda(id) {
@@ -323,7 +334,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -377,7 +388,8 @@
     await carica(d.lat - 0.012, d.lon - 0.017, d.lat + 0.012, d.lon + 0.017, false); arrivo(true);
     if (dest === d) { // per il cruscotto: le destinazioni senza posti attorno dicono dove mancano dati
       const n = attorno(d.lat, d.lon).filter((x) => x.d <= raggio).length, vic = attorno(d.lat, d.lon)[0];
-      traccia('destinazione', { comune: d.comune || (vic && vic.s.comune) || (String(d.sub || '').split(',').map((t) => t.trim()).filter(Boolean).slice(-1)[0]) || null, dettaglio: n ? 'con_posti' : 'senza_posti' });
+      traccia('destinazione', { comune: d.comune || (vic && vic.s.comune) || (String(d.sub || '').split(',').map((t) => t.trim()).filter(Boolean).slice(-1)[0]) || null, dettaglio: n ? 'con_posti' : 'senza_posti',
+        lat_g: Math.round(d.lat * 100) / 100, lon_g: Math.round(d.lon * 100) / 100 }); // arrotondata a circa 1 km: mai la posizione esatta
     }
   }
   function attorno(lat, lon) { // posti attorno a un punto, dal più vicino, senza doppioni a pochi metri
@@ -657,6 +669,26 @@
     if (!j.access_token) return 'conferma'; // account creato: serve il clic sul link ricevuto per email
     entra2(j); await allinea(); return 'ok';
   }
+  // Accesso con Google (OAuth di Supabase). Sul telefono si torna all'app con il link it.disabilityparking.app://login,
+  // sul web si torna alla stessa pagina; in entrambi i casi i codici arrivano dopo il # dell'indirizzo.
+  const NATIVO = () => { const cap = window.Capacitor; return !!(cap && cap.isNativePlatform && cap.isNativePlatform()); };
+  function accediGoogle() {
+    const torna = NATIVO() ? 'it.disabilityparking.app://login' : location.origin + location.pathname;
+    ls.set('dp.google', Date.now());
+    const url = `${CFG.SB}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(torna)}`;
+    if (NATIVO()) apri(url); else location.href = url;
+  }
+  async function daGoogle(href) { // legge i codici tornati da Google e completa l'accesso
+    const h = new URLSearchParams(String(href).split('#')[1] || ''), at = h.get('access_token');
+    if (!at) { if (h.get('error')) toast('Accesso con Google non riuscito. Riprova.'); return false; }
+    let email = ''; try { email = JSON.parse(atob(at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch (e) { /* email non leggibile */ }
+    entra2({ access_token: at, refresh_token: h.get('refresh_token'), expires_in: +h.get('expires_in') || 3600, user: { email } });
+    traccia('accesso', { dettaglio: 'google' }); ls.set('dp.google', 0);
+    try { await allinea(); } catch (e) { /* si riallinea alla prossima modifica */ }
+    if (!$('#menu').hidden) menu(); toast('Accesso fatto. I tuoi posti ora ti seguono.'); return true;
+  }
+  if (/access_token=|error_description=/.test(location.hash)) { const h = location.hash; history.replaceState(null, '', location.pathname + location.search); setTimeout(() => daGoogle(h), 300); }
+  (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App; if (A) A.addListener('appUrlOpen', (e) => { if (e && e.url && e.url.indexOf('it.disabilityparking.app://login') === 0) daGoogle(e.url); }); })();
   function esci() { if (sessione) fetch(`${CFG.SB}/auth/v1/logout`, { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + sessione.token } }).catch(() => {}); sessione = null; ls.set('dp.sessione', null); }
 
   // ---------- schermata 7 · i tuoi posti ----------
@@ -668,7 +700,7 @@
       ? `<div class="chi"><span class="av">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span><button class="bsm" data-a="esci">Esci</button></div>`
       : `<div class="acc"><div class="b">Accedi per non perderli</div><p>I posti salvati ti seguono se cambi telefono. È facoltativo: l'app funziona anche senza.</p>${formAperto
         ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><input id="a-pass" type="password" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password"><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
-        : `<button class="bw" data-a="form">Usa la tua email</button><p>L'accesso con Google e con Apple arriva presto.</p>`}</div>`;
+        : `${CFG.GOOGLE ? `<button class="bw gg" data-a="google"><span class="g" aria-hidden="true">G</span>Continua con Google</button>` : ''}<button class="${CFG.GOOGLE ? 'bo' : 'bw'}" data-a="form">Usa la tua email</button>${CFG.GOOGLE ? '' : '<p>L\'accesso con Google arriva presto.</p>'}`}</div>`;
     const luogo = (k, nome, ic) => l[k]
       ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}">Cambia</button><button data-a="togli" data-k="${k}">Togli</button></div></div>`
       : `<div class="luogo vuoto"><button class="vai" data-a="imposta" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>Imposta l'indirizzo</span></span></button></div>`;
@@ -676,7 +708,10 @@
       <div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>
       <button class="vaip" data-a="profilo"><span class="mk">${icon('wc')}</span><span class="t">Il mio contrassegno e gli avvisi</span>${icon('chev')}</button>
       <button class="vaip" data-a="segn"><span class="mk">${icon('plus')}</span><span class="t">Le mie segnalazioni</span>${icon('chev')}</button>
+      <button class="vaip" data-a="regole"><span class="mk">${icon('shield')}</span><span class="t">Regole della sosta con il contrassegno</span>${icon('chev')}</button>
       <button class="vaip" data-a="sugg"><span class="mk">${icon('idea')}</span><span class="t">Suggerisci un miglioramento</span>${icon('chev')}</button>
+      <button class="vaip" data-a="consiglia"><span class="mk">${icon('share')}</span><span class="t">Consiglia l'app a un amico</span>${icon('chev')}</button>
+      <button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>
       <div><div class="eyebrow">Posti salvati</div>${v.length ? v.map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('') : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>'}</div>
       <div class="piede"><button data-a="fonti">Fonti e avvertenze</button></div>`;
   }
@@ -700,6 +735,10 @@
     else if (a === 'profilo') { $('#profilo').hidden = false; scheda8(); }
     else if (a === 'segn') apriSegnalazioni();
     else if (a === 'sugg') apriSuggerimento();
+    else if (a === 'regole') apriRegole(null);
+    else if (a === 'consiglia') consiglia();
+    else if (a === 'stat') { const on = !statAttive(); if (!on) traccia('stat_off', null, true); ls.set('dp.stat', on); menu(); toast(on ? 'Statistiche anonime attivate. Grazie!' : 'Statistiche anonime disattivate.'); }
+    else if (a === 'google') accediGoogle();
     else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-ver').textContent = 'Disability Parking, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
   $('#f-back').onclick = () => { $('#fonti').hidden = true; };
@@ -720,6 +759,52 @@
     } catch (e) { el.innerHTML = '<div class="empty">Non riesco a caricare le segnalazioni. Controlla la connessione e riprova.</div>'; }
   }
   $('#g-back').onclick = () => { $('#segn').hidden = true; };
+
+  // ---------- consiglia l'app e invito a lasciare una recensione su Play ----------
+  async function consiglia() {
+    const text = 'Disability Parking trova i parcheggi riservati alle persone con disabilità in tutta Italia e ti porta lì. È gratis.', url = NATIVO() ? CFG.PLAY : CFG.SITO;
+    const cap = window.Capacitor, Sh = NATIVO() && cap.Plugins && cap.Plugins.Share;
+    traccia('consiglia');
+    try {
+      if (Sh) await Sh.share({ title: 'Disability Parking', text, url, dialogTitle: 'Consiglia l\'app' });
+      else if (navigator.share) await navigator.share({ title: 'Disability Parking', text, url });
+      else { await navigator.clipboard.writeText(text + ' ' + url); toast('Link copiato: incollalo dove vuoi'); }
+    } catch (e) { /* condivisione annullata */ }
+  }
+  // Solo sull'app Android: dopo almeno 3 navigazioni, al ritorno nell'app, una volta sola (o di nuovo dopo 30 giorni se "Più tardi")
+  function forseVoto() {
+    if (!NATIVO() || !$('#voto').hidden) return;
+    const st = ls.get('dp.voto', {}), nav = ls.get('dp.nav', 0), t = ls.get('dp.navT', 0);
+    if (st.fatto || st.mai || nav < 3 || Date.now() - t > 20 * 60000 || (st.dopo && Date.now() - st.dopo < 30 * 864e5)) return;
+    $('#voto').hidden = false;
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(forseVoto, 1200); });
+  $('#voto').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-v]'); if (!b) return; const st = ls.get('dp.voto', {}), v = b.dataset.v;
+    if (v === 'si') { st.fatto = Date.now(); traccia('recensione', { dettaglio: 'si' }); apri(CFG.PLAY); }
+    else if (v === 'dopo') { st.dopo = Date.now(); traccia('recensione', { dettaglio: 'dopo' }); }
+    else { st.mai = Date.now(); traccia('recensione', { dettaglio: 'no' }); }
+    ls.set('dp.voto', st); $('#voto').hidden = true;
+  });
+
+  // ---------- regole della sosta con il contrassegno (nazionali + note del comune) ----------
+  const regoleCache = new Map();
+  async function regoleDi(comune) {
+    if (!comune) return null; const k = norma(comune); if (regoleCache.has(k)) return regoleCache.get(k);
+    try { const r = await fetch(`${CFG.SB}/rest/v1/regole_comuni?select=*&comune=ilike.${encodeURIComponent(comune.replace(/[%_*]/g, ''))}`, { headers: H }); const j = r.ok ? await r.json() : []; regoleCache.set(k, j[0] || null); return j[0] || null; }
+    catch (e) { return null; }
+  }
+  async function apriRegole(comune) {
+    if (!comune) { const s = selId && stalli.get(selId); comune = (s && s.comune) || null; }
+    $('#regole').hidden = false; traccia('regole', { comune });
+    const box = $('#r-comune'); box.innerHTML = comune ? `<p class="muted">Carico le regole di ${esc(comune)}…</p>` : '';
+    const r = await regoleDi(comune);
+    box.innerHTML = !comune ? '' : r
+      ? `<p><b>A ${esc(r.comune)}</b></p>${r.ztl ? `<p><b>ZTL:</b> ${esc(r.ztl)}</p>` : ''}${r.note ? `<p>${esc(r.note).replace(/\n/g, '<br>')}</p>` : ''}${r.link ? `<p><a href="${esc(r.link)}" target="_blank" rel="noopener">Pagina del Comune</a></p>` : ''}<p class="small muted">Aggiornato il ${new Date(r.aggiornato).toLocaleDateString('it-IT')}.</p>`
+      : `<p><b>A ${esc(comune)}</b></p><p class="muted">Non abbiamo ancora le regole di questo comune su ZTL e parcheggi. Valgono quelle nazionali qui sopra; per la ZTL chiedi al Comando di Polizia Locale.</p>`;
+  }
+  $('#r-back').onclick = () => { $('#regole').hidden = true; };
+  $('#c-regole').onclick = () => { const s = stalli.get(selId); apriRegole(s && s.comune); };
 
   // ---------- suggerimenti: gli utenti ci dicono cosa manca ----------
   let catSugg = 'manca';

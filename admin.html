@@ -46,6 +46,14 @@ body{overflow:auto;background:var(--bg)}
 .sg{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
 .sg .h{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px}.sg .tag{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
 .sg .t{white-space:pre-wrap;font-size:15px}.sg .a{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.sg .a .btn{padding:6px 10px;min-height:34px;font-size:13px}
+.pec{width:100%;border-collapse:collapse;font-size:13px}.pec th{text-align:left;color:var(--muted);font-weight:600;padding:6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.pec td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.pec td.c{font-weight:600;white-space:nowrap}
+.pec select{width:auto;min-width:150px;min-height:0}.pec input{min-height:0}.pec select,.pec input{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg)}
+.pec input.p{width:150px}.pec textarea{font:inherit;font-size:12px;width:260px;min-height:34px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;background:var(--panel);color:var(--fg)}
+.pec tr.scad td{background:rgba(220,40,40,.07)}.pec .sc{white-space:nowrap}.pec .sc.x{color:#c62828;font-weight:700}
+.pec-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}.pec-f input{flex:1;min-width:200px}
+#reg-box textarea,#reg-box input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;width:100%;margin-bottom:8px;background:var(--panel);color:var(--fg)}
+.err{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:13px}.err code{white-space:pre-wrap;word-break:break-word;font-size:12px}.err .s{color:var(--muted);font-size:12px;margin-top:3px}
 #i-sug li{padding:9px 10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column}#i-sug li:hover{background:var(--bg)}#i-sug .m{font-weight:600}#i-sug .s{font-size:12px;color:var(--muted)}
 </style>
 </head>
@@ -75,6 +83,31 @@ body{overflow:auto;background:var(--bg)}
       <summary>Suggerimenti degli utenti <span class="sub" id="sug-count"></span></summary>
       <div class="sg-tabs"><button class="btn active" data-sg="nuovo">Nuovi</button><button class="btn" data-sg="letto">Letti</button><button class="btn" data-sg="fatto">Fatti</button><button class="btn" data-sg="scartato">Scartati</button></div>
       <div id="sug-rows"></div>
+    </details>
+    <details class="edit" style="margin-bottom:12px" id="err-box">
+      <summary>Errori dell'app <span class="sub" id="err-count"></span></summary>
+      <div class="sub" style="margin:8px 0">Errori capitati sui telefoni o nel browser degli utenti negli ultimi 7 giorni, raggruppati per messaggio.</div>
+      <div id="err-rows"></div>
+    </details>
+    <details class="edit" style="margin-bottom:12px" id="zone-box">
+      <summary>Zone cercate e posti mancanti <span class="sub" id="zone-count"></span></summary>
+      <div class="sub" style="margin:8px 0">Ogni cerchio è una zona di circa 1 km dove qualcuno ha cercato una destinazione negli ultimi <select id="zone-g" style="width:auto;display:inline-block;min-height:0;padding:2px 6px"><option value="7">7</option><option value="30" selected>30</option><option value="90">90</option><option value="365">365</option></select> giorni. Rosso: attorno non c'erano posti. Più grande = più ricerche.</div>
+      <div id="zmap" style="height:420px;border-radius:14px"></div>
+      <div id="zone-list" style="margin-top:10px"></div>
+    </details>
+    <details class="edit" style="margin-bottom:12px" id="reg-box">
+      <summary>Regole della sosta per comune <span class="sub" id="reg-count"></span></summary>
+      <div class="sub" style="margin:8px 0">Le note che scrivi qui compaiono nell'app nella pagina "Regole della sosta" quando si apre un posto di quel comune (ZTL, parcheggi in struttura, come registrare la targa).</div>
+      <div class="pec-f"><input id="reg-comune" placeholder="Comune (es. Udine)"><input id="reg-link" placeholder="Link alla pagina del Comune (facoltativo)"></div>
+      <textarea id="reg-ztl" rows="2" placeholder="ZTL: come si accede con il contrassegno"></textarea>
+      <textarea id="reg-note" rows="3" placeholder="Altre note utili (parcheggi in struttura, eccezioni…)"></textarea>
+      <div class="actions"><button class="btn primary" id="reg-salva">Salva</button><button class="btn" id="reg-nuovo">Nuovo</button><span class="sub" id="reg-msg"></span></div>
+      <div id="reg-rows" style="margin-top:10px"></div>
+    </details>
+    <details class="edit" style="margin-bottom:12px" id="pec-box">
+      <summary>PEC di accesso civico ai comuni <span class="sub" id="pec-count"></span></summary>
+      <div class="sg-tabs" id="pec-tabs"><button class="btn active" data-pf="">Tutti</button><button class="btn" data-pf="Da inviare">Da inviare</button><button class="btn" data-pf="Inviata">Inviate</button><button class="btn" data-pf="Risposta ricevuta">Protocollate</button><button class="btn" data-pf="Dati importati">Dati importati</button><button class="btn" data-pf="Rifiutata">Rifiutate</button><button class="btn" data-pf="scadute">Scadute</button></div>
+      <div style="overflow-x:auto"><table class="pec"><thead><tr><th>Comune</th><th>Prov.</th><th>Stalli</th><th>PEC</th><th>Inviata</th><th>Scadenza</th><th>Stato</th><th>Protocollo</th><th>Note</th></tr></thead><tbody id="pec-rows"></tbody></table></div>
     </details>
     <div class="kpi" id="kpi"></div>
     <details class="edit" style="margin-bottom:12px" id="cand-box" open>
@@ -121,7 +154,7 @@ body{overflow:auto;background:var(--bg)}
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=0.8.0"></script>
-<script src="admin.js?v=0.8.0"></script>
+<script src="config.js?v=0.9.0"></script>
+<script src="admin.js?v=0.9.0"></script>
 </body>
 </html>

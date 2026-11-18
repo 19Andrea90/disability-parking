@@ -325,3 +325,23 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .sug input{height:52px}
 .sug .bp{height:56px;border-radius:16px;background:var(--blu);color:#fff;font-size:17px;font-weight:700}
 .sug .bp:disabled{opacity:.6}
+
+/* regole della sosta, recensione, interruttore statistiche, Google */
+.lnk{display:flex;align-items:center;gap:8px;text-align:left;color:var(--blu);font-size:15px;font-weight:600;min-height:44px;padding:2px 0}
+.lnk .ic{flex:none;width:20px;height:20px}
+.lnk span{text-decoration:underline;text-underline-offset:3px}
+.vaip.stat{font-weight:400}
+.vaip.stat .t{display:flex;flex-direction:column;gap:2px;font-weight:700}
+.vaip.stat .t span{font-size:14px;font-weight:400;color:var(--muted)}
+.tgl{width:50px;height:30px;align-self:center;display:block;flex:none;border-radius:999px;background:var(--bordo);position:relative;transition:background .2s}
+.tgl::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.vaip.stat[aria-checked="true"] .tgl{background:#1a9e4b}
+.vaip.stat[aria-checked="true"] .tgl::after{transform:translateX(20px)}
+.acc .gg{display:flex;align-items:center;justify-content:center;gap:10px}
+.acc .gg .g{width:26px;height:26px;border-radius:50%;background:#fff;border:1px solid var(--bordo);color:#4285f4;font-weight:800;display:grid;place-items:center;font-size:15px}
+.velo{position:fixed;inset:0;z-index:40;background:rgba(11,31,68,.45);display:grid;place-items:center;padding:20px}
+.velo[hidden]{display:none}
+.dlg{background:var(--panel);border-radius:22px;padding:22px 18px 14px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.dlg h2{margin:0;font-size:22px}.dlg p{margin:0 0 6px;font-size:16px;line-height:1.45;color:var(--muted)}
+.dlg .bp{height:54px;border-radius:16px;background:var(--blu);color:#fff;font-size:17px;font-weight:700}
+.dlg .bl{min-height:46px;font-size:16px;color:var(--blu);font-weight:600}

@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Disability Parking</title>
-<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=12af762d">
-<link rel="stylesheet" href="mobile/www/app.css?v=12af762d">
+<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=1ab75435">
+<link rel="stylesheet" href="mobile/www/app.css?v=1ab75435">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -152,6 +152,7 @@
       <div id="c-sub" class="muted"></div>
       <div id="c-badges" class="badges"></div>
       <p id="c-note" class="muted" hidden></p>
+      <button id="c-regole" class="lnk"><svg class="ic"><use href="#i-shield"/></svg><span>Con il contrassegno le strisce blu sono gratis · regole della sosta</span></button>
       <button id="c-nav" class="primary"><svg class="ic"><use href="#i-nav"/></svg><span>Portami lì</span></button>
       <div class="three">
         <button id="c-street" class="sec"><svg class="ic"><use href="#i-eye"/></svg><span>Vedi il posto</span></button>
@@ -210,6 +211,31 @@
   </div>
 </div>
 
+<!-- Regole della sosta -->
+<div id="regole" class="page" hidden>
+  <div class="p-top"><button id="r-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Regole della sosta</h1></div>
+  <div class="testo">
+    <p>Cosa puoi fare con il contrassegno per persone con disabilità (CUDE), valido in tutta Italia e nell'Unione europea. Va esposto in originale e ben visibile, e vale solo quando l'auto è al servizio della persona titolare.</p>
+    <p><b>Posti riservati</b><br>Strisce gialle con il simbolo della carrozzina. Se il posto porta un numero o una targa è personalizzato: è riservato solo a quella persona.</p>
+    <p><b>Strisce blu</b><br>Puoi sostare gratis nelle aree di sosta a pagamento (art. 188, comma 3-bis, del Codice della strada). Parcheggi in struttura, aeroporti, porti e stazioni gestiti da privati possono avere regole proprie.</p>
+    <p><b>Zone con disco orario</b><br>Non sei tenuto a rispettare i limiti di tempo (art. 188, comma 3).</p>
+    <p><b>ZTL</b><br>Le auto al servizio di persone con disabilità possono circolare nelle zone a traffico limitato, ma quasi sempre bisogna comunicare prima la targa al Comune per non ricevere la multa dalle telecamere. In molti comuni si fa una volta sola sulla Piattaforma unica nazionale CUDE.</p>
+    <div id="r-comune"></div>
+    <p class="small muted">Sono indicazioni generali: controlla sempre la segnaletica sul posto e il regolamento del comune, che è quello che vale.</p>
+  </div>
+</div>
+
+<!-- Invito a lasciare una recensione (solo app Android) -->
+<div id="voto" class="velo" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="v-t">
+    <h2 id="v-t">Ti è utile Disability Parking?</h2>
+    <p>Una recensione su Google Play ci aiuta a farla conoscere a chi ne ha bisogno. Bastano pochi secondi.</p>
+    <button class="bp" data-v="si">Lascia una recensione</button>
+    <button class="bl" data-v="dopo">Più tardi</button>
+    <button class="bl" data-v="no">No, grazie</button>
+  </div>
+</div>
+
 <!-- Fonti e avvertenze -->
 <div id="fonti" class="page" hidden>
   <div class="p-top"><button id="f-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Fonti e avvertenze</h1></div>
@@ -225,7 +251,7 @@
     <p><b>Mappa e percorsi</b></p>
     <p>Sfondo della mappa: OpenFreeMap, dati OpenStreetMap. Tempi in auto e ricerca dei civici: TomTom. Ricerca dei luoghi: Photon e Nominatim.</p>
     <p><b>Statistiche d'uso</b></p>
-    <p>Per capire come migliorare l'app contiamo in forma anonima alcune azioni (apertura dell'app, ricerche di una destinazione, avvio del navigatore), legate a un codice casuale del telefono. Non registriamo la tua posizione né dati personali.</p>
+    <p>Per capire come migliorare l'app contiamo in forma anonima alcune azioni (apertura dell'app, ricerche di una destinazione con la zona arrotondata a circa 1 km, avvio del navigatore, eventuali errori dell'app), legate a un codice casuale del telefono. Non registriamo la tua posizione né dati personali. Puoi disattivarle dal menu dei tuoi posti.</p>
     <p id="f-ver" class="small muted"></p>
   </div>
 </div>
@@ -248,9 +274,9 @@
   </div>
 </div>
 
-<script src="mobile/www/vendor/maplibre-gl.js?v=12af762d"></script>
-<script src="mobile/www/chiavi.js?v=12af762d"></script>
-<script src="mobile/www/app.js?v=12af762d"></script>
-<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web 12af762d'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
+<script src="mobile/www/vendor/maplibre-gl.js?v=1ab75435"></script>
+<script src="mobile/www/chiavi.js?v=1ab75435"></script>
+<script src="mobile/www/app.js?v=1ab75435"></script>
+<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web 1ab75435'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
 </body>
 </html>

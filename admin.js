@@ -19,7 +19,7 @@
 
   // ---------- auth ----------
   async function session() { const { data } = await sb.auth.getSession(); return data.session; }
-  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); loadCands(); statistiche(); setInterval(() => { if (document.visibilityState === 'visible') statistiche(); }, 30000); loadSugg(); } }
+  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); loadCands(); statistiche(); setInterval(() => { if (document.visibilityState === 'visible') statistiche(); }, 30000); loadSugg(); loadErrori(); loadRegole(); loadPec(); } }
   $('#l-in').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signInWithPassword({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : ''; if (!error) boot(); };
   $('#l-up').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signUp({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : 'Registrazione inviata: se Supabase richiede la conferma, controlla la posta e poi premi "Entra".'; };
   $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
@@ -58,6 +58,8 @@
         ${card('Conferme sul posto (24 h)', fmt(d.conferme_24h), `"non c'è più" in 7 giorni: ${fmt(d.non_esiste_7g)}`)}
         ${card('Posti aperti (24 h)', fmt(d.schede_24h), `Street View 7 g: ${fmt(d.streetview_7g)} · condivisi: ${fmt(d.condivisioni_7g)} · salvati: ${fmt(d.salvati_7g)}`)}
         ${card('Suggerimenti da leggere', fmt(d.suggerimenti_nuovi), '<a href="#sug-box" onclick="document.getElementById(\'sug-box\').open=true">apri l\'elenco</a>')}
+        ${card('Errori dell\'app (24 h)', fmt(d.errori_24h), `su ${fmt(d.errori_telefoni_24h)} telefoni · <a href="#err-box" onclick="document.getElementById('err-box').open=true">vedi</a>`)}
+        ${card('Passaparola (7 giorni)', fmt(d.consigli_7g), `"Consiglia l'app" toccato · inviti a recensire: ${fmt(d.recensioni_7g)} · statistiche spente: ${fmt(d.stat_off_7g)}`)}
       </div>
       <div class="st-cols">
         <div><div class="st-h">Ultimi 30 giorni</div>${grafico(d.serie || [], ['attivi', 'naviga', 'nuovi'], ['#0b2a5b', '#e0a800', '#7aa7e0'])}
@@ -93,6 +95,83 @@
     b.disabled = true; const { error } = await sb.from('suggerimenti').update({ stato: b.dataset.st }).eq('id', id);
     if (error) { alert('Non riesco a salvare: ' + error.message); b.disabled = false; return; }
     loadSugg(); statistiche();
+  });
+
+  // ---------- errori dell'app ----------
+  async function loadErrori() {
+    const { data, error } = await sb.rpc('errori_admin', { p_giorni: 7 });
+    if (error) { $('#err-rows').innerHTML = `<div class="sub">${/function|schema cache/i.test(error.message) ? 'Manca il passo sul database: supabase/10_errori_zone_regole_pec.sql.' : esc(error.message)}</div>`; return; }
+    $('#err-count').textContent = data.length ? `· ${data.length} tipi di errore` : '· nessuno';
+    $('#err-rows').innerHTML = data.length ? data.map((x) => `<div class="err"><code>${esc(x.messaggio)}</code><div class="s">${fmt(x.volte)} volte su ${fmt(x.telefoni)} telefoni · ultimo ${new Date(x.ultimo).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · ${esc(x.piattaforme)} · ${esc(x.versioni)}</div></div>`).join('') : '<div class="sub">Nessun errore negli ultimi 7 giorni.</div>';
+  }
+
+  // ---------- zone cercate e posti mancanti ----------
+  let zmap, zlayer;
+  async function loadZone() {
+    if (!zmap) { zmap = L.map('zmap').setView([42.3, 12.5], 6); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(zmap); zlayer = L.layerGroup().addTo(zmap); }
+    setTimeout(() => zmap.invalidateSize(), 50);
+    const { data, error } = await sb.rpc('zone_ricerche_admin', { p_giorni: +$('#zone-g').value });
+    if (error) { $('#zone-list').innerHTML = `<div class="sub">${/function|schema cache/i.test(error.message) ? 'Manca il passo sul database: supabase/10_errori_zone_regole_pec.sql.' : esc(error.message)}</div>`; return; }
+    zlayer.clearLayers(); const max = Math.max(1, ...data.map((z) => +z.ricerche));
+    data.forEach((z) => { const vuote = +z.senza_posti, tot = +z.ricerche, frac = vuote / tot;
+      L.circleMarker([+z.lat + 0.005, +z.lon + 0.005], { radius: 5 + 18 * Math.sqrt(tot / max), color: frac > 0.5 ? '#c62828' : frac > 0 ? '#e0a800' : '#1a7f3c', weight: 1, fillOpacity: 0.45 })
+        .bindTooltip(`${esc(z.comune || 'zona')} · ${tot} ricerche, ${vuote} senza posti`).addTo(zlayer); });
+    const vuote = data.filter((z) => +z.senza_posti > 0).sort((a, b) => b.senza_posti - a.senza_posti).slice(0, 15);
+    $('#zone-count').textContent = `· ${data.length} zone, ${vuote.length ? data.filter((z) => +z.senza_posti > 0).length + ' con ricerche senza posti' : 'nessuna senza posti'}`;
+    $('#zone-list').innerHTML = vuote.length ? `<div class="st-h">Zone con più ricerche senza posti</div><ul class="st-list">${vuote.map((z) => `<li><span>${esc(z.comune || '?')} <span class="sub">(${(+z.lat).toFixed(2)}, ${(+z.lon).toFixed(2)})</span></span><b>${fmt(z.senza_posti)} su ${fmt(z.ricerche)}</b></li>`).join('')}</ul>` : '';
+  }
+  $('#zone-box').addEventListener('toggle', () => { if ($('#zone-box').open) loadZone(); });
+  $('#zone-g').onchange = loadZone;
+
+  // ---------- regole della sosta per comune ----------
+  let regole = [];
+  async function loadRegole() {
+    const { data, error } = await sb.from('regole_comuni').select('*').order('comune');
+    if (error) { $('#reg-rows').innerHTML = `<div class="sub">${/relation|schema cache/i.test(error.message) ? 'Manca il passo sul database: supabase/10_errori_zone_regole_pec.sql.' : esc(error.message)}</div>`; return; }
+    regole = data; $('#reg-count').textContent = `· ${data.length} comuni`;
+    $('#reg-rows').innerHTML = data.length ? data.map((r) => `<div class="sg" data-c="${esc(r.comune)}"><div class="h"><b style="color:var(--fg)">${esc(r.comune)}</b><span>aggiornato ${new Date(r.aggiornato).toLocaleDateString('it-IT')}</span></div>${r.ztl ? `<div class="t"><b>ZTL:</b> ${esc(r.ztl)}</div>` : ''}${r.note ? `<div class="t">${esc(r.note)}</div>` : ''}${r.link ? `<div class="sub"><a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.link)}</a></div>` : ''}<div class="a"><button class="btn" data-r="mod">Modifica</button><button class="btn danger" data-r="del">Elimina</button></div></div>`).join('') : '<div class="sub">Ancora nessun comune.</div>';
+  }
+  const regForm = (r) => { $('#reg-comune').value = r ? r.comune : ''; $('#reg-link').value = r ? r.link || '' : ''; $('#reg-ztl').value = r ? r.ztl || '' : ''; $('#reg-note').value = r ? r.note || '' : ''; $('#reg-msg').textContent = ''; };
+  $('#reg-nuovo').onclick = () => regForm(null);
+  $('#reg-salva').onclick = async () => {
+    const comune = $('#reg-comune').value.trim(); if (comune.length < 2) { $('#reg-msg').textContent = 'Scrivi il nome del comune.'; return; }
+    const rec = { comune, link: $('#reg-link').value.trim() || null, ztl: $('#reg-ztl').value.trim() || null, note: $('#reg-note').value.trim() || null, aggiornato: new Date().toISOString() };
+    const { error } = await sb.from('regole_comuni').upsert(rec); $('#reg-msg').textContent = error ? 'Errore: ' + error.message : 'Salvato.'; if (!error) loadRegole();
+  };
+  $('#reg-rows').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-r]'); if (!b) return; const c = b.closest('[data-c]').dataset.c, r = regole.find((x) => x.comune === c);
+    if (b.dataset.r === 'mod') { regForm(r); $('#reg-comune').scrollIntoView({ block: 'center' }); }
+    else if (confirm(`Eliminare le regole di ${c}?`)) { await sb.from('regole_comuni').delete().eq('comune', c); loadRegole(); }
+  });
+
+  // ---------- PEC di accesso civico ai comuni ----------
+  let pec = [], pecFiltro = '', riepilogoComuni = null;
+  const scadenza = (r) => r.inviata ? new Date(new Date(r.inviata).getTime() + 30 * 864e5) : null;
+  async function loadPec() {
+    const { data, error } = await sb.from('pec_comuni').select('*').order('comune');
+    if (error) { $('#pec-rows').innerHTML = `<tr><td colspan="9" class="sub">${/relation|schema cache/i.test(error.message) ? 'Manca il passo sul database: supabase/10_errori_zone_regole_pec.sql.' : esc(error.message)}</td></tr>`; return; }
+    pec = data;
+    if (!riepilogoComuni) { try { const j = await (await fetch(C.SUPABASE_URL + '/storage/v1/object/public/foto/copertura/riepilogo.json')).json(); riepilogoComuni = new Map(j.comuni.map((c) => [c.n.toLowerCase(), c.t])); } catch (e) { riepilogoComuni = new Map(); } }
+    renderPec();
+  }
+  function renderPec() {
+    const oggi = new Date(), aperta = (r) => r.stato === 'Inviata' || r.stato === 'Risposta ricevuta';
+    const v = pec.filter((r) => !pecFiltro || (pecFiltro === 'scadute' ? aperta(r) && scadenza(r) && scadenza(r) < oggi : r.stato === pecFiltro));
+    const n = (st) => pec.filter((r) => r.stato === st).length, scad = pec.filter((r) => aperta(r) && scadenza(r) && scadenza(r) < oggi).length;
+    $('#pec-count').textContent = `· ${pec.length} comuni: ${n('Inviata')} inviate, ${n('Risposta ricevuta')} protocollate, ${n('Dati importati')} con dati, ${n('Da inviare')} da inviare${scad ? `, ${scad} scadute` : ''}`;
+    const ST = ['Da inviare', 'Inviata', 'Risposta ricevuta', 'Dati importati', 'Rifiutata'];
+    $('#pec-rows').innerHTML = v.map((r) => { const sc = scadenza(r), x = aperta(r) && sc && sc < oggi;
+      return `<tr data-c="${esc(r.comune)}" class="${x ? 'scad' : ''}"><td class="c">${esc(r.comune)}</td><td>${esc(r.provincia || '')}</td><td>${riepilogoComuni && riepilogoComuni.has(r.comune.toLowerCase()) ? fmt(riepilogoComuni.get(r.comune.toLowerCase())) : '–'}</td><td><span class="sub">${esc(r.pec || '')}</span></td>
+        <td><input type="date" data-k="inviata" value="${r.inviata || ''}"></td><td class="sc ${x ? 'x' : ''}">${sc ? sc.toLocaleDateString('it-IT') : ''}</td>
+        <td><select data-k="stato">${ST.map((s) => `<option${s === r.stato ? ' selected' : ''}>${s}</option>`).join('')}</select></td>
+        <td><input class="p" data-k="protocollo" value="${esc(r.protocollo || '')}"></td><td><textarea data-k="note">${esc(r.note || '')}</textarea></td></tr>`; }).join('') || '<tr><td colspan="9" class="sub">Nessun comune.</td></tr>';
+  }
+  document.querySelectorAll('[data-pf]').forEach((b) => b.onclick = () => { document.querySelectorAll('[data-pf]').forEach((x) => x.classList.toggle('active', x === b)); pecFiltro = b.dataset.pf; renderPec(); });
+  $('#pec-rows').addEventListener('change', async (e) => {
+    const el = e.target.closest('[data-k]'); if (!el) return; const c = el.closest('[data-c]').dataset.c, k = el.dataset.k, val = el.value.trim() || null;
+    const { error } = await sb.from('pec_comuni').update({ [k]: val, aggiornato: new Date().toISOString() }).eq('comune', c);
+    if (error) { alert('Non riesco a salvare: ' + error.message); return; }
+    const r = pec.find((x) => x.comune === c); if (r) r[k] = val; el.style.outline = '2px solid #1a9e4b'; setTimeout(() => { el.style.outline = ''; renderPec(); }, 700);
   });
 
   // ---------- mappa ----------

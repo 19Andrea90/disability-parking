@@ -46,6 +46,10 @@ jobs:
           sed -i 's/minSdkVersion = 23/minSdkVersion = 24/; s/compileSdkVersion = 35/compileSdkVersion = 36/; s/targetSdkVersion = 35/targetSdkVersion = 36/' android/variables.gradle
           echo 'android.suppressUnsupportedCompileSdk=36' >> android/gradle.properties
           grep -n 'Sdk' android/variables.gradle
+      - name: Ritorno nell'app dopo l'accesso con Google (it.disabilityparking.app://login)
+        run: |
+          sed -i '0,/<\/activity>/s##    <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="it.disabilityparking.app" android:host="login" />\n            </intent-filter>\n        </activity>#' android/app/src/main/AndroidManifest.xml
+          grep -q 'android:scheme="it.disabilityparking.app"' android/app/src/main/AndroidManifest.xml
       - name: Permessi per la posizione
         run: |
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
