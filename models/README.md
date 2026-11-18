@@ -70,3 +70,9 @@ di una cella passa da circa 210 a 72 ms sui 2 processori del contenitore, con gl
 Prova a secco su 81 riquadri del centro di Udine: rilevatore da 2,4 a 1,0 minuti, stessi candidati con lo stesso punteggio.
 Il modello ONNX viene esportato una volta per file di pesi nella cartella temporanea; `DP_NO_ONNX=1` torna a PyTorch.
 Provati e scartati: quantizzazione a 8 bit (più lenta e punteggi sbagliati), celle più grandi o riquadro intero (nessun guadagno).
+
+## Produzione definitiva (18 novembre 2026) e come tornare indietro
+In uso: v1 rileva, v5+v2+v4 votano, calcolo con ONNX Runtime (prova di velocità su Pordenone, Monfalcone, Cividale: 21,7 → 8,6 minuti, stessi candidati).
+Backup: ramo `backup-scansione-prima-v5` (configurazione precedente, v1+v2+v4 con PyTorch); Supabase `modelli/backup/backup_produzione_scansione_20261118.zip`
+(modelli v1, v2, v4, v5 e script di scansione); copie dei singoli modelli in `modelli/v1` … `modelli/v5`.
+Per tornare indietro solo sul motore: `DP_NO_ONNX=1`. Per tornare alla vecchia combinazione: in `tools/scan_fvg.py` MODELS = v1,v2,v4 e niente `--detector`.
