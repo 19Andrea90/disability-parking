@@ -100,7 +100,7 @@ def main():
                 vals.append(float(s_[m_].max()) if m_.any() else 0.0)
             return sum(vals) / len(vals)
     net = Ensemble(a.model.split(','), a.detector)
-    print(f'Reti in media: {len(net.nets)}', flush=True)
+    print(f'Reti in media: {len(net.nets)} · motore {"ONNX Runtime" if getattr(net.scan, "ort", None) is not None else "PyTorch"}', flush=True)
     ctx = None
     if a.context:
         from shapely.geometry import Polygon, LineString, Point, box

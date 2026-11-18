@@ -1,0 +1,47 @@
+name: Prova scansione (a secco)
+
+# Prova la scansione su una zona già verificata senza caricare nulla nel database:
+# serve a controllare che su GitHub funzionino il motore ONNX e la combinazione di modelli in uso, e a misurarne la velocità.
+# Riferimento in locale (2 processori, centro di Pordenone): 176 s con ONNX, 411 s con PyTorch, 2 candidati.
+
+on:
+  workflow_dispatch:
+    inputs:
+      comune:
+        description: Comune (deve avere il contesto salvato dall'admin)
+        default: 'pordenone'
+      bbox:
+        description: Zona S,W,N,E
+        default: '45.950,12.645,45.962,12.668'
+
+permissions:
+  contents: read
+
+jobs:
+  prova:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: tools/requisiti-scansione.txt
+      - name: Librerie
+        run: |
+          pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
+          pip install -r tools/requisiti-scansione.txt
+      - name: Scansione a secco
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          PYTHONWARNINGS: ignore
+        run: |
+          if [ -z "$SUPABASE_SERVICE_KEY" ]; then echo "Manca il segreto SUPABASE_SERVICE_KEY"; exit 1; fi
+          echo "Processori: $(nproc)"
+          M=models/stalli_mobilenetv3_ft_
+          t0=$(date +%s)
+          python3 -u tools/scan_area.py ${M}v5.pt,${M}v2.pt,${M}v4.pt --detector ${M}v1.pt --bbox "${{ inputs.bbox }}" --thr 0.2 \
+            --context "${{ inputs.comune }}" --label prova --dry-run --save-dir "$RUNNER_TEMP/candidati" --progress "$RUNNER_TEMP/prova.json"
+          echo "Tempo totale: $(( $(date +%s) - t0 )) s"
+          echo "Candidati:"; ls "$RUNNER_TEMP/candidati" 2>/dev/null || echo "nessuno"
