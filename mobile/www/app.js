@@ -21,6 +21,27 @@
   let deviceId = ls.get('dp.device', null);
   if (!deviceId) { deviceId = 'd-' + Math.random().toString(36).slice(2) + Date.now().toString(36); ls.set('dp.device', deviceId); }
 
+  // ---------- statistiche d'uso anonime ----------
+  // Solo il codice casuale del telefono, il tipo di azione e al massimo il comune: niente posizione, niente dati personali.
+  // Servono al cruscotto del pannello admin (quante persone usano l'app, quante si fanno portare a un posto, dove mancano posti).
+  const PIATTAFORMA = (() => { const cap = window.Capacitor; if (cap && cap.isNativePlatform && cap.isNativePlatform()) return (cap.getPlatform && cap.getPlatform()) === 'ios' ? 'ios' : 'android'; return window.matchMedia('(min-width:900px)').matches ? 'pc' : 'web'; })();
+  function traccia(tipo, x) {
+    try {
+      const corpo = Object.assign({ device_id: deviceId, tipo, piattaforma: PIATTAFORMA, versione: String(window.DP_VERSIONE || '').slice(0, 40) || null }, x || {});
+      if (corpo.comune) corpo.comune = String(corpo.comune).slice(0, 80);
+      fetch(CFG.SB + '/rest/v1/eventi', { method: 'POST', keepalive: true, headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(corpo) }).catch(() => {});
+    } catch (e) { /* le statistiche non devono mai disturbare l'app */ }
+  }
+  (function () { // "online adesso": un segnale ogni 2 minuti mentre l'app è aperta e in primo piano
+    let nascosta = 0;
+    setTimeout(() => traccia('avvio'), 1500); // dopo che la pagina ha scritto il numero di versione
+    setInterval(() => { if (document.visibilityState === 'visible') traccia('attivo'); }, 120000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') nascosta = Date.now();
+      else if (nascosta) { traccia(Date.now() - nascosta > 30 * 60000 ? 'avvio' : 'attivo'); nascosta = 0; }
+    });
+  })();
+
   // ---------- stato ----------
   const stalli = new Map();           // id -> stallo
   const filtri = { ver: false, cop: false, multi: false };
@@ -265,12 +286,12 @@
     const n = e.target.closest('[data-nav]'); if (n) { naviga(stalli.get(n.dataset.nav)); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
   });
-  function naviga(s) { if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
+  function naviga(s) { if (s) traccia('naviga', { comune: s.comune || null }); if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
 
   // ---------- scheda del posto ----------
   function apriScheda(id) {
     const s = stalli.get(id); if (!s) return;
-    const eraAperta = !!selId; selId = id; disegna(); trovaVia(s);
+    const eraAperta = !!selId, prima = selId; selId = id; disegna(); trovaVia(s); if (prima !== id) traccia('scheda', { comune: s.comune || null });
     const [cls, lab] = affidabilita(s);
     $('#c-title').textContent = titolo(s);
     sottotitolo(); if (me) { tempi(me, [{ s }], 'car').then((ok) => { if (ok && selId === id) sottotitolo(); }); chiediTraffico(s).then((ok) => { if (ok && selId === id) sottotitolo(); }); }
@@ -302,22 +323,23 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
   $('#c-nav').onclick = () => naviga(stalli.get(selId));
-  $('#c-street').onclick = () => { const s = stalli.get(selId); if (s) apri(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lon}`); };
+  $('#c-street').onclick = () => { const s = stalli.get(selId); if (s) traccia('streetview', { comune: s.comune || null }); if (s) apri(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${s.lat},${s.lon}`); };
   $('#c-save').onclick = () => {
     const s = stalli.get(selId); if (!s) return;
     if (salvati.has(selId)) salvati.delete(selId); else salvati.set(selId, { id: s.id, lat: s.lat, lon: s.lon, t: titolo(s), c: s.comune || '' });
     ls.set('dp.salvati', [...salvati.values()]); toccato(); const on = salvati.has(selId);
-    $('#c-save').setAttribute('aria-pressed', on); $('#c-save').querySelector('span').textContent = on ? 'Salvato' : 'Salva'; toast(on ? 'Salvato tra i tuoi posti' : 'Tolto dai tuoi posti');
+    $('#c-save').setAttribute('aria-pressed', on); $('#c-save').querySelector('span').textContent = on ? 'Salvato' : 'Salva'; toast(on ? 'Salvato tra i tuoi posti' : 'Tolto dai tuoi posti'); if (on) traccia('salva', { comune: s.comune || null });
   };
   $('#c-share').onclick = async () => {
     const s = stalli.get(selId); if (!s) return;
     const url = `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}`, text = `Posto riservato ai disabili: ${titolo(s)}${s.comune ? ', ' + s.comune : ''}`;
     const cap = window.Capacitor, Sh = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.Share;
+    traccia('condividi', { comune: s.comune || null });
     try {
       if (Sh) await Sh.share({ title: 'Disability Parking', text, url, dialogTitle: 'Condividi il posto' });
       else if (navigator.share) await navigator.share({ title: 'Disability Parking', text, url });
@@ -329,7 +351,7 @@
     try {
       const r = await fetch(`${CFG.SB}/rest/v1/conferme`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }, H), body: JSON.stringify({ stallo_id: s.id, esito: b.dataset.esito, device_id: deviceId }) });
       if (!r.ok) throw new Error(r.status);
-      const fatti = ls.get('dp.conf', {}); fatti[s.id] = b.dataset.esito; ls.set('dp.conf', fatti);
+      const fatti = ls.get('dp.conf', {}); fatti[s.id] = b.dataset.esito; ls.set('dp.conf', fatti); traccia('conferma', { comune: s.comune || null, dettaglio: b.dataset.esito });
       if (b.dataset.esito === 'esiste') s.conferme_esiste = (s.conferme_esiste || 0) + 1;
       toast('Grazie! La tua risposta aiuta chi arriva dopo.'); aggiornaConferma();
     } catch (err) { toast('Non sono riuscito a inviare la risposta. Riprova.'); }
@@ -353,6 +375,10 @@
     $('#a-count').textContent = 'Cerco i posti…'; $('#a-sub').textContent = ''; $('#a-list').innerHTML = ''; $('#a-nav').hidden = true; $('#a-hint').textContent = '';
     map.jumpTo({ center: [d.lon, d.lat], zoom: 16 });
     await carica(d.lat - 0.012, d.lon - 0.017, d.lat + 0.012, d.lon + 0.017, false); arrivo(true);
+    if (dest === d) { // per il cruscotto: le destinazioni senza posti attorno dicono dove mancano dati
+      const n = attorno(d.lat, d.lon).filter((x) => x.d <= raggio).length, vic = attorno(d.lat, d.lon)[0];
+      traccia('destinazione', { comune: d.comune || (vic && vic.s.comune) || (String(d.sub || '').split(',').map((t) => t.trim()).filter(Boolean).slice(-1)[0]) || null, dettaglio: n ? 'con_posti' : 'senza_posti' });
+    }
   }
   function attorno(lat, lon) { // posti attorno a un punto, dal più vicino, senza doppioni a pochi metri
     const tutti = []; for (const s of stalli.values()) if (passa(s)) { const d = dist(lat, lon, s.lat, s.lon); if (d <= 1300) tutti.push({ s, d }); }
@@ -587,6 +613,7 @@
       if (!r.ok) throw new Error('invio ' + r.status);
       const s = (await r.json())[0]; if (s && s.tipo !== 'personalizzato') stalli.set(s.id, Object.assign({ conferme_esiste: 0, conferme_non_esiste: 0, ultima_conferma: null }, s));
       const oggi = new Date().toISOString().slice(0, 10), fatti = ls.get('dp.segnalati', {}); ls.set('dp.segnalati', { [oggi]: (fatti[oggi] || 0) + 1 });
+      traccia('segnala', { comune: nuovo.comune || null, dettaglio: nuovo.tipo });
       chiudiAggiungi(); disegna(); toast(nuovo.tipo === 'personalizzato' ? 'Grazie! Posto registrato.' : 'Grazie! Il posto è in mappa come "da verificare".', 3500);
     } catch (err) { toast('Non sono riuscito a inviare la segnalazione. Controlla la connessione e riprova.', 4500); }
     lab.textContent = 'Invia la segnalazione'; btn.disabled = nuovo.doppio;
@@ -626,6 +653,7 @@
     const r = await fetch(`${CFG.SB}/auth/v1/${nuovoAccount ? 'signup' : 'token?grant_type=password'}`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? 'La password deve avere almeno 6 caratteri.' : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
+    traccia(nuovoAccount ? 'registrazione' : 'accesso');
     if (!j.access_token) return 'conferma'; // account creato: serve il clic sul link ricevuto per email
     entra2(j); await allinea(); return 'ok';
   }
@@ -648,6 +676,7 @@
       <div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>
       <button class="vaip" data-a="profilo"><span class="mk">${icon('wc')}</span><span class="t">Il mio contrassegno e gli avvisi</span>${icon('chev')}</button>
       <button class="vaip" data-a="segn"><span class="mk">${icon('plus')}</span><span class="t">Le mie segnalazioni</span>${icon('chev')}</button>
+      <button class="vaip" data-a="sugg"><span class="mk">${icon('idea')}</span><span class="t">Suggerisci un miglioramento</span>${icon('chev')}</button>
       <div><div class="eyebrow">Posti salvati</div>${v.length ? v.map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('') : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>'}</div>
       <div class="piede"><button data-a="fonti">Fonti e avvertenze</button></div>`;
   }
@@ -670,6 +699,7 @@
     else if (a === 'via') { salvati.delete(b.dataset.id); ls.set('dp.salvati', [...salvati.values()]); toccato(); menu(); }
     else if (a === 'profilo') { $('#profilo').hidden = false; scheda8(); }
     else if (a === 'segn') apriSegnalazioni();
+    else if (a === 'sugg') apriSuggerimento();
     else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-ver').textContent = 'Disability Parking, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
   $('#f-back').onclick = () => { $('#fonti').hidden = true; };
@@ -690,6 +720,31 @@
     } catch (e) { el.innerHTML = '<div class="empty">Non riesco a caricare le segnalazioni. Controlla la connessione e riprova.</div>'; }
   }
   $('#g-back').onclick = () => { $('#segn').hidden = true; };
+
+  // ---------- suggerimenti: gli utenti ci dicono cosa manca ----------
+  let catSugg = 'manca';
+  function apriSuggerimento() {
+    $('#sugg').hidden = false; $('#u-msg').textContent = '';
+    if (sessione && sessione.email && !$('#u-email').value) $('#u-email').value = sessione.email;
+    document.querySelectorAll('#sugg [data-cat]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.cat === catSugg));
+    setTimeout(() => $('#u-testo').focus(), 50);
+  }
+  $('#u-back').onclick = () => { $('#sugg').hidden = true; };
+  $('#sugg .u-cat').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (!b) return; catSugg = b.dataset.cat; document.querySelectorAll('#sugg [data-cat]').forEach((x) => x.setAttribute('aria-pressed', x === b)); });
+  $('#u-invia').onclick = async () => {
+    const btn = $('#u-invia'), testo = $('#u-testo').value.trim(), email = $('#u-email').value.trim();
+    if (testo.length < 3) { $('#u-msg').textContent = 'Scrivi qualche parola sul tuo suggerimento.'; $('#u-testo').focus(); return; }
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) { $('#u-msg').textContent = 'Controlla l\'email, oppure lasciala vuota.'; return; }
+    btn.disabled = true; $('#u-msg').textContent = 'Invio…';
+    try {
+      const r = await fetch(CFG.SB + '/rest/v1/suggerimenti', { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ device_id: deviceId, categoria: catSugg, testo: testo.slice(0, 2000), email: email || null, piattaforma: PIATTAFORMA, versione: String(window.DP_VERSIONE || '').slice(0, 40) || null }) });
+      if (!r.ok) throw new Error(r.status);
+      traccia('suggerimento', { dettaglio: catSugg });
+      $('#u-testo').value = ''; $('#sugg').hidden = true; toast('Grazie! Il tuo suggerimento è arrivato.', 3500);
+    } catch (err) { $('#u-msg').textContent = 'Non sono riuscito a inviarlo. Controlla la connessione e riprova.'; }
+    btn.disabled = false;
+  };
   $('#g-body').addEventListener('click', (e) => {
     const b = e.target.closest('button.segn'); if (!b) return;
     $('#segn').hidden = true; $('#menu').hidden = true; seguo = false;

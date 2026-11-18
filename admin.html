@@ -30,6 +30,22 @@ body{overflow:auto;background:var(--bg)}
 .kpi{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .kpi div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--muted)}
 .kpi b{display:block;font-size:20px;color:var(--fg);font-variant-numeric:tabular-nums}
+#stat-box summary,#sug-box summary{cursor:pointer;font-weight:600}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:10px}
+.st{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.st .l,.st .x{text-transform:none;letter-spacing:0}.st .l{font-size:12px;color:var(--muted)}.st b{display:block;font-size:24px;font-variant-numeric:tabular-nums;color:var(--fg)}.st .x{font-size:12px;color:var(--muted)}
+.st.live b::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#1a9e4b;margin-right:7px;vertical-align:middle;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.st-h{margin:16px 0 6px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.st-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media (max-width:820px){.st-cols{grid-template-columns:1fr}}
+.st-chart{width:100%;height:auto;display:block}
+.st-leg{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:4px}.st-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.st-list{list-style:none;margin:0;padding:0;font-size:14px}.st-list li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)}
+.st-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:4px}.st-bar i{display:block;height:100%;background:#0b2a5b}
+.sg-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.sg-tabs .btn{padding:7px 11px;min-height:36px}.sg-tabs .btn.active{outline:2px solid var(--giallo)}
+.sg{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
+.sg .h{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px}.sg .tag{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.sg .t{white-space:pre-wrap;font-size:15px}.sg .a{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.sg .a .btn{padding:6px 10px;min-height:34px;font-size:13px}
 #i-sug li{padding:9px 10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column}#i-sug li:hover{background:var(--bg)}#i-sug .m{font-weight:600}#i-sug .s{font-size:12px;color:var(--muted)}
 </style>
 </head>
@@ -51,6 +67,15 @@ body{overflow:auto;background:var(--bg)}
   </div>
 
   <div id="panel" hidden>
+    <details class="edit" style="margin-bottom:12px" id="stat-box" open>
+      <summary>Utilizzo dell'app <span class="sub" id="st-agg"></span></summary>
+      <div id="stat"><div class="sub" style="margin-top:8px">Carico le statistiche…</div></div>
+    </details>
+    <details class="edit" style="margin-bottom:12px" id="sug-box">
+      <summary>Suggerimenti degli utenti <span class="sub" id="sug-count"></span></summary>
+      <div class="sg-tabs"><button class="btn active" data-sg="nuovo">Nuovi</button><button class="btn" data-sg="letto">Letti</button><button class="btn" data-sg="fatto">Fatti</button><button class="btn" data-sg="scartato">Scartati</button></div>
+      <div id="sug-rows"></div>
+    </details>
     <div class="kpi" id="kpi"></div>
     <details class="edit" style="margin-bottom:12px" id="cand-box" open>
       <summary style="cursor:pointer;font-weight:600">Candidati trovati dalla rete <span class="sub" id="cand-count"></span></summary>
@@ -96,7 +121,7 @@ body{overflow:auto;background:var(--bg)}
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="config.js?v=0.7.0"></script>
-<script src="admin.js?v=0.7.0"></script>
+<script src="config.js?v=0.8.0"></script>
+<script src="admin.js?v=0.8.0"></script>
 </body>
 </html>

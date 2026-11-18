@@ -19,10 +19,81 @@
 
   // ---------- auth ----------
   async function session() { const { data } = await sb.auth.getSession(); return data.session; }
-  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); loadCands(); } }
+  async function boot() { const s = await session(); if (s) { $('#login').hidden = true; $('#panel').hidden = false; $('#logout').hidden = false; initMap(); load(); loadCands(); statistiche(); setInterval(() => { if (document.visibilityState === 'visible') statistiche(); }, 30000); loadSugg(); } }
   $('#l-in').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signInWithPassword({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : ''; if (!error) boot(); };
   $('#l-up').onclick = async () => { $('#l-msg').textContent = '…'; const { error } = await sb.auth.signUp({ email: $('#l-email').value.trim(), password: $('#l-pass').value }); $('#l-msg').textContent = error ? error.message : 'Registrazione inviata: se Supabase richiede la conferma, controlla la posta e poi premi "Entra".'; };
   $('#logout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+  // ---------- cruscotto: utilizzo dell'app (si aggiorna da solo ogni 30 secondi) ----------
+  const fmt = (n) => (n == null ? '–' : Number(n).toLocaleString('it-IT'));
+  const pct = (a, b) => (b ? Math.round((a / b) * 100) + '%' : '–');
+  function grafico(serie, chiavi, colori) { // barre affiancate per giorno, senza librerie
+    const W = 600, Hh = 150, pad = 18, n = serie.length, max = Math.max(1, ...serie.flatMap((d) => chiavi.map((k) => d[k] || 0)));
+    const bw = (W - pad) / n, sub = (bw - 2) / chiavi.length;
+    let out = `<svg class="st-chart" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Andamento ultimi 30 giorni">`;
+    out += `<text x="0" y="10" font-size="10" fill="currentColor" opacity=".55">${fmt(max)}</text>`;
+    serie.forEach((d, i) => chiavi.forEach((k, j) => { const h = ((d[k] || 0) / max) * (Hh - pad - 4); out += `<rect x="${pad + i * bw + j * sub}" y="${Hh - 14 - h}" width="${Math.max(1, sub - 1)}" height="${h}" fill="${colori[j]}"><title>${d.g}: ${k} ${d[k] || 0}</title></rect>`; }));
+    [0, Math.floor(n / 2), n - 1].forEach((i) => { const d = serie[i]; if (d) out += `<text x="${pad + i * bw}" y="${Hh - 2}" font-size="10" fill="currentColor" opacity=".55">${d.g.slice(8, 10)}/${d.g.slice(5, 7)}</text>`; });
+    return out + '</svg>';
+  }
+  async function statistiche() {
+    const { data: d, error } = await sb.rpc('statistiche_admin');
+    if (error) { $('#stat').innerHTML = `<div class="sub" style="margin-top:8px">${/function|does not exist|schema cache/i.test(error.message) ? 'Manca il passo sul database: esegui <b>supabase/09_statistiche_suggerimenti.sql</b> nell\'editor SQL di Supabase.' : 'Errore: ' + esc(error.message)}</div>`; return; }
+    $('#st-agg').textContent = '· aggiornato alle ' + new Date(d.agg).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const card = (l, v, x, cls) => `<div class="st ${cls || ''}"><div class="l">${l}</div><b>${v}</b>${x ? `<div class="x">${x}</div>` : ''}</div>`;
+    const pf = d.piattaforme_30g || {}, totPf = Object.values(pf).reduce((a, b) => a + b, 0), PF = { android: 'Android', ios: 'iPhone', web: 'Web da telefono', pc: 'Web da computer', '?': 'Sconosciuta' };
+    const lista = (v, vuoto) => v && v.length ? `<ul class="st-list">${v.map((x) => `<li><span>${esc(x.c || x.v)}</span><b>${fmt(x.n)}</b></li>`).join('')}</ul>` : `<div class="sub">${vuoto}</div>`;
+    const ore = d.ore_7g || [], maxO = Math.max(1, ...ore);
+    $('#stat').innerHTML = `
+      <div class="st-grid">
+        ${card('Online adesso', fmt(d.online), 'app aperta negli ultimi 5 minuti', 'live')}
+        ${card('Utenti nelle ultime 24 ore', fmt(d.attivi_24h), `7 giorni: ${fmt(d.attivi_7g)} · 30 giorni: ${fmt(d.attivi_30g)}`)}
+        ${card('Hanno navigato verso un posto (24 h)', fmt(d.navigatori_24h), `${fmt(d.navigazioni_24h)} navigazioni avviate`)}
+        ${card('Registrati nelle ultime 24 ore', fmt(d.registrati_24h), `totale account: ${fmt(d.registrati_totali)}`)}
+        ${card('Nuovi telefoni (24 h)', fmt(d.nuovi_24h), `7 giorni: ${fmt(d.nuovi_7g)} · da sempre: ${fmt(d.telefoni_totali)}`)}
+        ${card('Destinazioni cercate (24 h)', fmt(d.destinazioni_24h), `senza posti attorno: ${fmt(d.senza_posti_24h)} (${pct(d.senza_posti_24h, d.destinazioni_24h)})`)}
+        ${card('Tornano dopo una settimana', pct(d.ritorno_tornati, d.ritorno_base), `${fmt(d.ritorno_tornati)} su ${fmt(d.ritorno_base)} arrivati 7-14 giorni fa`)}
+        ${card('Usano davvero l\'app (7 giorni)', pct(d.navigatori_7g, d.attivi_7g), `hanno avviato il navigatore: ${fmt(d.navigatori_7g)} su ${fmt(d.attivi_7g)}`)}
+        ${card('Segnalazioni nuove (24 h)', fmt(d.segnalazioni_24h), `da approvare: ${fmt(d.segnalazioni_da_vedere)}`)}
+        ${card('Conferme sul posto (24 h)', fmt(d.conferme_24h), `"non c'è più" in 7 giorni: ${fmt(d.non_esiste_7g)}`)}
+        ${card('Posti aperti (24 h)', fmt(d.schede_24h), `Street View 7 g: ${fmt(d.streetview_7g)} · condivisi: ${fmt(d.condivisioni_7g)} · salvati: ${fmt(d.salvati_7g)}`)}
+        ${card('Suggerimenti da leggere', fmt(d.suggerimenti_nuovi), '<a href="#sug-box" onclick="document.getElementById(\'sug-box\').open=true">apri l\'elenco</a>')}
+      </div>
+      <div class="st-cols">
+        <div><div class="st-h">Ultimi 30 giorni</div>${grafico(d.serie || [], ['attivi', 'naviga', 'nuovi'], ['#0b2a5b', '#e0a800', '#7aa7e0'])}
+          <div class="st-leg"><span><i style="background:#0b2a5b"></i>utenti attivi</span><span><i style="background:#e0a800"></i>navigazioni</span><span><i style="background:#7aa7e0"></i>nuovi telefoni</span></div></div>
+        <div><div class="st-h">A che ora si usa (ultimi 7 giorni)</div>
+          <svg class="st-chart" viewBox="0 0 480 150">${ore.map((n, h) => `<rect x="${h * 20 + 2}" y="${136 - (n / maxO) * 126}" width="16" height="${(n / maxO) * 126}" fill="#0b2a5b"><title>${h}:00 · ${n}</title></rect>`).join('')}${[0, 6, 12, 18, 23].map((h) => `<text x="${h * 20 + 2}" y="148" font-size="10" fill="currentColor" opacity=".55">${h}</text>`).join('')}</svg></div>
+      </div>
+      <div class="st-cols">
+        <div><div class="st-h">Dove si fanno portare (30 giorni)</div>${lista(d.comuni_naviga_30g, 'Ancora nessuna navigazione.')}</div>
+        <div><div class="st-h">Dove cercano ma mancano posti (30 giorni)</div>${lista(d.comuni_vuoti_30g, 'Nessuna ricerca senza posti.')}<div class="sub" style="margin-top:6px">Sono i comuni da completare per primi (PEC, open data, scansione).</div></div>
+      </div>
+      <div class="st-cols">
+        <div><div class="st-h">Da dove usano l'app (30 giorni)</div>${Object.keys(pf).length ? Object.entries(pf).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${PF[k] || esc(k)}</span><b>${fmt(n)} · ${pct(n, totPf)}</b></div><div class="st-bar"><i style="width:${(n / Math.max(1, totPf)) * 100}%"></i></div></div>`).join('') : '<div class="sub">Ancora nessun dato.</div>'}</div>
+        <div><div class="st-h">Versioni in uso (7 giorni)</div>${lista(d.versioni_7g, 'Ancora nessun dato.')}</div>
+      </div>`;
+  }
+
+  // ---------- suggerimenti degli utenti ----------
+  let sgFiltro = 'nuovo';
+  const CAT = { manca: 'Manca una funzione', errore: 'Qualcosa non va', idea: 'Idea', altro: 'Altro' };
+  async function loadSugg() {
+    const { data, error } = await sb.from('suggerimenti').select('*').eq('stato', sgFiltro).order('creato', { ascending: false }).limit(200);
+    if (error) { $('#sug-rows').innerHTML = `<div class="sub">${/relation|does not exist|schema cache/i.test(error.message) ? 'Manca il passo sul database (supabase/09_statistiche_suggerimenti.sql).' : esc(error.message)}</div>`; return; }
+    const { count } = await sb.from('suggerimenti').select('id', { count: 'exact', head: true }).eq('stato', 'nuovo');
+    $('#sug-count').textContent = count ? `· ${count} da leggere` : '';
+    $('#sug-rows').innerHTML = data.length ? data.map((x) => `<div class="sg" data-id="${x.id}"><div class="h"><span class="tag">${CAT[x.categoria] || esc(x.categoria)}</span><span>${new Date(x.creato).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><span>${esc(x.piattaforma || '')} ${esc(x.versione || '')}</span>${x.email ? `<a href="mailto:${esc(x.email)}">${esc(x.email)}</a>` : ''}</div>
+      <div class="t">${esc(x.testo)}</div>
+      <div class="a">${['letto', 'fatto', 'scartato', 'nuovo'].filter((st) => st !== x.stato).map((st) => `<button class="btn" data-st="${st}">${{ letto: 'Segna come letto', fatto: 'Fatto', scartato: 'Scarta', nuovo: 'Rimetti tra i nuovi' }[st]}</button>`).join('')}</div></div>`).join('') : '<div class="sub">Nessun suggerimento qui.</div>';
+  }
+  document.querySelectorAll('[data-sg]').forEach((b) => b.onclick = () => { document.querySelectorAll('[data-sg]').forEach((x) => x.classList.toggle('active', x === b)); sgFiltro = b.dataset.sg; loadSugg(); });
+  $('#sug-rows').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-st]'); if (!b) return; const id = +b.closest('[data-id]').dataset.id;
+    b.disabled = true; const { error } = await sb.from('suggerimenti').update({ stato: b.dataset.st }).eq('id', id);
+    if (error) { alert('Non riesco a salvare: ' + error.message); b.disabled = false; return; }
+    loadSugg(); statistiche();
+  });
 
   // ---------- mappa ----------
   function initMap() {

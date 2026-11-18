@@ -35,6 +35,7 @@
     <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 1 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></symbol>
+    <symbol id="i-idea" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></symbol>
   </defs>
 </svg>
 
@@ -183,6 +184,26 @@
   <div id="g-body"></div>
 </div>
 
+<!-- Suggerimenti -->
+<div id="sugg" class="page" hidden>
+  <div class="p-top"><button id="u-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1>Suggerisci un miglioramento</h1></div>
+  <div class="testo sug">
+    <p>Manca qualcosa o hai trovato un errore? Scrivici: leggiamo tutti i suggerimenti e i più utili entrano nelle prossime versioni.</p>
+    <div class="u-cat" role="group" aria-label="Di cosa si tratta">
+      <button class="chip" data-cat="manca" aria-pressed="true">Manca una funzione</button>
+      <button class="chip" data-cat="errore" aria-pressed="false">Qualcosa non va</button>
+      <button class="chip" data-cat="idea" aria-pressed="false">Un'idea</button>
+      <button class="chip" data-cat="altro" aria-pressed="false">Altro</button>
+    </div>
+    <label for="u-testo" class="eyebrow">Il tuo suggerimento</label>
+    <textarea id="u-testo" maxlength="2000" rows="6" placeholder="Per esempio: vorrei vedere solo i posti coperti"></textarea>
+    <label for="u-email" class="eyebrow">Email, se vuoi una risposta (facoltativa)</label>
+    <input id="u-email" type="email" autocomplete="email" placeholder="La tua email">
+    <div class="msg small muted" id="u-msg" role="status"></div>
+    <button class="bp" id="u-invia">Invia il suggerimento</button>
+  </div>
+</div>
+
 <!-- Fonti e avvertenze -->
 <div id="fonti" class="page" hidden>
   <div class="p-top"><button id="f-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Fonti e avvertenze</h1></div>
@@ -197,6 +218,8 @@
     <p>"Ufficiale": viene dal Comune. "Verificato": presente su OpenStreetMap o confermato da più persone. "Da verificare": segnalato da poco, non ancora confermato.</p>
     <p><b>Mappa e percorsi</b></p>
     <p>Sfondo della mappa: OpenFreeMap, dati OpenStreetMap. Tempi in auto e ricerca dei civici: TomTom. Ricerca dei luoghi: Photon e Nominatim.</p>
+    <p><b>Statistiche d'uso</b></p>
+    <p>Per capire come migliorare l'app contiamo in forma anonima alcune azioni (apertura dell'app, ricerche di una destinazione, avvio del navigatore), legate a un codice casuale del telefono. Non registriamo la tua posizione né dati personali.</p>
     <p id="f-ver" class="small muted"></p>
   </div>
 </div>
