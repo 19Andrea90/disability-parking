@@ -2,3 +2,5 @@ numpy
 pillow
 shapely
 scikit-learn
+onnx
+onnxruntime

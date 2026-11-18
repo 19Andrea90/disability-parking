@@ -63,3 +63,10 @@ v1 come rilevatore e v5+v2+v4 che votano (`--detector`): 3 (1 sopra 0,55).
 Uso in produzione dal 17 novembre: v1 scorre l'immagine e non vota, v5+v2+v4 votano (è la combinazione misurata sui candidati verificati):
 `python3 tools/scan_area.py models/stalli_mobilenetv3_ft_v5.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v4.pt --detector models/stalli_mobilenetv3_ft_v1.pt --bbox S,W,N,E --thr 0.2 --context <comune> --label <Comune> [--auto 55]`
 Copie: Supabase `modelli/v5/`.
+
+## Velocità (18 novembre 2026)
+La scansione calcola le reti con ONNX Runtime invece che con PyTorch (`Net.use_onnx` in `tools/finetune.py`): la mappa dei punteggi
+di una cella passa da circa 210 a 72 ms sui 2 processori del contenitore, con gli stessi punteggi (differenza massima 0,00003).
+Prova a secco su 81 riquadri del centro di Udine: rilevatore da 2,4 a 1,0 minuti, stessi candidati con lo stesso punteggio.
+Il modello ONNX viene esportato una volta per file di pesi nella cartella temporanea; `DP_NO_ONNX=1` torna a PyTorch.
+Provati e scartati: quantizzazione a 8 bit (più lenta e punteggi sbagliati), celle più grandi o riquadro intero (nessun guadagno).

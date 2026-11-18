@@ -67,7 +67,10 @@ def main():
     S0, W0, N0, E0 = map(float, a.bbox.split(','))
     class Ensemble:  # media dei punteggi di più reti (stessa griglia)
         def __init__(self, paths, detector=''):
-            load = lambda pth: (lambda n_: (n_.load_state_dict(torch.load(pth)), n_.eval(), n_)[2])(Fm.Net())
+            def load(pth):
+                n_ = Fm.Net(); n_.load_state_dict(torch.load(pth)); n_.eval()
+                if not os.environ.get('DP_NO_ONNX'): n_.use_onnx(pth)
+                return n_
             self.nets = [load(p_) for p_ in paths]
             self.det = load(detector) if detector else None  # rilevatore separato: non vota
             self.scan = self.det or self.nets[0]
@@ -135,12 +138,12 @@ def main():
     from concurrent.futures import ThreadPoolExecutor
     pool = ThreadPoolExecutor(6); fetch = lambda t_: wms(t_[0], t_[1], t_[0] + TILE * dlat, t_[1] + TILE * dlon, px)
     tag = f"rete neurale{' (media di ' + str(len(net.nets)) + ')' if len(net.nets) > 1 else ''}"
-    total_up = 0; in_bld = 0; n_dark = 0; n_anom = 0; n_cells_skip = 0
+    total_up = 0; in_bld = 0; n_dark = 0; n_anom = 0; n_cells_skip = 0; tm = dict(foto=0., rileva=0., voto=0.)  # dove va il tempo
     for bi in range(0, len(todo), a.batch):
         batch = todo[bi:bi + a.batch]; futs = [pool.submit(fetch, t_) for t_ in batch[:6]]; found = []
         for j, (la, lo) in enumerate(batch):
             if j + 6 < len(batch): futs.append(pool.submit(fetch, batch[j + 6]))  # scarico in anticipo mentre la rete calcola
-            img = futs[j].result(); s, w, n, e = la, lo, la + TILE * dlat, lo + TILE * dlon
+            t1 = time.time(); img = futs[j].result(); tm['foto'] += time.time() - t1; s, w, n, e = la, lo, la + TILE * dlat, lo + TILE * dlon
             if img is None: continue
             gray = img.mean(2)
             if (gray < 0.12).mean() > 0.5 or (gray > 0.95).mean() > 0.5: n_dark += 1; continue  # ortofoto mancante (zona nera o bianca): la rete vedrebbe solo rumore
@@ -150,11 +153,11 @@ def main():
                 def need(y0, x0, c, n=n, w=w):
                     g = box(w + (x0 / px) * (e - w) - 15 * dlon, n - ((y0 + c) / px) * (n - s) - 15 * dlat, w + ((x0 + c) / px) * (e - w) + 15 * dlon, n - (y0 / px) * (n - s) + 15 * dlat)
                     return any(ctx['linesl'][i].intersects(g) for i in ctx['lines'].query(g))
-            dets, sk = net.detect(img, a.thr if len(net.nets) == 1 else a.thr / 2, need if a.cell else None, CELL=a.cell); n_cells_skip += sk
+            t1 = time.time(); dets, sk = net.detect(img, a.thr if len(net.nets) == 1 else a.thr / 2, need if a.cell else None, CELL=a.cell); n_cells_skip += sk; tm['rileva'] += time.time() - t1
             for v, x, y in dets:
                 if not (m <= x <= px - m and m <= y <= px - m): continue
                 lat = n - (y / px) * (n - s); lon = w + (x / px) * (e - w)
-                v = net.rescore(img, x, y, v)
+                t1 = time.time(); v = net.rescore(img, x, y, v); tm['voto'] += time.time() - t1
                 if v < a.thr: continue
                 yi, xi = int(y), int(x); w8 = int(4 / T.RES)
                 win = gray[max(0, yi - w8):yi + w8, max(0, xi - w8):xi + w8]
@@ -203,7 +206,7 @@ def main():
             try: sb('POST', remote, key, open(prog, 'rb').read(), 'application/json', {'x-upsert': 'true'})
             except Exception as ex: print('  avanzamento non salvato su Supabase:', ex)
         total_up += len(keep)
-        print(f'  blocco {bi // a.batch + 1}/{math.ceil(len(todo) / a.batch)}: riquadri {min(bi + a.batch, len(todo))}/{len(todo)} · nuovi candidati {len(keep)} (totale {total_up}) · scartati sui tetti {in_bld} · zone nere {n_dark} · riquadri anomali {n_anom} · celle saltate {n_cells_skip} · {(time.time() - t0) / 60:.0f} min', flush=True)
+        print(f'  blocco {bi // a.batch + 1}/{math.ceil(len(todo) / a.batch)}: riquadri {min(bi + a.batch, len(todo))}/{len(todo)} · nuovi candidati {len(keep)} (totale {total_up}) · scartati sui tetti {in_bld} · zone nere {n_dark} · riquadri anomali {n_anom} · celle saltate {n_cells_skip} · {(time.time() - t0) / 60:.0f} min (attesa foto {tm["foto"] / 60:.1f}, rilevatore {tm["rileva"] / 60:.1f}, voto {tm["voto"] / 60:.1f})', flush=True)
     print(f'Fatto in {(time.time() - t0) / 60:.0f} min: {total_up} candidati caricati.')
 
 
