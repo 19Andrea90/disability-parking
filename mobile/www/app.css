@@ -345,3 +345,5 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .dlg h2{margin:0;font-size:22px}.dlg p{margin:0 0 6px;font-size:16px;line-height:1.45;color:var(--muted)}
 .dlg .bp{height:54px;border-radius:16px;background:var(--blu);color:#fff;font-size:17px;font-weight:700}
 .dlg .bl{min-height:46px;font-size:16px;color:var(--blu);font-weight:600}
+
+.testo a{color:var(--blu);font-weight:700;text-decoration:underline;text-underline-offset:3px;word-break:break-word}
