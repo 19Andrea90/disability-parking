@@ -76,3 +76,20 @@ jobs:
           prerelease: true
           make_latest: false
           files: mobile/disability-parking.apk
+      - name: Copia dell'APK su Supabase Storage (il deposito diventerà privato, il sito scarica da qui)
+        # Non blocca la build se fallisce. Percorso pubblico: <SB>/storage/v1/object/public/foto/app/sostabile.apk
+        continue-on-error: true
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SB: https://wwereqrojlwktgwlrsib.supabase.co
+        run: |
+          if [ -z "$SUPABASE_SERVICE_KEY" ]; then echo "ESITO CARICAMENTO SUPABASE: NON ESEGUITO (manca il segreto SUPABASE_SERVICE_KEY)"; exit 1; fi
+          codice=$(curl -sS -o risposta.txt -w '%{http_code}' -X POST "$SB/storage/v1/object/foto/app/sostabile.apk" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "x-upsert: true" -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary @disability-parking.apk) || codice=errore
+          if [ "$codice" = "200" ] || [ "$codice" = "201" ]; then
+            echo "ESITO CARICAMENTO SUPABASE: RIUSCITO (HTTP $codice, $(stat -c %s disability-parking.apk) byte) -> $SB/storage/v1/object/public/foto/app/sostabile.apk"
+          else
+            echo "ESITO CARICAMENTO SUPABASE: FALLITO (HTTP $codice)"; head -c 400 risposta.txt; echo; exit 1
+          fi
