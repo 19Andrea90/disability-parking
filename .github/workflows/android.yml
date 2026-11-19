@@ -2,6 +2,9 @@ name: App Android (versione di prova)
 
 # Compila l'app Android di prova a ogni modifica di mobile/ e la pubblica come file installabile:
 # https://github.com/19Andrea90/disability-parking/releases/download/app-prova/disability-parking.apk
+# Su un ramo diverso da main (avvio a mano) NON tocca né il rilascio app-prova né Supabase Storage: pubblica l'APK come artefatto
+# del workflow e nel rilascio separato app-prova-arrivo:
+# https://github.com/19Andrea90/disability-parking/releases/download/app-prova-arrivo/disability-parking.apk
 
 on:
   push:
@@ -13,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: android-prova
+  group: android-prova-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -54,6 +57,10 @@ jobs:
         run: |
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
           cat android/app/src/main/AndroidManifest.xml
+      - name: Nome del canale di notifica del servizio di posizione (visibile nelle impostazioni del telefono)
+        run: |
+          sed -i 's#</resources>#    <string name="capacitor_background_geolocation_notification_channel_name">Ascolto durante il tragitto</string>\n</resources>#' android/app/src/main/res/values/strings.xml
+          grep -q 'capacitor_background_geolocation_notification_channel_name' android/app/src/main/res/values/strings.xml
       - name: Numero di versione e firma di prova (sempre la stessa, così gli aggiornamenti si installano sopra)
         run: |
           sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
@@ -65,10 +72,37 @@ jobs:
       - name: Compila
         run: cd android && ./gradlew assembleDebug --no-daemon
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk disability-parking.apk
+      - name: Permessi dell'APK (deve esserci la posizione mentre si usa l'app, NON quella in sottofondo)
+        run: |
+          BT=$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)
+          $BT/aapt2 dump permissions disability-parking.apk | tee permessi.txt
+          $BT/aapt2 dump xmltree --file AndroidManifest.xml disability-parking.apk | grep -E 'foregroundServiceType|android:name.*Service' | tee servizi.txt || true
+          if grep -q 'ACCESS_BACKGROUND_LOCATION' permessi.txt; then echo "ERRORE: l'APK chiede ACCESS_BACKGROUND_LOCATION, non voluto"; exit 1; fi
+          grep -q 'ACCESS_FINE_LOCATION' permessi.txt && grep -q 'FOREGROUND_SERVICE_LOCATION' permessi.txt
       - name: Impronta della firma
         id: firma
         run: echo "sha=$($ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)/apksigner verify --print-certs disability-parking.apk | grep -m1 'SHA-256' | awk '{print $NF}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: github.ref != 'refs/heads/main'
+        with:
+          name: sostabile-apk-${{ github.ref_name }}
+          path: |
+            mobile/disability-parking.apk
+            mobile/permessi.txt
+            mobile/servizi.txt
+          retention-days: 30
       - uses: softprops/action-gh-release@v2
+        if: github.ref != 'refs/heads/main'
+        with:
+          tag_name: app-prova-arrivo
+          target_commitish: ${{ github.sha }}
+          name: App Android · prova della fase arrivo (ramo ${{ github.ref_name }})
+          body: "Versione di prova 0.1.${{ github.run_number }} dal ramo ${{ github.ref_name }}. NON è la versione pubblica. Firma: ${{ steps.firma.outputs.sha }}"
+          prerelease: true
+          make_latest: false
+          files: mobile/disability-parking.apk
+      - uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
         with:
           tag_name: app-prova
           name: App Android · versione di prova
@@ -77,7 +111,8 @@ jobs:
           make_latest: false
           files: mobile/disability-parking.apk
       - name: Copia dell'APK su Supabase Storage (il deposito diventerà privato, il sito scarica da qui)
-        # Non blocca la build se fallisce. Percorso pubblico: <SB>/storage/v1/object/public/foto/app/sostabile.apk
+        # Solo da main. Non blocca la build se fallisce. Percorso pubblico: <SB>/storage/v1/object/public/foto/app/sostabile.apk
+        if: github.ref == 'refs/heads/main'
         continue-on-error: true
         env:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
