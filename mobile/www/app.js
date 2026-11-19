@@ -716,14 +716,17 @@
       if (remoto && (vuoto || (remoto.agg || 0) > locale.agg)) { applica(remoto); if (nuovoQui) await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); } else if (!vuoto) { ls.set('dp.agg', locale.agg || Date.now()); await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); }
     } catch (e) { /* si riprova al prossimo cambiamento */ }
   }
-  // Regole della password per i nuovi account: lunghezza minima, almeno una maiuscola e almeno un carattere speciale.
+  // Regole della password per i nuovi account, uguali a quelle impostate su Supabase: lunghezza minima,
+  // almeno una minuscola, una maiuscola, un numero e un carattere speciale.
   // Chi ha già un account con una password più semplice continua a entrare.
   const PASS_MIN = 10;
   function passMancante(p) {
     const m = [];
     if (p.length < PASS_MIN) m.push(p.length ? `altri ${PASS_MIN - p.length} caratteri` : `almeno ${PASS_MIN} caratteri`);
-    if (!/\p{Lu}/u.test(p)) m.push('una lettera maiuscola');
-    if (!/[^\p{L}\p{N}\s]/u.test(p)) m.push('un carattere speciale (es. ! ? @ #)');
+    if (!/[a-z]/.test(p)) m.push('una lettera minuscola');
+    if (!/[A-Z]/.test(p)) m.push('una lettera maiuscola');
+    if (!/[0-9]/.test(p)) m.push('un numero');
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"|<>?,.\/`~\\]/.test(p)) m.push('un carattere speciale (es. ! ? @ #)');
     return m;
   }
   async function accedi(email, password, nuovoAccount) {
@@ -731,7 +734,7 @@
     const ritorno = nuovoAccount && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? '?redirect_to=' + encodeURIComponent(location.origin + location.pathname) : '';
     const r = await fetch(`${CFG.SB}/auth/v1/${nuovoAccount ? 'signup' + ritorno : 'token?grant_type=password'}`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? `La password deve avere almeno ${PASS_MIN} caratteri, una maiuscola e un carattere speciale.` : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
+    if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? `La password deve avere almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.` : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
     traccia(nuovoAccount ? 'registrazione' : 'accesso');
     if (!j.access_token) return 'conferma'; // account creato: serve il clic sul link ricevuto per email
     entra2(j); await allinea(); return 'ok';
@@ -766,7 +769,7 @@
     const acc = sessione
       ? `<div class="chi"><span class="av">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span><button class="bsm" data-a="esci">Esci</button></div>`
       : `<div class="acc"><div class="b">Accedi per non perderli</div><p>I posti salvati ti seguono se cambi telefono. È facoltativo: l'app funziona anche senza.</p>${formAperto
-        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><input id="a-pass" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="a-reg"><p class="reg" id="a-reg">Per un nuovo account: almeno ${PASS_MIN} caratteri, con una maiuscola e un carattere speciale.</p><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
+        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><input id="a-pass" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="a-reg"><p class="reg" id="a-reg">Per un nuovo account: almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.</p><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
         : `${CFG.GOOGLE ? `<button class="bw gg" data-a="google"><span class="g" aria-hidden="true">G</span>Continua con Google</button>` : ''}<button class="${CFG.GOOGLE ? 'bo' : 'bw'}" data-a="form">Usa la tua email</button>${CFG.GOOGLE ? '' : '<p>L\'accesso con Google arriva presto.</p>'}`}</div>`;
     const luogo = (k, nome, ic) => l[k]
       ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}">Cambia</button><button data-a="togli" data-k="${k}">Togli</button></div></div>`
