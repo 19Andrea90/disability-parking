@@ -23,3 +23,10 @@ python tools/import_osm.py --area Udine --area Gorizia
 
 ## Licenze dati
 I dati importati da OpenStreetMap sono © OpenStreetMap contributors, ODbL.
+
+## Pubblicazione
+Il sito per Cloudflare Pages si prepara con:
+```
+python3 tools/pubblica.py dist
+```
+La cartella di uscita è `dist` (ignorata da git, ricreata da zero a ogni esecuzione): contiene solo web app, pannello admin e `sito/`, più `_headers` e `robots.txt`. Restano fuori dati, modelli, strumenti, SQL e sorgenti mobile. Lo script segue i riferimenti reali dei file e si ferma se ne manca uno.
