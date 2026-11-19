@@ -347,3 +347,5 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .dlg .bl{min-height:46px;font-size:16px;color:var(--blu);font-weight:600}
 
 .testo a{color:var(--blu);font-weight:700;text-decoration:underline;text-underline-offset:3px;word-break:break-word}
+
+.vers{text-align:center;font-size:13px;color:var(--muted);padding-bottom:4px}
