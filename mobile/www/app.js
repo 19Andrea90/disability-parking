@@ -398,7 +398,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (fgStato) fgChiudi(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (fgStato) fgChiudi(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (fgStato) fgChiudi(); else chiudiScheda(true); } });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -522,6 +522,7 @@
 
   // ---------- schermata 3 · ricerca ----------
   let sCtl, sT, scelgo = null; // scelgo: 'casa' o 'lavoro' mentre si imposta la scorciatoia
+  let catAperta = null;        // categoria di luogo aperta nella ricerca (es. 'ospedali'), altrimenti null
   const luoghi = () => ls.get('dp.luoghi', {});
   function ricorda(d) { const r = ls.get('dp.recenti', []).filter((x) => x.t !== d.t); r.unshift({ t: d.t, sub: d.sub || '', lat: d.lat, lon: d.lon, q: d.q || '' }); ls.set('dp.recenti', r.slice(0, 5)); }
   function apriRicerca(testo, imposta) {
@@ -529,11 +530,12 @@
     if (testo) { chipStato(); cerca(testo); } else inizio();
     setTimeout(() => { $('#s-q').focus(); if (testo) $('#s-q').select(); }, 60);
   }
-  function chiudiRicerca() { $('#search').hidden = true; $('#s-q').blur(); if (sCtl) sCtl.abort(); }
+  function chiudiRicerca() { $('#search').hidden = true; $('#s-q').blur(); if (sCtl) sCtl.abort(); catAperta = null; }
   function chipStato() { document.querySelectorAll('.s-chips button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.k === scelgo)); $('#s-q').placeholder = scelgo ? `Cerca l'indirizzo ${scelgo === 'casa' ? 'di casa' : 'del lavoro'}` : 'Via, luogo o città'; }
   function inizio() {
-    chipStato(); const r = ls.get('dp.recenti', []);
+    chipStato(); catAperta = null; const r = ls.get('dp.recenti', []);
     $('#s-body').innerHTML = (scelgo ? `<div class="empty">Scrivi l'indirizzo e toccalo: lo ritrovi qui sopra con un tocco.</div>` : '') +
+      (!scelgo && !$('#s-q').value.trim() ? htmlCategorie() : '') +
       (r.length ? '<div class="eyebrow">Cercati di recente</div>' + r.map((x, i) => `<button class="res rec" data-rec="${i}"><span class="mk">${icon('clock')}</span><span class="t"><b>${esc(x.t)}</b></span></button>`).join('') : (scelgo ? '' : '<div class="empty">Scrivi dove stai andando: ti mostro i posti riservati lì attorno.</div>'));
   }
   function etichetta(p) { const via = [p.street, p.housenumber].filter(Boolean).join(' '), t = p.name || via || p.city || ''; return { t, sub: [p.name && via, p.city !== t && p.city, p.county].filter(Boolean).join(', ') }; }
@@ -566,7 +568,7 @@
     }
   }
   async function cerca(q) {
-    if (sCtl) sCtl.abort(); sCtl = new AbortController(); const mio = sCtl; attesa(q); const c = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
+    catAperta = null; if (sCtl) sCtl.abort(); sCtl = new AbortController(); const mio = sCtl; attesa(q); const c = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
     try {
       const trovati = await geocodifica(q, c, mio.signal); if (sCtl !== mio) return;
       // niente righe uguali, e niente provincia o regione quando c'è già la città con lo stesso nome
@@ -610,7 +612,7 @@
   $('#s-q').addEventListener('input', () => { const q = $('#s-q').value.trim(); $('#s-x').hidden = !q; clearTimeout(sT); if (sCtl) sCtl.abort(); if (q.length < 3) { inizio(); return; } attesa(q); sT = setTimeout(() => cerca(q), 450); });
   $('#s-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#s-q').blur(); const q = $('#s-q').value.trim(); clearTimeout(sT); if (q.length >= 2) cerca(q); } });
   $('#s-x').onclick = () => { $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus(); };
-  $('#s-back').onclick = chiudiRicerca;
+  $('#s-back').onclick = () => { if (catAperta) { inizio(); $('#s-q').focus(); } else chiudiRicerca(); };
   function scegli(x) {
     const k = scelgo;
     if (k) { const l = luoghi(); l[k] = { t: x.t, sub: x.sub || '', lat: x.lat, lon: x.lon }; ls.set('dp.luoghi', l); toccato(); toast(`${k === 'casa' ? 'Casa' : 'Lavoro'} impostato: ${x.t}`); scelgo = null; }
@@ -627,12 +629,15 @@
     const n = e.target.closest('[data-nav]'); if (n) { naviga(stalli.get(n.dataset.nav)); return; }
     const a = e.target.closest('[data-res]'); if (a) { scegli(risultati[+a.dataset.res]); return; }
     const r = e.target.closest('[data-rec]'); if (r) { scegli(ls.get('dp.recenti', [])[+r.dataset.rec]); return; }
-    const sv = e.target.closest('[data-sal]'); if (sv) apriSalvato(sv.dataset.sal);
+    const sv = e.target.closest('[data-sal]'); if (sv) { apriSalvato(sv.dataset.sal); return; }
+    const ct = e.target.closest('[data-cat]'); if (ct) { apriCategoria(ct.dataset.cat); return; }
+    const lg = e.target.closest('[data-luogo]'); if (lg) { sceltaLuogo(+lg.dataset.luogo); return; }
+    if (e.target.closest('[data-cat-fine]')) { inizio(); $('#s-q').focus(); }
   });
   document.querySelector('.s-chips').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k;
     if (k === 'salvati') {
-      scelgo = null; chipStato(); const v = [...salvati.values()];
+      scelgo = null; catAperta = null; chipStato(); const v = [...salvati.values()];
       $('#s-body').innerHTML = '<div class="eyebrow">I tuoi posti salvati</div>' + (v.length ? v.map((x) => `<button class="res" data-sal="${esc(x.id)}"><span class="mk">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button>`).join('') : '<div class="empty">Non hai ancora salvato nessun posto. Apri un posto e tocca "Salva".</div>');
       return;
     }
@@ -902,6 +907,73 @@
   $('#b-auto').onclick = apriAuto;
   disegnaAuto();
   window.DPArrivo = { navigazioneAvviata, arrivatoVicino, ritornoLontano, esito, controllaRitorno, apriAuto };
+
+  // ---------- ricerca per tipo di luogo (in aggiunta alla ricerca per indirizzo) ----------
+  // Categorie della Search API di TomTom (categorySearch / poiSearch), verificate con chiamate reali su Udine, Milano, Trieste, Roma.
+  // "si" tiene solo i nomi che c'entrano (la categoria ospedali di TomTom contiene anche padiglioni, studi, lavanderie).
+  const CATEGORIE = [
+    { k: 'ospedali', n: 'Ospedali', ic: 'ospedale', cat: '7321', si: /ospedal|hospital|policlinic|clinica|presidio|pronto soccorso|casa di cura|irccs|asst|azienda sanitaria/i },
+    { k: 'stazioni', n: 'Stazioni', ic: 'treno', q: 'stazione ferroviaria', si: (x) => (/^stazione/i.test(x.poi.name) || /national|international/.test((x.poi.categories || []).join())) && !/biglietteria|cargo|s\.?p\.?a/i.test(x.poi.name) },
+    { k: 'uffici', n: 'Uffici pubblici', ic: 'ufficio', cat: '7367,7324' },
+    { k: 'farmacie', n: 'Farmacie', ic: 'farmacia', cat: '7326', no: /erboristeria|drogheria/i },
+    { k: 'supermercati', n: 'Supermercati', ic: 'carrello', cat: '7332005' },
+    { k: 'scuole', n: 'Scuole', ic: 'scuola', cat: '7372004,7372005,7372006,7372014,7372007,7372009' },
+  ];
+  let luoghiCat = [];
+  const htmlCategorie = () => `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
+    <div class="catgrid">${CATEGORIE.map((c) => `<button data-cat="${c.k}"><span class="mk">${icon(c.ic)}</span><span>${c.n}</span></button>`).join('')}</div>`;
+  const messaggioCat = (testo) => { $('#s-body').innerHTML = `<div class="s-msg" role="status"><div class="empty">${testo}</div><button class="bsm" data-cat-fine="1">Torna alla ricerca</button></div>`; };
+  async function apriCategoria(k) {
+    const c = CATEGORIE.find((x) => x.k === k); if (!c) return;
+    catAperta = k; if (sCtl) sCtl.abort(); sCtl = new AbortController(); const mio = sCtl;
+    $('#s-body').innerHTML = `<div class="empty cerco" role="status">Cerco ${c.n.toLowerCase()} vicino a te…</div>`;
+    if (!TT) { messaggioCat('La ricerca per tipo di luogo non è disponibile in questo momento. Puoi cercare per nome o indirizzo.'); return; }
+    const centro = me ? { lat: me.lat, lon: me.lon } : { lat: map.getCenter().lat, lon: map.getCenter().lng }, usoMe = !!me;
+    try {
+      const url = `https://api.tomtom.com/search/2/${c.q ? 'poiSearch/' + encodeURIComponent(c.q) : 'categorySearch/.'}.json?key=${TT}&lat=${centro.lat}&lon=${centro.lon}&radius=10000&limit=25&countrySet=IT&language=it-IT${c.cat ? '&categorySet=' + c.cat : ''}`;
+      const r = await entro(url, mio.signal, 6000); if (!r.ok) throw new Error(r.status);
+      const j = await r.json(); if (sCtl !== mio) return;
+      const v = (j.results || []).filter((x) => x.poi && x.poi.name && x.position && (!c.si || (typeof c.si === 'function' ? c.si(x) : c.si.test(x.poi.name))) && !(c.no && c.no.test(x.poi.name)));
+      v.forEach((x) => { x.d = dist(centro.lat, centro.lon, x.position.lat, x.position.lon); }); v.sort((a, b) => a.d - b.d);
+      luoghiCat = [];
+      for (const x of v) { // niente doppioni a pochi metri l'uno dall'altro; al massimo 8
+        if (luoghiCat.some((y) => dist(x.position.lat, x.position.lon, y.lat, y.lon) < 150)) continue;
+        const a = x.address || {}; luoghiCat.push({ t: x.poi.name, via: [a.streetName, a.streetNumber].filter(Boolean).join(' '), comune: a.municipality || '', lat: x.position.lat, lon: x.position.lon, d: x.d }); if (luoghiCat.length === 8) break;
+      }
+      if (!luoghiCat.length) { messaggioCat(`Non trovo ${c.n.toLowerCase()} nei dintorni. Prova a cercare per nome o indirizzo.`); return; }
+      $('#s-body').innerHTML = `<div class="cat-testa"><h2 id="cat-h" tabindex="-1">${c.n}</h2><div class="muted">${usoMe ? 'Vicino a te' : 'Vicino al centro della mappa'}</div></div>` +
+        luoghiCat.map((x, i) => `<button class="res luogoc" data-luogo="${i}"><span class="mk">${icon(c.ic)}</span><span class="t"><b>${esc(x.t)}</b><span>${esc([x.via, x.comune].filter(Boolean).join(', '))}</span><span class="cnt" data-cnt="${i}"></span></span><span class="d">${fmtDist(x.d)}</span></button>`).join('') +
+        `<div class="cat-piede"><p>Tocca un luogo per vedere i posti numerati attorno, come con un indirizzo.</p><button class="lnk" data-cat-fine="1"><span>Non lo trovi? Cerca per nome o indirizzo</span></button></div>`;
+      const h = $('#cat-h'); if (h) h.focus({ preventScroll: true });
+      contaLuoghi(luoghiCat.slice(), mio.signal);
+    } catch (e) { if (e.name === 'AbortError' || sCtl !== mio) return; messaggioCat('La ricerca per tipo di luogo non risponde. Controlla la connessione, oppure cerca per nome o indirizzo.'); }
+  }
+  // Posti riservati attorno a ogni luogo: al massimo 6 richieste per ricerca. Ogni richiesta copre una zona di circa 5 x 5 km attorno
+  // a un luogo e vale per tutti i luoghi che ci cadono dentro con almeno 1 km di margine (il raggio massimo): gli altri restano senza riga.
+  async function contaLuoghi(arr, signal) {
+    const HH = 0.0245, HW = 0.036; let chiamate = 0; const coperti = new Set();
+    for (const x of arr) {
+      if (coperti.has(x) || chiamate >= 6 || signal.aborted) continue; chiamate++;
+      const ih = HH - 1000 / 111320, iw = HW - 1000 / (111320 * Math.cos(x.lat * Math.PI / 180));
+      try {
+        const rows = await rpc('stalli_zona', { p_s: x.lat - HH, p_w: x.lon - HW, p_n: x.lat + HH, p_e: x.lon + HW }, signal);
+        for (const y of rows) { const v = stalli.get(y.id); if (v && v._via) y._via = v._via; stalli.set(y.id, y); }
+        disegna();
+      } catch (e) { if (e.name === 'AbortError' || e.status === 429) return; continue; } // senza dati la riga non compare
+      if (signal.aborted) return;
+      for (const y of arr) if (Math.abs(y.lat - x.lat) <= ih && Math.abs(y.lon - x.lon) <= iw) coperti.add(y);
+      for (const y of coperti) { const el = document.querySelector(`[data-cnt="${luoghiCat.indexOf(y)}"]`); if (el && !el.textContent) el.textContent = rigaPosti(y); }
+    }
+  }
+  function rigaPosti(y) {
+    const tutti = attorno(y.lat, y.lon), dentro = tutti.filter((z) => z.d <= raggio), n = dentro.reduce((a, z) => a + (z.s.posti || 1), 0), rg = raggio >= 1000 ? '1 km' : raggio + ' m';
+    if (dentro.length) return `${n === 1 ? '1 posto riservato' : n + ' posti riservati'} · il più vicino a ${fmtDist(dentro[0].d)}`;
+    const v = tutti[0]; return `Nessun posto entro ${rg}` + (v && v.d <= 1000 ? ` · il più vicino a ${fmtDist(v.d)}` : '');
+  }
+  function sceltaLuogo(i) {
+    const x = luoghiCat[i]; if (!x) return;
+    vaiA({ t: x.t, sub: [x.via, x.comune].filter(Boolean).join(', '), lat: x.lat, lon: x.lon, q: '', comune: x.comune });
+  }
 
   // ---------- schermata 6 · segnala un posto nuovo ----------
   const nuovo = { tipo: 'generico', posti: 1, via: '', comune: '', doppio: false };

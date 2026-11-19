@@ -404,6 +404,21 @@ body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-
 .fg-campo input{height:56px;border:2px solid var(--blu);border-radius:14px;padding:0 14px;font:inherit;font-size:18px;color:var(--ink);background:#fff;width:100%}
 .fg-campo .primary{height:52px;font-size:18px}
 
+/* ricerca per tipo di luogo */
+.catgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.catgrid button{min-height:64px;border:1px solid var(--bordo);border-radius:18px;display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:17px;font-weight:700;text-align:left}
+.catgrid .mk,.res .mk .ic{color:var(--blu)}
+.catgrid .mk{width:40px;height:40px;flex:none;border-radius:12px;background:var(--soft);display:grid;place-items:center}
+.cat-testa{display:flex;flex-direction:column;gap:2px;padding:4px 0 8px}
+.cat-testa h2{margin:0;font-size:24px;line-height:1.15}
+.res.luogoc .d{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
+.res .t .cnt{color:var(--ink);font-weight:700}
+.cat-piede{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid var(--line)}
+.cat-piede p{margin:0;font-size:14px;color:var(--muted)}
+.cat-piede .lnk{font-size:16px}
+.s-msg{display:flex;flex-direction:column;gap:12px;padding:8px 0}
+.s-msg .bsm{align-self:flex-start;height:48px}
+
 @media (min-width:900px){
   #fg{left:16px;right:auto;width:var(--col);bottom:16px}
   #fg .sheet{max-height:calc(100vh - 32px)}
