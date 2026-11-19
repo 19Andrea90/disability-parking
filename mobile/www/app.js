@@ -9,7 +9,7 @@
     HOME: [13.236, 46.063], // Udine, finché non c'è la posizione
     MIN_ZOOM_DATI: 12,      // sotto questo zoom i posti sarebbero troppi: si chiede di avvicinarsi
     VICINO_M: 80,           // entro questa distanza si può confermare "c'è / non c'è più"
-    GOOGLE: false,          // accesso con Google: si accende quando il fornitore Google è configurato su Supabase
+    GOOGLE: true,           // accesso con Google: fornitore configurato su Supabase il 19/11/2026
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
     SITO: 'https://19andrea90.github.io/disability-parking/sito/',
   };
