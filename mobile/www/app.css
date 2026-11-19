@@ -406,9 +406,11 @@ body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-
 
 /* ricerca per tipo di luogo */
 .catgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
-.catgrid button{min-height:64px;border:1px solid var(--bordo);border-radius:18px;display:flex;align-items:center;gap:12px;padding:8px 12px;font-size:17px;font-weight:700;text-align:left}
+.catgrid button{min-height:64px;min-width:0;border:1px solid var(--bordo);border-radius:18px;display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:16px;font-weight:700;text-align:left;overflow-wrap:normal;word-break:normal;hyphens:none}
+.catgrid button>span:last-child{min-width:0}
 .catgrid .mk,.res .mk .ic{color:var(--blu)}
-.catgrid .mk{width:40px;height:40px;flex:none;border-radius:12px;background:var(--soft);display:grid;place-items:center}
+.catgrid .mk{width:34px;height:34px;flex:none;border-radius:12px;background:var(--soft);display:grid;place-items:center}
+@media (max-width:380px){.catgrid{gap:8px}.catgrid button{gap:6px;padding:8px 8px;font-size:15px}.catgrid .mk{width:30px;height:30px}}
 .cat-testa{display:flex;flex-direction:column;gap:2px;padding:4px 0 8px}
 .cat-testa h2{margin:0;font-size:24px;line-height:1.15}
 .res.luogoc .d{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
@@ -419,6 +421,11 @@ body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-
 .s-msg{display:flex;flex-direction:column;gap:12px;padding:8px 0}
 .s-msg .bsm{align-self:flex-start;height:48px}
 
+.fg-durate{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fg-durate .btn2{padding:8px 4px;font-size:16px}
+.fg-orario{display:flex;gap:10px}
+.fg-orario input{flex:1;min-width:0}
+.fg-orario .btn2{width:auto;flex:none;padding:8px 20px}
 @media (min-width:900px){
   #fg{left:16px;right:auto;width:var(--col);bottom:16px}
   #fg .sheet{max-height:calc(100vh - 32px)}

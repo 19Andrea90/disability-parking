@@ -37,12 +37,20 @@
   // Servono al cruscotto del pannello admin (quante persone usano l'app, quante si fanno portare a un posto, dove mancano posti).
   const PIATTAFORMA = (() => { const cap = window.Capacitor; if (cap && cap.isNativePlatform && cap.isNativePlatform()) return (cap.getPlatform && cap.getPlatform()) === 'ios' ? 'ios' : 'android'; return window.matchMedia('(min-width:900px)').matches ? 'pc' : 'web'; })();
   const statAttive = () => ls.get('dp.stat', true) !== false;
+  // 'parcheggiato' e 'occupato' sono tipi nuovi (supabase/14_eventi_arrivo.sql). Finché il database non li ammette l'inserimento viene
+  // rifiutato (400): in quel caso lo stesso evento si rimanda UNA volta nel formato vecchio (tipo 'conferma', dettaglio 'tipo:posto'), e per
+  // le 24 ore successive si manda subito così, senza ritentare ogni volta.
+  const TIPI_ARRIVO = ['parcheggiato', 'occupato'];
+  const arrivoRifiutato = () => Date.now() - ls.get('dp.evArrivoNo', 0) < 864e5;
+  const comeConferma = (c) => Object.assign({}, c, { tipo: 'conferma', dettaglio: (c.tipo + ':' + (c.dettaglio || '')).slice(0, 80) });
   function traccia(tipo, x, sempre) {
     if (!sempre && !statAttive()) return;
     try {
-      const corpo = Object.assign({ device_id: deviceId, tipo, piattaforma: PIATTAFORMA, versione: String(window.DP_VERSIONE || '').slice(0, 40) || null }, x || {});
+      let corpo = Object.assign({ device_id: deviceId, tipo, piattaforma: PIATTAFORMA, versione: String(window.DP_VERSIONE || '').slice(0, 40) || null }, x || {});
       if (corpo.comune) corpo.comune = String(corpo.comune).slice(0, 80);
-      fetch(CFG.SB + '/rest/v1/eventi', { method: 'POST', keepalive: true, headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(corpo) }).catch(() => {});
+      const nuovo = TIPI_ARRIVO.includes(tipo); if (nuovo && arrivoRifiutato()) corpo = comeConferma(corpo);
+      const invia = (c) => fetch(CFG.SB + '/rest/v1/eventi', { method: 'POST', keepalive: true, headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(c) });
+      invia(corpo).then((r) => { if (nuovo && r.status === 400 && corpo.tipo === tipo) { ls.set('dp.evArrivoNo', Date.now()); return invia(comeConferma(corpo)); } }).catch(() => {});
     } catch (e) { /* le statistiche non devono mai disturbare l'app */ }
   }
   (function () { // errori dell'app: arrivano nel pannello admin (al massimo 5 per apertura, senza ripetizioni)
@@ -361,7 +369,12 @@
     if (e.target.closest('[data-me]')) { vaiAMe(); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
   });
-  function naviga(s, da, nPiano) { if (s) { traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); navigazioneAvviata(s, da, nPiano); } if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
+  function naviga(s, da, nPiano) {
+    if (!s) return;
+    traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); navigazioneAvviata(s, da, nPiano);
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, vai = () => apri(url);
+    if (SITO_NATIVO()) { avviaAscolto(navPend()).then(vai, vai); } else vai(); // sull'app, prima i permessi e l'ascolto (con la frase di spiegazione), poi il navigatore
+  }
 
   // ---------- scheda del posto ----------
   function apriScheda(id) {
@@ -398,7 +411,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (fgStato) fgChiudi(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (fgStato) fgChiudi(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (fgStato) fgChiudi(); else chiudiScheda(true); } });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -668,10 +681,11 @@
   }
   function segnaOccupato(p) { // un posto si registra occupato una volta sola; il pin diventa grigio con la X
     if (!p || !p.id || occupati.has(p.id)) return;
-    occupati.add(p.id); traccia('conferma', { comune: p.comune || null, dettaglio: ('occupato:' + p.id).slice(0, 80) }); disegna();
+    occupati.add(p.id); traccia('occupato', { comune: p.comune || null, dettaglio: String(p.id).slice(0, 80) }); disegna();
   }
   function esito(tipo, opz) {
     opz = opz || {}; const p = opz.posto || navPend(); if (!p) return;
+    fermaAscolto(); annullaNotifica(ID_ARRIVO);
     if (tipo === 'occupato') {
       segnaOccupato(p); ls.set('dp.navpend', null);
       if (dentroElenco(p)) { fgChiudi(); arrivo(false); return; } // con l'elenco numerato il "prossimo" è il numero successivo dell'elenco
@@ -680,10 +694,10 @@
     } else if (tipo === 'parcheggiato') {
       let lat = p.lat, lon = p.lon, t = p.t, nuovaVia = !t || /^Posto riservato$/i.test(t);
       if (opz.altrove && me) { lat = me.lat; lon = me.lon; t = ''; nuovaVia = true; }
-      traccia('conferma', { comune: p.comune || null, dettaglio: (opz.altrove ? 'parcheggiato:altrove' : 'parcheggiato:' + p.id).slice(0, 80) });
+      traccia('parcheggiato', { comune: p.comune || null, dettaglio: (opz.altrove ? 'altrove' : String(p.id)).slice(0, 80) });
       ls.set('dp.navpend', null);
       if (selId) chiudiScheda(); if (dest) chiudiDest(); // si è parcheggiato: si torna alla schermata principale, dove c'è il tasto dell'auto
-      const a = { lat, lon, t: t || 'Posizione dell\'auto', ora: Date.now(), nota: '' }; ls.set('dp.auto', a);
+      cancellaScadenza(); const a = { lat, lon, t: t || 'Posizione dell\'auto', ora: Date.now(), nota: '' }; ls.set('dp.auto', a);
       disegnaAuto(); fgMostra('salvata', {}); $('#fg-live').textContent = `Auto salvata: ${a.t}, alle ${oraDi(a.ora)}`;
       if (nuovaVia) indirizzoDa(lat, lon).then((v) => { const c = autoSalvata(); if (v && c && c.ora === a.ora) { c.t = v; ls.set('dp.auto', c); fgRinfresca(); } });
     }
@@ -715,7 +729,7 @@
     const q = navPend(); if (!q || q.chiesto || q.ora !== p.ora || fgStato || !$('#welcome').hidden || !$('#aggiorna').hidden) return;
     if (me && dist(me.lat, me.lon, q.lat, q.lon) <= CFG.ARRIVO_M) arrivatoVicino(q); else ritornoLontano(q);
   }
-  function segnaChiesto(p) { p.chiesto = true; const q = navPend(); if (q && q.ora === p.ora) ls.set('dp.navpend', p); } // il foglio compare una sola volta per navigazione
+  function segnaChiesto(p) { fermaAscolto(); annullaNotifica(ID_ARRIVO); p.chiesto = true; const q = navPend(); if (q && q.ora === p.ora) ls.set('dp.navpend', p); } // il foglio compare una sola volta per navigazione
   function arrivatoVicino(p) { p = p || navPend(); if (!p) return; segnaChiesto(p); fgMostra('qui', { p }); }
   function ritornoLontano(p) { p = p || navPend(); if (!p) return; segnaChiesto(p); fgMostra('come', { p, elenco: dentroElenco(p) }); }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(controllaRitorno, 500); });
@@ -798,6 +812,7 @@
       <div class="fg-testa"><h2 id="fg-h" tabindex="-1">Auto salvata</h2><div class="b">${esc(a.t)} · ${esc(quandoAuto(a.ora))}</div>
         <p class="muted">Quando vuoi tornare, tocca «La tua auto» sulla mappa. La posizione resta solo su questo telefono.</p></div>
       ${a.nota && !d.nota ? `<div class="fg-nota"><span class="muted small">La tua nota</span><b>${esc(a.nota)}</b></div>` : ''}
+      ${blocchiScadenza(a, d)}
       ${d.nota ? `<div class="fg-campo"><label for="fg-nota" class="lab">Nota (piano, settore)</label><input id="fg-nota" maxlength="80" value="${esc(a.nota || '')}" autocomplete="off" enterkeyhint="done"><button class="primary" data-fg="nota-ok">${icon('check')}<span>Salva la nota</span></button></div>`
         : `<button class="btn2" data-fg="nota"><span>${a.nota ? 'Modifica la nota' : 'Aggiungi una nota (piano, settore)'}</span></button>`}
       <button class="primary" data-fg="chiudi">${icon('check')}<span>Fatto</span></button>
@@ -809,10 +824,21 @@
         <div class="fg-testa"><div class="eyebrow">La tua auto</div><h2 id="fg-h" tabindex="-1">${esc(a.t)}</h2><div class="muted">Parcheggiata ${esc(quandoAuto(a.ora))} · ${esc(trascorso(Date.now() - a.ora))}</div></div>
         ${m != null ? `<div class="fg-stat"><div><b>${esc(fmtDist(m))}</b><span>dalla tua posizione</span></div>${min ? `<div><b>${esc(min)}</b><span>a piedi</span></div>` : ''}</div>` : ''}
         ${a.nota ? `<div class="fg-nota"><span class="muted small">La tua nota</span><b>${esc(a.nota)}</b></div>` : ''}
+        ${a.scade && a.scade > Date.now() ? `<div class="fg-nota"><span class="muted small">Scadenza della sosta</span><b>Scade alle ${esc(oraDi(a.scade))} · ti avviso alle ${esc(oraDi(a.scade - AVVISO_PRIMA_MIN * 60000))}</b></div>` : ''}
         <button class="primary" data-fg="riporta">${icon('nav')}<span>Riportami all'auto</span></button>
         <button class="btn3 dang" data-fg="togli">Sono ripartito, togli la posizione</button>` };
     }
     return { html: '' };
+  }
+  // «Avvisami prima della scadenza»: solo nell'app Android (sul sito non c'è la notifica locale)
+  function blocchiScadenza(a, d) {
+    if (!NAT() || !LN() || d.nota) return '';
+    if (a.scade && a.scade > Date.now()) return `<div class="fg-nota" role="status"><span class="muted small">Avviso impostato</span><b>Ti avviso alle ${esc(oraDi(a.scade - AVVISO_PRIMA_MIN * 60000))} (scade alle ${esc(oraDi(a.scade))})</b></div>`;
+    if (!d.scad) return '<button class="btn2" data-fg="scad">Avvisami prima della scadenza</button>';
+    return `<div class="fg-sez"><div class="eyebrow" id="fg-scad-h">Tra quanto scade la sosta?</div>
+      <div class="fg-durate" role="group" aria-labelledby="fg-scad-h"><button class="btn2" data-fg="scad-30">30 minuti</button><button class="btn2" data-fg="scad-60">1 ora</button><button class="btn2" data-fg="scad-120">2 ore</button></div>
+      <div class="fg-campo"><label for="fg-ora" class="lab">Oppure l'ora di scadenza</label><div class="fg-orario"><input id="fg-ora" type="time"><button class="btn2" data-fg="scad-ora">Imposta</button></div></div>
+      <p class="muted small">Ti avviso ${AVVISO_PRIMA_MIN} minuti prima.</p></div>`;
   }
   function fgAggiornaAuto() { // la distanza dall'auto cambia mentre cammini: ridisegno il foglio solo se il numero mostrato è cambiato
     if (fgStato !== 'auto') return; const a = autoSalvata(); if (!a || !me) return;
@@ -836,7 +862,15 @@
     if (k === 'cerca') { fgChiudi(); apriRicerca(); return; }
     if (k === 'nota') { d.nota = true; fgMostra('salvata', d, true); const i = $('#fg-nota'); if (i) { i.focus(); i.select(); } return; }
     if (k === 'nota-ok') { const a = autoSalvata(), i = $('#fg-nota'); if (a && i) { a.nota = i.value.trim().slice(0, 80); ls.set('dp.auto', a); } d.nota = false; fgMostra('salvata', d, true); const bt = $('#fg-sheet').querySelector('[data-fg="nota"]'); if (bt) bt.focus(); return; }
-    if (k === 'togli') { ls.set('dp.auto', null); disegnaAuto(); fgChiudi(); toast('Posizione dell\'auto eliminata.'); return; }
+    if (k === 'scad') { d.scad = true; fgMostra('salvata', d, true); const b = $('#fg-sheet').querySelector('[data-fg="scad-30"]'); if (b) b.focus(); return; }
+    if (/^scad-\d+$/.test(k) || k === 'scad-ora') {
+      let fine = 0;
+      if (k === 'scad-ora') { const v = ($('#fg-ora') || {}).value; if (!v) { toast('Scegli prima l\'ora di scadenza.', 3000); return; } const [h, m] = v.split(':').map(Number), t = new Date(); t.setHours(h, m, 0, 0); fine = t.getTime(); if (fine < Date.now()) { toast('Quell\'ora è già passata: scegli un\'ora di oggi.', 3500); return; } }
+      else fine = Date.now() + (+k.slice(5)) * 60000;
+      impostaScadenza(fine).then((fatto) => { if (fgStato !== 'salvata') return; if (fatto) { d.scad = false; $('#fg-live').textContent = `Avviso impostato per le ${oraDi(fine - AVVISO_PRIMA_MIN * 60000)}`; } fgMostra('salvata', d, true); });
+      return;
+    }
+    if (k === 'togli') { cancellaScadenza(); ls.set('dp.auto', null); disegnaAuto(); fgChiudi(); toast('Posizione dell\'auto eliminata.'); return; }
     if (k === 'riporta') { const a = autoSalvata(); if (a) apri(`https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}&travelmode=walking`); }
   });
   $('#fg').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'fg-nota') { e.preventDefault(); const b = $('#fg-sheet').querySelector('[data-fg="nota-ok"]'); if (b) b.click(); } });
@@ -908,6 +942,98 @@
   disegnaAuto();
   window.DPArrivo = { navigazioneAvviata, arrivatoVicino, ritornoLontano, esito, controllaRitorno, apriAuto };
 
+  // ---------- solo app Android: avviso all'arrivo e scadenza della sosta ----------
+  // Sul sito (senza Capacitor) niente di tutto questo si attiva. Plugin: @capacitor-community/background-geolocation (posizione mentre
+  // l'app è in secondo piano, con servizio in primo piano di tipo "location": serve solo il permesso "mentre usi l'app") e
+  // @capacitor/local-notifications (notifica all'arrivo con due azioni, avviso di scadenza).
+  // Le azioni della notifica richiamano i punti di aggancio qui sopra (esito, controllaRitorno).
+  const NAT = () => SITO_NATIVO();
+  const LN = () => plug('LocalNotifications');
+  const plug = (n) => { const cap = window.Capacitor; try { return (NAT() && ((cap.Plugins && cap.Plugins[n]) || (cap.registerPlugin && cap.registerPlugin(n)))) || null; } catch (e) { return null; } };
+  const ID_ARRIVO = 41, ID_SCADENZA = 42, ASCOLTO_MAX_MS = 60 * 60000, AVVISO_PRIMA_MIN = 10;
+  let ascolto = null; // { id, timer, ora }
+  const fuoriPronta = (f) => { const t = setInterval(() => { if (pronta) { clearInterval(t); f(); } }, 200); setTimeout(() => clearInterval(t), 20000); };
+
+  // permesso per le notifiche (Android 13+): prima una frase chiara, poi la richiesta di sistema. true = concesso.
+  function chiediNotifiche(frase) {
+    const L = LN(); if (!L) return Promise.resolve(false);
+    return L.checkPermissions().then((st) => {
+      if (st.display === 'granted') return true;
+      if (st.display === 'denied') return false; // rifiutato per sempre: Android non lo richiede più
+      return new Promise((ok) => {
+        const v = $('#velo-n'), fuoco = document.activeElement; $('#vn-p').textContent = frase; v.hidden = false; $('#vn-h').focus();
+        const fine = (si) => { v.hidden = true; $('#vn-si').onclick = $('#vn-no').onclick = null; if (fuoco && fuoco.isConnected && fuoco.focus) { try { fuoco.focus({ preventScroll: true }); } catch (e) { /* ignora */ } } ok(si); };
+        $('#vn-si').onclick = () => { L.requestPermissions().then((r) => { fine(r.display === 'granted'); }, () => fine(false)); };
+        $('#vn-no').onclick = () => fine(false);
+      });
+    }).catch(() => false);
+  }
+  async function preparaNotifiche() { // canali e azioni; si rifà a ogni uso, è leggero e idempotente
+    const L = LN(); if (!L) return false;
+    try {
+      await L.createChannel({ id: 'arrivo', name: 'Arrivo al posto', description: 'Ti avvisa quando sei vicino al posto riservato', importance: 4, visibility: 1, vibration: true });
+      await L.createChannel({ id: 'scadenza', name: 'Scadenza della sosta', description: 'Ti avvisa prima che scada la sosta', importance: 4, visibility: 1, vibration: true });
+      await L.registerActionTypes({ types: [{ id: 'ARRIVO', actions: [{ id: 'parcheggiato', title: 'Ho parcheggiato' }, { id: 'occupato', title: 'Occupato' }] }] });
+      return true;
+    } catch (e) { return false; }
+  }
+  async function annullaNotifica(id) { const L = LN(); if (L) { try { await L.cancel({ notifications: [{ id }] }); } catch (e) { /* niente da annullare */ } } }
+
+  function fermaAscolto() {
+    const a = ascolto; ascolto = null; if (!a) return; clearTimeout(a.timer);
+    const BG = plug('BackgroundGeolocation'); if (BG && a.id != null) { try { Promise.resolve(BG.removeWatcher({ id: a.id })).catch(() => {}); } catch (e) { /* già fermo */ } }
+  }
+  // Parte quando si tocca «Portami lì», con l'app in primo piano. Se mancano permesso di posizione o di notifiche non fa nulla:
+  // restano i fogli al rientro nell'app, come sul sito.
+  async function avviaAscolto(p) {
+    fermaAscolto(); const BG = plug('BackgroundGeolocation'), G = plug('Geolocation'); if (!BG || !G || !LN() || ascolto) return;
+    try {
+      const pos = await G.checkPermissions(); if (pos.location !== 'granted') return;
+      if (Date.now() - ls.get('dp.notifNo', 0) < 3 * 864e5 && (await LN().checkPermissions()).display !== 'granted') return; // ha detto «Non ora» da poco
+      const si = await chiediNotifiche('Ti mando una notifica solo quando sei vicino al posto, per chiederti com\'è andata. Durante il viaggio non ti disturbo.');
+      if (!si) { ls.set('dp.notifNo', Date.now()); return; }
+      await preparaNotifiche();
+      const mio = { id: null, timer: setTimeout(fermaAscolto, ASCOLTO_MAX_MS), ora: p.ora }; ascolto = mio;
+      const id = await BG.addWatcher({ backgroundTitle: 'SostAbile', backgroundMessage: 'SostAbile ti avvisa all\'arrivo', requestPermissions: false, stale: false, distanceFilter: 15 }, (loc, err) => {
+        if (ascolto !== mio) return;
+        if (err) { if (err.code === 'NOT_AUTHORIZED') fermaAscolto(); return; }
+        const q = navPend(); if (!q || q.ora !== mio.ora || q.chiesto || Date.now() - q.ora > ASCOLTO_MAX_MS) { fermaAscolto(); return; }
+        if (!loc || !(loc.accuracy <= 100)) return; // posizione troppo incerta
+        if (dist(loc.latitude, loc.longitude, q.lat, q.lon) <= CFG.ARRIVO_M) notificaArrivo(q);
+      });
+      if (ascolto === mio) mio.id = id; else if (BG) { try { Promise.resolve(BG.removeWatcher({ id })).catch(() => {}); } catch (e) { /* ignora */ } }
+    } catch (e) { fermaAscolto(); }
+  }
+  async function notificaArrivo(p) { // «arrivato vicino al posto»: se l'app è visibile basta il foglio, altrimenti la notifica
+    fermaAscolto();
+    if (document.visibilityState === 'visible') { controllaRitorno(); return; }
+    const L = LN(); if (!L) return;
+    try { await L.schedule({ notifications: [{ id: ID_ARRIVO, title: 'SostAbile', body: `Sei quasi arrivato in ${p.t}. Com'è andata?`, channelId: 'arrivo', actionTypeId: 'ARRIVO', extra: { ora: p.ora } }] }); } catch (e) { /* senza notifica restano i fogli */ }
+  }
+  function azioneNotifica(ev) {
+    const n = ev && ev.notification; if (!n) return;
+    if (n.id === ID_ARRIVO) {
+      annullaNotifica(ID_ARRIVO); const p = navPend(), ora = n.extra && n.extra.ora;
+      if (!p || (ora && p.ora !== ora)) return; // già risolta dentro l'app
+      fuoriPronta(() => { if (ev.actionId === 'parcheggiato') esito('parcheggiato', { posto: p }); else if (ev.actionId === 'occupato') esito('occupato', { posto: p }); else controllaRitorno(); });
+    }
+  }
+  if (NAT() && LN()) { try { LN().addListener('localNotificationActionPerformed', azioneNotifica); } catch (e) { /* senza ascolto restano i fogli */ } }
+
+  // avviso prima della scadenza della sosta: notifica locale 10 minuti prima, una sola per volta
+  const fmtScad = (t) => oraDi(t);
+  async function impostaScadenza(fine) {
+    const a = autoSalvata(); if (!a) return false;
+    if (fine - AVVISO_PRIMA_MIN * 60000 < Date.now() + 60000) { toast('Troppo vicina: scegli una scadenza tra almeno 12 minuti.', 3500); return false; }
+    if (!(await chiediNotifiche('Per avvisarti prima che scada la sosta, SostAbile ha bisogno del permesso di mostrarti notifiche.'))) { toast('Senza il permesso per le notifiche non posso avvisarti.', 3500); return false; }
+    await preparaNotifiche(); await annullaNotifica(ID_SCADENZA);
+    try {
+      await LN().schedule({ notifications: [{ id: ID_SCADENZA, title: 'La sosta sta per scadere', body: `Scade alle ${fmtScad(fine)}: hai ancora ${AVVISO_PRIMA_MIN} minuti. La tua auto è in ${a.t}.`, channelId: 'scadenza', schedule: { at: new Date(fine - AVVISO_PRIMA_MIN * 60000), allowWhileIdle: true } }] });
+    } catch (e) { toast('Non sono riuscito a programmare l\'avviso.', 3500); return false; }
+    const c = autoSalvata(); if (c) { c.scade = fine; ls.set('dp.auto', c); } return true;
+  }
+  const cancellaScadenza = () => { if (NAT()) annullaNotifica(ID_SCADENZA); };
+
   // ---------- ricerca per tipo di luogo (in aggiunta alla ricerca per indirizzo) ----------
   // Categorie della Search API di TomTom (categorySearch / poiSearch), verificate con chiamate reali su Udine, Milano, Trieste, Roma.
   // "si" tiene solo i nomi che c'entrano (la categoria ospedali di TomTom contiene anche padiglioni, studi, lavanderie).
@@ -920,14 +1046,14 @@
     { k: 'scuole', n: 'Scuole', ic: 'scuola', cat: '7372004,7372005,7372006,7372014,7372007,7372009' },
   ];
   let luoghiCat = [];
-  const htmlCategorie = () => `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
+  const htmlCategorie = () => !TT ? '' : `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
     <div class="catgrid">${CATEGORIE.map((c) => `<button data-cat="${c.k}"><span class="mk">${icon(c.ic)}</span><span>${c.n}</span></button>`).join('')}</div>`;
   const messaggioCat = (testo) => { $('#s-body').innerHTML = `<div class="s-msg" role="status"><div class="empty">${testo}</div><button class="bsm" data-cat-fine="1">Torna alla ricerca</button></div>`; };
   async function apriCategoria(k) {
     const c = CATEGORIE.find((x) => x.k === k); if (!c) return;
     catAperta = k; if (sCtl) sCtl.abort(); sCtl = new AbortController(); const mio = sCtl;
     $('#s-body').innerHTML = `<div class="empty cerco" role="status">Cerco ${c.n.toLowerCase()} vicino a te…</div>`;
-    if (!TT) { messaggioCat('La ricerca per tipo di luogo non è disponibile in questo momento. Puoi cercare per nome o indirizzo.'); return; }
+    if (!TT) { inizio(); return; } // senza chiave la griglia non si vede: qui non si arriva, ma meglio tornare alla ricerca che fare errori
     const centro = me ? { lat: me.lat, lon: me.lon } : { lat: map.getCenter().lat, lon: map.getCenter().lng }, usoMe = !!me;
     try {
       const url = `https://api.tomtom.com/search/2/${c.q ? 'poiSearch/' + encodeURIComponent(c.q) : 'categorySearch/.'}.json?key=${TT}&lat=${centro.lat}&lon=${centro.lon}&radius=10000&limit=25&countrySet=IT&language=it-IT${c.cat ? '&categorySet=' + c.cat : ''}`;
@@ -1307,7 +1433,6 @@
   });
   $('#p-foto').onchange = async () => { const f = $('#p-foto').files[0]; if (!f) return; try { const blob = await rimpicciolisci(f, 1000); const r = new FileReader(); r.onload = () => { ls.set('dp.contrassegno', r.result); scheda8(); }; r.readAsDataURL(blob); } catch (e) { toast('Non riesco a leggere la foto. Riprova.'); } };
   // avvisi sul telefono: programmati sul dispositivo, funzionano anche senza rete e senza account
-  const LN = () => { const cap = window.Capacitor; return cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.LocalNotifications; };
   async function permessoAvvisi() { const p = LN(); if (!p) return true; try { let s = await p.checkPermissions(); if (s.display !== 'granted') s = await p.requestPermissions(); return s.display === 'granted'; } catch (e) { return false; } }
   async function programmaAvvisi() {
     const p = LN(); if (!p) return; const pr = profilo();
