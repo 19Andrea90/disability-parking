@@ -7,7 +7,9 @@
     KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3ZXJlcXJvamx3a3Rnd2xyc2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MjMzMjYsImV4cCI6MjEwODM5OTMyNn0.vOaCaVc8kaqsRT_o_TP01CbyX9SN-Af1fKjSZ3NxQys',
     STYLE: 'https://tiles.openfreemap.org/styles/positron',
     HOME: [13.236, 46.063], // Udine, finché non c'è la posizione
-    MIN_ZOOM_DATI: 12,      // sotto questo zoom i posti sarebbero troppi: si chiede di avvicinarsi
+    MIN_ZOOM_DATI: 12,      // sotto questo zoom si vedono i totali per regione, provincia e comune (file statico)
+    MAX_H: 0.03,            // vista più alta di così (circa 3 km) o più larga di MAX_W: niente singoli posti, solo conteggi a griglia
+    MAX_W: 0.07,            // il server accetta riquadri fino a 0,05° x 0,075° (stalli_zona): vedi il margine in caricaVista()
     VICINO_M: 80,           // entro questa distanza si può confermare "c'è / non c'è più"
     GOOGLE: true,           // accesso con Google: fornitore configurato su Supabase il 19/11/2026
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
@@ -95,30 +97,68 @@
   function passa(s) { return !(filtri.ver && s.stato === 'proposto') && !(filtri.cop && !s.coperto) && !(filtri.multi && !(s.posti >= 2)); }
 
   // ---------- dati ----------
-  const SEL = 'id,lat,lon,tipo,posti,nome,indirizzo,comune,note,coperto,stato,fonte,conferme_esiste,conferme_non_esiste,ultima_conferma';
+  // I posti si chiedono al server solo per una zona piccola (funzione stalli_zona, al massimo 0,05° x 0,075°) e c'è un limite
+  // di richieste per indirizzo: a mappa larga si chiedono solo conteggi a griglia (stalli_conteggi).
   const H = { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY };
-  let ctl;
+  let ctl, pausa429 = 0;
+  async function rpc(nome, args, signal) { // chiama una funzione del database; 429 = troppe richieste, non si ripete da soli
+    const limite = () => Object.assign(new Error('429'), { status: 429 });
+    if (Date.now() < pausa429) throw limite(); // già bloccati da poco: inutile insistere (si riprova da soli dopo 30 secondi, solo se l'utente muove la mappa)
+    const r = await fetch(`${CFG.SB}/rest/v1/rpc/${nome}`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(args), signal });
+    if (r.status === 429) { pausa429 = Date.now() + 30000; throw limite(); }
+    if (!r.ok) throw Object.assign(new Error(r.status), { status: r.status });
+    return r.json();
+  }
+  const troppe = () => toast('Troppe richieste in poco tempo. Riprova tra qualche minuto.', 4500);
+  const erroreDati = (err) => { if (err.name === 'AbortError') return; if (err.status === 429) troppe(); else toast('Non riesco a caricare i posti. Controlla la connessione.'); };
   async function carica(s, w, n, e, annullabile) {
     if (annullabile) { if (ctl) ctl.abort(); ctl = new AbortController(); }
-    const u = `${CFG.SB}/rest/v1/stalli_con_conferme?select=${SEL}&stato=in.(proposto,verificato,ufficiale)&tipo=neq.personalizzato&lat=gte.${s}&lat=lte.${n}&lon=gte.${w}&lon=lte.${e}&limit=3000`;
+    const ZH = 0.049, ZW = 0.074; // il riquadro non può superare 0,05° x 0,075: se è più grande si stringe attorno al centro
+    if (n - s > ZH) { const m = (n + s) / 2; s = m - ZH / 2; n = m + ZH / 2; }
+    if (e - w > ZW) { const m = (e + w) / 2; w = m - ZW / 2; e = m + ZW / 2; }
     try {
-      const r = await fetch(u, { headers: H, signal: annullabile ? ctl.signal : undefined });
-      if (!r.ok) throw new Error(r.status);
-      const rows = await r.json();
+      const rows = await rpc('stalli_zona', { p_s: s, p_w: w, p_n: n, p_e: e }, annullabile ? ctl.signal : undefined);
       if (stalli.size > 30000) stalli.clear();
       for (const x of rows) { const v = stalli.get(x.id); if (v && v._via) x._via = v._via; stalli.set(x.id, x); }
       disegna(); return rows;
-    } catch (err) { if (err.name !== 'AbortError') toast('Non riesco a caricare i posti. Controlla la connessione.'); return []; }
+    } catch (err) { erroreDati(err); return []; }
+  }
+  // Tre modi, secondo la vista: 'lontano' (sotto MIN_ZOOM_DATI: totali statici), 'conteggi' (mappa larga: cerchi con i numeri,
+  // nessun singolo posto) e 'posti' (vista stretta: i singoli posti, come prima).
+  let modo = 'lontano', conteggi = null, ctlC;
+  function vediPosti(si) { if (!pronta) return; for (const l of ['gruppi', 'gruppi-n', 'pin', 'pin-i']) map.setLayoutProperty(l, 'visibility', si ? 'visible' : 'none'); }
+  function passaA(m) {
+    if (m === modo) return; modo = m; vediPosti(m === 'posti');
+    if (m !== 'conteggi') { if (ctlC) ctlC.abort(); conteggi = null; if (pronta) map.getSource('conteggi').setData(VUOTO); }
   }
   function caricaVista() {
     zone();
-    if (map.getZoom() < CFG.MIN_ZOOM_DATI) { vicini(); return; }
-    const b = map.getBounds(), dy = (b.getNorth() - b.getSouth()) * 0.25, dx = (b.getEast() - b.getWest()) * 0.25;
-    carica(b.getSouth() - dy, b.getWest() - dx, b.getNorth() + dy, b.getEast() + dx, true);
+    if (map.getZoom() < CFG.MIN_ZOOM_DATI) { passaA('lontano'); vicini(); return; }
+    const b = map.getBounds(), h = b.getNorth() - b.getSouth(), w = b.getEast() - b.getWest();
+    if (h <= CFG.MAX_H && w <= CFG.MAX_W) { // vista stretta: i posti con un margine del 25% (ridotto se serve per restare nel limite del server)
+      passaA('posti'); const dy = h * 0.25, dx = Math.min(w * 0.25, (0.074 - w) / 2);
+      carica(b.getSouth() - dy, b.getWest() - dx, b.getNorth() + dy, b.getEast() + dx, true); return;
+    }
+    passaA('conteggi'); if (ctl) ctl.abort(); caricaConteggi(b); vicini();
+  }
+  async function caricaConteggi(b) {
+    if (ctlC) ctlC.abort(); ctlC = new AbortController(); const mio = ctlC;
+    try {
+      const rows = await rpc('stalli_conteggi', { p_s: b.getSouth(), p_w: b.getWest(), p_n: b.getNorth(), p_e: b.getEast() }, mio.signal);
+      if (modo !== 'conteggi' || ctlC !== mio) return;
+      conteggi = { celle: rows, b: { s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast() } };
+      map.getSource('conteggi').setData({ type: 'FeatureCollection', features: rows.map((c) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
+        properties: { n: c.stalli, p: c.posti, t: num(c.posti), r: Math.round(Math.min(46, 15 + 2.4 * Math.sqrt(c.posti))) } })) });
+      vicini();
+    } catch (err) { erroreDati(err); }
+  }
+  function avvicinaA(centro) { // dal cerchio alla zona: si avvicina finché la vista è abbastanza stretta da mostrare i posti
+    const b = map.getBounds(), z = map.getZoom(), k = Math.max((b.getNorth() - b.getSouth()) / (CFG.MAX_H * 0.8), (b.getEast() - b.getWest()) / (CFG.MAX_W * 0.8));
+    seguo = false; map.easeTo({ center: centro, zoom: Math.min(17, Math.max(z + 0.6, z + Math.log2(k))), duration: 500 });
   }
 
   // ---------- mappa ----------
-  const map = new maplibregl.Map({ container: 'map', style: CFG.STYLE, center: CFG.HOME, zoom: 14, attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false });
+  const map = new maplibregl.Map({ container: 'map', style: CFG.STYLE, center: CFG.HOME, zoom: 14.5, attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false });
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   window.__dp = { map, stalli }; // per le prove
@@ -133,7 +173,7 @@
   const VUOTO = { type: 'FeatureCollection', features: [] };
   // ---------- vista da lontano: quanti posti per regione, provincia, comune ----------
   let riepilogo = null, livello = '';
-  const LIVELLI = [['regioni', 7.2, 8.4], ['province', 9.6, 10.6], ['comuni', CFG.MIN_ZOOM_DATI, 13.5]]; // nome, fino a che zoom, zoom dopo il tocco
+  const LIVELLI = [['regioni', 7.2, 8.4], ['province', 9.6, 10.6], ['comuni', CFG.MIN_ZOOM_DATI, 14.2]]; // nome, fino a che zoom, zoom dopo il tocco (14,2: la vista è abbastanza stretta per i singoli posti)
   const num = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+$)/g, '.');
   function fondoZona() { // fondo blu arrotondato che si allarga attorno al testo
     const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
@@ -150,7 +190,7 @@
   map.on('load', () => {
     map.addImage('wc-w', glifo('#ffffff'), { pixelRatio: 2 }); map.addImage('wc-b', glifo('#0b2a5b'), { pixelRatio: 2 }); map.addImage('wc-d', glifo('#2b2300'), { pixelRatio: 2 });
     map.addSource('stalli', { type: 'geojson', data: VUOTO, cluster: true, clusterRadius: 42, clusterMaxZoom: 15 });
-    map.addSource('sel', { type: 'geojson', data: VUOTO });
+    map.addSource('sel', { type: 'geojson', data: VUOTO }); map.addSource('conteggi', { type: 'geojson', data: VUOTO });
     map.addSource('zone', { type: 'geojson', data: VUOTO }); map.addImage('zona', fondoZona(), { pixelRatio: 2, stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
     map.addLayer({ id: 'zone', type: 'symbol', source: 'zone', maxzoom: CFG.MIN_ZOOM_DATI, layout: { 'icon-image': 'zona', 'icon-text-fit': 'both', 'symbol-sort-key': ['-', ['get', 't']], 'text-field': ['format', ['get', 'n'], { 'font-scale': 0.8 }, '\n', {}, ['get', 'tl'], { 'text-font': ['literal', ['Noto Sans Bold']] }], 'text-font': ['Noto Sans Regular'], 'text-size': 15, 'text-line-height': 1.25, 'text-max-width': 9, 'text-padding': 6 }, paint: { 'text-color': '#ffffff' } });
     map.on('click', 'zone', (e) => { const f = e.features[0], v = LIVELLI.find((x) => x[0] === livello); seguo = false; map.easeTo({ center: f.geometry.coordinates, zoom: v ? v[2] : 13 }); });
@@ -158,12 +198,16 @@
     map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
     map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], paint: { 'circle-radius': 15, 'circle-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#ffffff', '#0b2a5b'], 'circle-stroke-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#0b2a5b', '#ffffff'], 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'pin-i', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], layout: { 'icon-image': ['case', ['==', ['get', 'stato'], 'proposto'], 'wc-b', 'wc-w'], 'icon-size': 0.8, 'icon-allow-overlap': true } });
+    map.addLayer({ id: 'conteggi', type: 'circle', source: 'conteggi', paint: { 'circle-color': '#0b2a5b', 'circle-radius': ['get', 'r'], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'conteggi-n', type: 'symbol', source: 'conteggi', layout: { 'text-field': ['get', 't'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
+    map.on('click', 'conteggi', (e) => avvicinaA(e.features[0].geometry.coordinates));
+    map.on('mouseenter', 'conteggi', () => { map.getCanvas().style.cursor = 'pointer'; }); map.on('mouseleave', 'conteggi', () => { map.getCanvas().style.cursor = ''; });
     map.addLayer({ id: 'sel', type: 'circle', source: 'sel', paint: { 'circle-radius': 23, 'circle-color': '#ffcc00', 'circle-stroke-color': '#0b1f44', 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'sel-i', type: 'symbol', source: 'sel', layout: { 'icon-image': 'wc-d', 'icon-size': 1.15, 'icon-allow-overlap': true } });
     map.on('click', 'pin', (e) => apriScheda(e.features[0].properties.id));
     map.on('click', 'gruppi', (e) => { const f = e.features[0]; Promise.resolve(map.getSource('stalli').getClusterExpansionZoom(f.properties.cluster_id)).then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(z, 18) })); });
     const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { at.classList.remove('maplibregl-compact-show'); at.removeAttribute('open'); } // i crediti della mappa partono chiusi (si aprono dalla i)
-    pronta = true; if (LARGO()) { map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right'); espandi(true); }
+    pronta = true; vediPosti(false); if (LARGO()) { map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right'); espandi(true); }
     map.setPadding(padHome()); disegna(); zone(); caricaVista();
   });
   map.on('error', (e) => { if (!pronta && e && e.error && /style|Failed to fetch|load/i.test(String(e.error.message))) toast('La mappa non si carica. Controlla la connessione.', 5000); });
@@ -187,7 +231,7 @@
     const primo = !me; me = { lat, lon };
     if (!meMarker) { const el = document.createElement('div'); el.className = 'me'; el.innerHTML = '<i></i>'; meMarker = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map); } else meMarker.setLngLat([lon, lat]);
     if (primo && seguo && !selId) map.jumpTo({ center: [lon, lat], zoom: 16, padding: padHome() });
-    if (!ultimoCarico || dist(lat, lon, ultimoCarico.lat, ultimoCarico.lon) > 300) { ultimoCarico = { lat, lon }; carica(lat - 0.03, lon - 0.04, lat + 0.03, lon + 0.04, false); }
+    if (!ultimoCarico || dist(lat, lon, ultimoCarico.lat, ultimoCarico.lon) > 300) { ultimoCarico = { lat, lon }; carica(lat - 0.024, lon - 0.035, lat + 0.024, lon + 0.035, false); }
     vicini(); if (selId) aggiornaConferma();
   }
   async function attivaPosizione(chiedi) {
@@ -268,6 +312,13 @@
         : '<div class="eyebrow">Mappa troppo lontana</div><div class="empty">Avvicinati con due dita per vedere i posti della zona.</div>';
       return;
     }
+    if (modo === 'conteggi') {
+      const c = conteggi, dentro = c && c.celle.filter((x) => x.lat >= c.b.s && x.lat <= c.b.n && x.lon >= c.b.w && x.lon <= c.b.e), d = c && (dentro.length ? dentro : c.celle), tot = d ? d.reduce((a, x) => a + x.posti, 0) : 0; // le celle con il centro nella vista (se nessuna, tutte)
+      el.innerHTML = `<div class="eyebrow">Mappa larga</div><div class="italia">${!c ? 'Cerco i posti della zona…' : tot ? `<b>${num(tot)}</b> ${tot === 1 ? 'posto riservato' : 'posti riservati'} in questa zona` : 'Nessun posto riservato in questa zona'}</div>
+        <div class="empty">Avvicinati o cerca un indirizzo per vedere i singoli posti</div>
+        <button class="primary" data-me="1">${icon('locate')}<span>Mostra i posti vicino a me</span></button>`;
+      return;
+    }
     const { usoMe, out } = elencoVicini();
     if (!out.length) { el.innerHTML = `<div class="eyebrow">${usoMe ? 'Vicino a te' : 'In questa zona'}</div><div class="empty">Nessun posto qui${filtri.ver || filtri.cop || filtri.multi ? ' con questi filtri' : ''}. Sposta la mappa${filtri.ver || filtri.cop || filtri.multi ? ' o togli un filtro' : ''}.</div>`; return; }
     const a = out[0], [cls, lab] = affidabilita(a.s);
@@ -295,6 +346,7 @@
   })();
   $('#near-body').addEventListener('click', (e) => {
     const n = e.target.closest('[data-nav]'); if (n) { naviga(stalli.get(n.dataset.nav)); return; }
+    if (e.target.closest('[data-me]')) { vaiAMe(); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
   });
   function naviga(s) { if (s) { traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); } if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
@@ -334,7 +386,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -370,10 +422,11 @@
 
   // ---------- barra in alto, filtri, pulsanti ----------
   document.querySelectorAll('.chip').forEach((c) => c.onclick = () => { const k = c.dataset.f; filtri[k] = !filtri[k]; c.setAttribute('aria-pressed', filtri[k]); disegna(); });
-  $('#b-me').onclick = async () => {
+  async function vaiAMe() {
     if (me) { seguo = true; map.easeTo({ center: [me.lon, me.lat], zoom: Math.max(map.getZoom(), 16), padding: padHome() }); return; }
     seguo = true; const ok = await attivaPosizione(true); if (!ok) toast('Per trovarti serve il permesso alla posizione. Lo trovi nelle impostazioni del telefono.', 4500);
-  };
+  }
+  $('#b-me').onclick = vaiAMe;
   const presto = () => toast('Arriva nella prossima versione di prova.');
   $('#b-search').onclick = () => apriRicerca(); $('#b-add').onclick = () => apriAggiungi(); $('#b-menu').onclick = () => apriMenu();
 
@@ -543,7 +596,7 @@
   }
   async function apriSalvato(id) {
     const v = salvati.get(id); chiudiRicerca();
-    if (!stalli.has(id)) { try { const r = await fetch(`${CFG.SB}/rest/v1/stalli_con_conferme?select=${SEL}&id=eq.${encodeURIComponent(id)}`, { headers: H }); const j = await r.json(); if (j[0]) stalli.set(id, j[0]); } catch (e) { /* sotto */ } }
+    if (!stalli.has(id)) { try { const j = await rpc('stallo', { p_id: id }); if (j[0]) stalli.set(id, j[0]); } catch (e) { if (e.status === 429) { troppe(); return; } /* sotto */ } }
     if (!stalli.has(id)) { toast('Questo posto non è più in mappa.'); return; }
     if (v && !v.lat) { const s = stalli.get(id); salvati.set(id, { id, lat: s.lat, lon: s.lon, t: titolo(s), c: s.comune || '' }); ls.set('dp.salvati', [...salvati.values()]); }
     apriScheda(id);
@@ -599,6 +652,7 @@
       } catch (e) { if (e.name !== 'AbortError' && aggiungo && !nuovo.doppio) $('#n-dove').textContent = 'Posizione scelta sulla mappa'; }
     }, 500);
   }
+  const uuid = () => { try { if (crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* senza contesto sicuro */ } const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = b[6] & 15 | 64; b[8] = b[8] & 63 | 128; const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join(''); return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`; };
   async function rimpicciolisci(file, max) { // le foto del telefono sono enormi: bastano 1280 px
     const img = await createImageBitmap(file), k = Math.min(1, (max || 1280) / Math.max(img.width, img.height));
     const cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
@@ -620,10 +674,11 @@
         const u = await fetch(`${CFG.SB}/storage/v1/object/foto/${path}`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'image/jpeg' }, H), body: blob });
         if (!u.ok) throw new Error('foto ' + u.status); foto_url = `${CFG.SB}/storage/v1/object/public/foto/${path}`;
       }
-      const rec = { lat: +c.lat.toFixed(7), lon: +c.lng.toFixed(7), tipo: nuovo.tipo, posti: nuovo.posti, indirizzo: nuovo.via || null, comune: nuovo.comune || null, foto_url, stato: 'proposto', fonte: 'utente', device_id: deviceId };
-      const r = await fetch(`${CFG.SB}/rest/v1/stalli`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'return=representation' }, H), body: JSON.stringify(rec) });
+      // l'id lo genera il telefono: così non serve rileggere la riga (la lettura libera della tabella è chiusa, vedi supabase/12)
+      const rec = { id: uuid(), lat: +c.lat.toFixed(7), lon: +c.lng.toFixed(7), tipo: nuovo.tipo, posti: nuovo.posti, indirizzo: nuovo.via || null, comune: nuovo.comune || null, foto_url, stato: 'proposto', fonte: 'utente', device_id: deviceId };
+      const r = await fetch(`${CFG.SB}/rest/v1/stalli`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json', Prefer: 'return=minimal' }, H), body: JSON.stringify(rec) });
       if (!r.ok) throw new Error('invio ' + r.status);
-      const s = (await r.json())[0]; if (s && s.tipo !== 'personalizzato') stalli.set(s.id, Object.assign({ conferme_esiste: 0, conferme_non_esiste: 0, ultima_conferma: null }, s));
+      if (rec.tipo !== 'personalizzato') stalli.set(rec.id, { id: rec.id, lat: rec.lat, lon: rec.lon, tipo: rec.tipo, posti: rec.posti, nome: null, indirizzo: rec.indirizzo, comune: rec.comune, note: null, coperto: false, stato: 'proposto', fonte: 'utente', conferme_esiste: 0, conferme_non_esiste: 0, ultima_conferma: null });
       const oggi = new Date().toISOString().slice(0, 10), fatti = ls.get('dp.segnalati', {}); ls.set('dp.segnalati', { [oggi]: (fatti[oggi] || 0) + 1 });
       traccia('segnala', { comune: nuovo.comune || null, dettaglio: nuovo.tipo });
       chiudiAggiungi(); disegna(); toast(nuovo.tipo === 'personalizzato' ? 'Grazie! Posto registrato.' : 'Grazie! Il posto è in mappa come "da verificare".', 3500);
@@ -900,4 +955,13 @@
   const entra = () => { ls.set('dp.benvenuto', true); $('#welcome').hidden = true; };
   $('#w-go').onclick = async () => { entra(); const ok = await attivaPosizione(true); if (!ok) toast('Posizione non attiva: puoi muovere la mappa a mano.', 4000); };
   $('#w-skip').onclick = entra;
+
+  // ---------- aggiornamento obbligatorio (solo Android) ----------
+  // Il database dice qual è la versione minima ancora accettata (funzione app_config); se questa è più vecchia, schermata bloccante.
+  // Se la chiamata non riesce o la versione non è un numero, l'app prosegue normalmente.
+  const numeri = (v) => (String(v || '').match(/\d+/g) || []).map(Number);
+  function piuVecchia(a, min) { const x = numeri(a), y = numeri(min); if (!x.length || !y.length) return false; for (let i = 0; i < Math.max(x.length, y.length); i++) { const p = x[i] || 0, q = y[i] || 0; if (p !== q) return p < q; } return false; }
+  $('#ag-go').onclick = () => apri(CFG.PLAY);
+  if (NATIVO()) fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
+    .then((r) => r.ok ? r.json() : null).then((c) => { if (c && piuVecchia(window.DP_VERSIONE, c.versione_minima_android)) { $('#aggiorna').hidden = false; $('#ag-go').focus(); } }).catch(() => {});
 })();
