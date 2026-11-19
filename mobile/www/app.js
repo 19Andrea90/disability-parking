@@ -717,7 +717,9 @@
     } catch (e) { /* si riprova al prossimo cambiamento */ }
   }
   async function accedi(email, password, nuovoAccount) {
-    const r = await fetch(`${CFG.SB}/auth/v1/${nuovoAccount ? 'signup' : 'token?grant_type=password'}`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    // Sul web il link di conferma riporta alla pagina da cui ci si è iscritti (non all'indirizzo predefinito di Supabase).
+    const ritorno = nuovoAccount && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? '?redirect_to=' + encodeURIComponent(location.origin + location.pathname) : '';
+    const r = await fetch(`${CFG.SB}/auth/v1/${nuovoAccount ? 'signup' + ritorno : 'token?grant_type=password'}`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? 'La password deve avere almeno 6 caratteri.' : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
     traccia(nuovoAccount ? 'registrazione' : 'accesso');
