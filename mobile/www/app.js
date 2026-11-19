@@ -16,6 +16,7 @@
     MAX_H: 0.03,            // vista più alta di così (circa 3 km) o più larga di MAX_W: niente singoli posti, solo conteggi a griglia
     MAX_W: 0.07,            // il server accetta riquadri fino a 0,05° x 0,075° (stalli_zona): vedi il margine in caricaVista()
     VICINO_M: 80,           // entro questa distanza si può confermare "c'è / non c'è più"
+    ARRIVO_M: 50,           // al rientro nell'app, entro questa distanza dal posto si chiede "Hai parcheggiato qui?" (deciso da Andrea)
     GOOGLE: true,           // accesso con Google: fornitore configurato su Supabase il 19/11/2026
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
     SITO: sitoBase(location.hostname, SITO_NATIVO()), // indirizzo base del sito vetrina (con / finale): vedi sitoBase() qui sopra
@@ -70,6 +71,7 @@
   let aggiungo = false;               // sto segnalando un posto nuovo
   let dest = null;                    // destinazione scelta dalla ricerca: {t, sub, lat, lon}
   let raggio = ls.get('dp.raggio', 300);
+  const occupati = new Set();         // id dei posti segnati occupati in questa sessione (non si salvano: alla riapertura sono di nuovo liberi)
 
   // ---------- utilità ----------
   function dist(a, b, c, d) { const R = 6371000, p = Math.PI / 180, x = (d - b) * p * Math.cos((a + c) * p / 2), y = (c - a) * p; return Math.sqrt(x * x + y * y) * R; }
@@ -85,13 +87,13 @@
       const r = await fetch(`https://photon.komoot.io/reverse?lat=${s.lat}&lon=${s.lon}`); if (!r.ok) return;
       const p = ((await r.json()).features[0] || {}).properties || {};
       const via = p.street ? p.street + (p.housenumber ? ' ' + p.housenumber : '') : (p.type === 'street' ? p.name : '');
-      if (via) { s._via = via; vicini(); if (dest) arrivo(false); if (selId === s.id) $('#c-title').textContent = titolo(s); }
+      if (via) { s._via = via; vicini(); if (dest) arrivo(false); if (selId === s.id) $('#c-title').textContent = titolo(s); fgRinfresca(); }
     } catch (e) { /* senza rete resta "Posto riservato" */ }
   }
   // computer: pannello fisso a sinistra e mappa a tutto schermo; telefono: pannelli dal basso
   const LARGO = () => window.matchMedia('(min-width:900px)').matches, COL = 448;
   const padPC = (m) => ({ top: 30 + (m || 0), bottom: 30 + (m || 0), left: COL + (m || 0), right: 30 + (m || 0) });
-  const padHome = () => LARGO() ? padPC() : (aggiungo ? { top: 90, bottom: $('#add .sheet').offsetHeight || 0, left: 0, right: 0 } : { top: dest ? 90 : 150, bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 });
+  const padHome = () => LARGO() ? padPC() : (aggiungo ? { top: 90, bottom: $('#add .sheet').offsetHeight || 0, left: 0, right: 0 } : { top: dest ? 90 : 150 + ($('#b-auto').hidden ? 0 : 58), bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 });
   function mostra() { const c = !!selId, d = !!dest, n = aggiungo; $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
   window.addEventListener('resize', () => { if (!pronta) return; map.resize(); if (LARGO()) espandi(true); if (!selId) map.setPadding(padHome()); });
   function affidabilita(s) { return s.stato === 'ufficiale' ? ['uff', 'Ufficiale'] : s.stato === 'verificato' ? ['ver', 'Verificato'] : ['prop', 'Da verificare']; }
@@ -175,6 +177,11 @@
     x.stroke(new Path2D('M10 8.5v5.5h5l2.5 5')); x.stroke(new Path2D('M7.5 11.5a5.5 5.5 0 1 0 7.5 7'));
     return x.getImageData(0, 0, 48, 48);
   }
+  function glifoX(colore) { // la X dei posti occupati, su un quadratino trasparente
+    const c = document.createElement('canvas'); c.width = c.height = 48; const x = c.getContext('2d');
+    x.scale(2, 2); x.strokeStyle = colore; x.lineWidth = 3; x.lineCap = 'round'; x.beginPath(); x.moveTo(7, 7); x.lineTo(17, 17); x.moveTo(17, 7); x.lineTo(7, 17); x.stroke();
+    return x.getImageData(0, 0, 48, 48);
+  }
   const VUOTO = { type: 'FeatureCollection', features: [] };
   // ---------- vista da lontano: quanti posti per regione, provincia, comune ----------
   let riepilogo = null, livello = '';
@@ -193,7 +200,7 @@
   }
   fetch(CFG.SB + '/storage/v1/object/public/foto/copertura/riepilogo.json').then((r) => r.ok ? r.json() : null).then((j) => { if (j && j.regioni) { riepilogo = j; zone(); vicini(); } }).catch(() => {});
   map.on('load', () => {
-    map.addImage('wc-w', glifo('#ffffff'), { pixelRatio: 2 }); map.addImage('wc-b', glifo('#0b2a5b'), { pixelRatio: 2 }); map.addImage('wc-d', glifo('#2b2300'), { pixelRatio: 2 });
+    map.addImage('wc-w', glifo('#ffffff'), { pixelRatio: 2 }); map.addImage('wc-b', glifo('#0b2a5b'), { pixelRatio: 2 }); map.addImage('wc-d', glifo('#2b2300'), { pixelRatio: 2 }); map.addImage('x-w', glifoX('#ffffff'), { pixelRatio: 2 });
     map.addSource('stalli', { type: 'geojson', data: VUOTO, cluster: true, clusterRadius: 42, clusterMaxZoom: 15 });
     map.addSource('sel', { type: 'geojson', data: VUOTO }); map.addSource('conteggi', { type: 'geojson', data: VUOTO });
     map.addSource('zone', { type: 'geojson', data: VUOTO }); map.addImage('zona', fondoZona(), { pixelRatio: 2, stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
@@ -201,8 +208,8 @@
     map.on('click', 'zone', (e) => { const f = e.features[0], v = LIVELLI.find((x) => x[0] === livello); seguo = false; map.easeTo({ center: f.geometry.coordinates, zoom: v ? v[2] : 13 }); });
     map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': '#0b2a5b', 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
-    map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], paint: { 'circle-radius': 15, 'circle-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#ffffff', '#0b2a5b'], 'circle-stroke-color': ['case', ['==', ['get', 'stato'], 'proposto'], '#0b2a5b', '#ffffff'], 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'pin-i', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], layout: { 'icon-image': ['case', ['==', ['get', 'stato'], 'proposto'], 'wc-b', 'wc-w'], 'icon-size': 0.8, 'icon-allow-overlap': true } });
+    map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], paint: { 'circle-radius': 15, 'circle-color': ['case', ['get', 'occ'], '#6b7686', ['==', ['get', 'stato'], 'proposto'], '#ffffff', '#0b2a5b'], 'circle-stroke-color': ['case', ['get', 'occ'], '#ffffff', ['==', ['get', 'stato'], 'proposto'], '#0b2a5b', '#ffffff'], 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'pin-i', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], layout: { 'icon-image': ['case', ['get', 'occ'], 'x-w', ['==', ['get', 'stato'], 'proposto'], 'wc-b', 'wc-w'], 'icon-size': 0.8, 'icon-allow-overlap': true } });
     map.addLayer({ id: 'conteggi', type: 'circle', source: 'conteggi', paint: { 'circle-color': '#0b2a5b', 'circle-radius': ['get', 'r'], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'conteggi-n', type: 'symbol', source: 'conteggi', layout: { 'text-field': ['get', 't'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
     map.on('click', 'conteggi', (e) => avvicinaA(e.features[0].geometry.coordinates));
@@ -223,7 +230,7 @@
   function disegna() {
     if (!pronta) return;
     const feats = [];
-    for (const s of stalli.values()) if (passa(s)) feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: { id: s.id, stato: s.stato } });
+    for (const s of stalli.values()) if (passa(s)) feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: { id: s.id, stato: s.stato, occ: occupati.has(s.id) } });
     map.getSource('stalli').setData({ type: 'FeatureCollection', features: feats });
     const s = selId && stalli.get(selId);
     map.getSource('sel').setData(s ? { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: {} }] } : VUOTO);
@@ -237,7 +244,7 @@
     if (!meMarker) { const el = document.createElement('div'); el.className = 'me'; el.innerHTML = '<i></i>'; meMarker = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map); } else meMarker.setLngLat([lon, lat]);
     if (primo && seguo && !selId) map.jumpTo({ center: [lon, lat], zoom: 16, padding: padHome() });
     if (!ultimoCarico || dist(lat, lon, ultimoCarico.lat, ultimoCarico.lon) > 300) { ultimoCarico = { lat, lon }; carica(lat - 0.024, lon - 0.035, lat + 0.024, lon + 0.035, false); }
-    vicini(); if (selId) aggiornaConferma();
+    vicini(); if (selId) aggiornaConferma(); aggiornaPillAuto(); fgAggiornaAuto();
   }
   async function attivaPosizione(chiedi) {
     const cap = window.Capacitor, G = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.Geolocation;
@@ -354,7 +361,7 @@
     if (e.target.closest('[data-me]')) { vaiAMe(); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
   });
-  function naviga(s) { if (s) { traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); } if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
+  function naviga(s, da, nPiano) { if (s) { traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); navigazioneAvviata(s, da, nPiano); } if (s) apri(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`); }
 
   // ---------- scheda del posto ----------
   function apriScheda(id) {
@@ -391,8 +398,8 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
-    else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudiScheda(true); });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (fgStato) fgChiudi(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) chiudiRicerca(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (fgStato) fgChiudi(); else chiudiScheda(true); } });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
   $('#c-nav').onclick = () => naviga(stalli.get(selId));
@@ -464,15 +471,15 @@
     tempi(dest, lista, 'foot').then((ok) => { if (ok) arrivo(false); });
     $('#a-count').textContent = dentro.length ? posti(n) : 'Nessun posto';
     $('#a-sub').textContent = dentro.length ? 'In ordine di distanza a piedi dalla destinazione' : (tutti.length ? `Il più vicino è a ${fmtDist(tutti[0].d)}. Ecco i più vicini, anche se fuori raggio.` : 'Nessun posto nemmeno entro 1 km da qui.');
-    const att = Math.max(0, Math.min(inCorso, lista.length - 1));
-    $('#a-list').innerHTML = lista.map((x, i) => `<button class="arow${i === att ? ' on' : ''}" data-id="${esc(x.s.id)}"><span class="num">${i + 1}</span><span class="t"><b>${esc(titolo(x.s))}</b><span>${[affidabilita(x.s)[1], posti(x.s.posti), x.s.coperto ? 'coperto' : ''].filter(Boolean).join(' · ')}</span></span><span class="d">${x.r ? `${fmtDist(x.r.m)}<small>${fmtMin(x.r.sec)} a piedi</small>` : fmtDist(x.d)}</span></button>`).join('');
-    const prox = inCorso + 1 < lista.length ? inCorso + 1 : -1;
+    const prox = prossimoElenco(inCorso), cur = inCorso >= 0 ? lista[inCorso] : null, curOcc = !!cur && occupati.has(cur.s.id), primo = inCorso < 0 ? Math.max(0, prossimoElenco(-1)) : 0;
+    const att = inCorso < 0 ? primo : Math.max(0, Math.min(inCorso, lista.length - 1));
+    $('#a-list').innerHTML = lista.map((x, i) => `<button class="arow${i === att ? ' on' : ''}${occupati.has(x.s.id) ? ' occ' : ''}" data-id="${esc(x.s.id)}"><span class="num">${occupati.has(x.s.id) ? icon('x') : i + 1}</span><span class="t"><b>${esc(titolo(x.s))}</b><span>${[occupati.has(x.s.id) ? 'Occupato' : '', affidabilita(x.s)[1], posti(x.s.posti), x.s.coperto ? 'coperto' : ''].filter(Boolean).join(' · ')}</span></span><span class="d">${x.r ? `${fmtDist(x.r.m)}<small>${fmtMin(x.r.sec)} a piedi</small>` : fmtDist(x.d)}</span></button>`).join('');
     $('#a-nav').hidden = !lista.length;
-    $('#a-nav span').textContent = inCorso < 0 ? 'Portami al numero 1' : prox >= 0 ? `Occupato? Portami al numero ${prox + 1}` : 'Riapri il navigatore';
-    $('#a-hint').textContent = inCorso < 0 && lista.length > 1 ? 'Se è occupato, con un tocco passi al numero 2.' : '';
+    $('#a-nav span').textContent = inCorso < 0 ? `Portami al numero ${primo + 1}` : prox < 0 ? 'Riapri il navigatore' : curOcc ? `Portami al numero ${prox + 1}` : `Occupato? Portami al numero ${prox + 1}`;
+    $('#a-hint').textContent = inCorso < 0 && lista.length > 1 && prossimoElenco(primo) >= 0 ? `Se è occupato, con un tocco passi al numero ${prossimoElenco(primo) + 1}.` : '';
     numMk.forEach((m) => m.remove()); numMk = []; if (destMk) destMk.remove();
     const de = document.createElement('div'); de.className = 'mdest'; de.innerHTML = icon(dest.k === 'casa' ? 'casa' : dest.k === 'lavoro' ? 'lavoro' : 'flag'); destMk = new maplibregl.Marker({ element: de }).setLngLat([dest.lon, dest.lat]).addTo(map);
-    lista.forEach((x, i) => { const el = document.createElement('div'); el.className = 'mnum' + (i === att ? ' on' : ''); el.textContent = i + 1; el.onclick = (e) => { e.stopPropagation(); apriScheda(x.s.id); }; numMk.push(new maplibregl.Marker({ element: el }).setLngLat([x.s.lon, x.s.lat]).addTo(map)); });
+    lista.forEach((x, i) => { const el = document.createElement('div'); const occ = occupati.has(x.s.id); el.className = 'mnum' + (i === att ? ' on' : '') + (occ ? ' occ' : ''); if (occ) { el.innerHTML = icon('x'); el.setAttribute('aria-label', 'Posto occupato'); } else el.textContent = i + 1; el.onclick = (e) => { e.stopPropagation(); apriScheda(x.s.id); }; numMk.push(new maplibregl.Marker({ element: el }).setLngLat([x.s.lon, x.s.lat]).addTo(map)); });
     if (inquadra) {
       const b = new maplibregl.LngLatBounds([dest.lon, dest.lat], [dest.lon, dest.lat]); lista.slice(0, 5).forEach((x) => b.extend([x.s.lon, x.s.lat]));
       map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }); // fitBounds somma il suo margine a quello già impostato
@@ -501,7 +508,17 @@
   $('#d-name').onclick = () => { if (dest) apriRicerca(dest.q || dest.t); };
   $('#a-r').onchange = () => { raggio = +$('#a-r').value; ls.set('dp.raggio', raggio); inCorso = -1; arrivo(true); };
   $('#a-list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id); });
-  $('#a-nav').onclick = () => { if (!lista.length) return; if (inCorso + 1 < lista.length) inCorso++; naviga(lista[inCorso].s); setTimeout(() => arrivo(false), 600); };
+  // primo posto dell'elenco dopo "da" che non sia stato segnato occupato (-1 se non ce n'è)
+  function prossimoElenco(da) { for (let i = da + 1; i < lista.length; i++) if (!occupati.has(lista[i].s.id)) return i; return -1; }
+  // "Occupato? Portami al numero N": il posto di prima risulta occupato (come per il piano B) e si va al successivo dell'elenco
+  function avantiElenco() {
+    if (!lista.length) return;
+    const prox = prossimoElenco(inCorso), cur = inCorso >= 0 ? lista[inCorso] : null;
+    if (cur && prox >= 0 && !occupati.has(cur.s.id)) segnaOccupato({ id: cur.s.id, comune: cur.s.comune });
+    inCorso = prox >= 0 ? prox : (inCorso >= 0 ? inCorso : 0);
+    naviga(lista[inCorso].s, 'elenco'); setTimeout(() => arrivo(false), 600);
+  }
+  $('#a-nav').onclick = avantiElenco;
 
   // ---------- schermata 3 · ricerca ----------
   let sCtl, sT, scelgo = null; // scelgo: 'casa' o 'lavoro' mentre si imposta la scorciatoia
@@ -624,6 +641,267 @@
     scelgo = scelgo === k ? null : k; $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus();
   });
 
+
+  // ---------- arrivo, piano B e ritorno all'auto ----------
+  // PUNTI DI AGGANCIO PER LA FASE NATIVA (Android: ascolto della posizione in sottofondo e notifica all'arrivo).
+  // Sono richiamabili anche da fuori, come window.DPArrivo, perché sarà la notifica a chiamarli quando si apre l'app:
+  //   navigazioneAvviata(posto, da, nPiano) ricorda dove si sta andando e a che ora (solo sul dispositivo, chiave dp.navpend)
+  //   arrivatoVicino(pend)                  mostra "Hai parcheggiato qui?" (la fase nativa lo chiama quando rileva l'arrivo entro CFG.ARRIVO_M)
+  //   ritornoLontano(pend)                  mostra "Com'è andata?" (rientro nell'app lontano dal posto)
+  //   esito('parcheggiato' | 'occupato', { posto, altrove })  registra l'esito: salva l'auto, oppure segna il posto occupato e propone il prossimo
+  //   controllaRitorno()                    sceglie quale dei due fogli mostrare (lo chiamano visibilitychange e la ripresa di Capacitor)
+  // "pend" = { id, lat, lon, t, comune, ora, da: 'elenco' | 'piano' | 'altro', piano, chiesto }; se manca si usa quello salvato.
+  // La posizione dell'auto (dp.auto) resta solo sul dispositivo: non fa parte dei dati sincronizzati con l'account.
+  const ARRIVO_MAX_MS = 2 * 3600 * 1000; // una navigazione conta per 2 ore
+  const navPend = () => { const p = ls.get('dp.navpend', null); return p && p.id && isFinite(p.lat) && isFinite(p.lon) && isFinite(p.ora) ? p : null; };
+  const autoSalvata = () => { const a = ls.get('dp.auto', null); return a && isFinite(a.lat) && isFinite(a.lon) && isFinite(a.ora) ? a : null; };
+  const dentroElenco = (p) => !!p && p.da === 'elenco' && !!dest && lista.some((x) => x.s.id === p.id);
+
+  function navigazioneAvviata(s, da, nPiano) {
+    if (!s) return;
+    ls.set('dp.navpend', { id: s.id, lat: s.lat, lon: s.lon, t: titolo(s), comune: s.comune || '', ora: Date.now(), da: da || 'altro', piano: da === 'piano' ? (nPiano || 0) : 0, chiesto: false });
+  }
+  function segnaOccupato(p) { // un posto si registra occupato una volta sola; il pin diventa grigio con la X
+    if (!p || !p.id || occupati.has(p.id)) return;
+    occupati.add(p.id); traccia('conferma', { comune: p.comune || null, dettaglio: ('occupato:' + p.id).slice(0, 80) }); disegna();
+  }
+  function esito(tipo, opz) {
+    opz = opz || {}; const p = opz.posto || navPend(); if (!p) return;
+    if (tipo === 'occupato') {
+      segnaOccupato(p); ls.set('dp.navpend', null);
+      if (dentroElenco(p)) { fgChiudi(); arrivo(false); return; } // con l'elenco numerato il "prossimo" è il numero successivo dell'elenco
+      if (selId) chiudiScheda(); // la scheda del posto occupato non serve più
+      fgPianoB(p, (p.piano || 0) + 1);
+    } else if (tipo === 'parcheggiato') {
+      let lat = p.lat, lon = p.lon, t = p.t, nuovaVia = !t || /^Posto riservato$/i.test(t);
+      if (opz.altrove && me) { lat = me.lat; lon = me.lon; t = ''; nuovaVia = true; }
+      traccia('conferma', { comune: p.comune || null, dettaglio: (opz.altrove ? 'parcheggiato:altrove' : 'parcheggiato:' + p.id).slice(0, 80) });
+      ls.set('dp.navpend', null);
+      if (selId) chiudiScheda(); if (dest) chiudiDest(); // si è parcheggiato: si torna alla schermata principale, dove c'è il tasto dell'auto
+      const a = { lat, lon, t: t || 'Posizione dell\'auto', ora: Date.now(), nota: '' }; ls.set('dp.auto', a);
+      disegnaAuto(); fgMostra('salvata', {}); $('#fg-live').textContent = `Auto salvata: ${a.t}, alle ${oraDi(a.ora)}`;
+      if (nuovaVia) indirizzoDa(lat, lon).then((v) => { const c = autoSalvata(); if (v && c && c.ora === a.ora) { c.t = v; ls.set('dp.auto', c); fgRinfresca(); } });
+    }
+  }
+  // indirizzo di un punto: TomTom se c'è la chiave, altrimenti Photon (come per le segnalazioni)
+  async function indirizzoDa(lat, lon) {
+    try {
+      const sg = new AbortController().signal;
+      if (TT) { const r = await entro(`https://api.tomtom.com/search/2/reverseGeocode/${lat},${lon}.json?key=${TT}&language=it-IT&radius=60`, sg, 5000); const a = (((await r.json()).addresses || [])[0] || {}).address || {}; return [a.streetName, a.streetNumber].filter(Boolean).join(' '); }
+      const r = await entro(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}`, sg, 5000); const q = ((await r.json()).features[0] || {}).properties || {};
+      return q.street ? [q.street, q.housenumber].filter(Boolean).join(' ') : (q.name || '');
+    } catch (e) { return ''; }
+  }
+
+  // --- al rientro nell'app ---
+  let ritornoIn = false;
+  async function posizioneFresca() { // il GPS in sottofondo può avere una posizione vecchia: ne chiedo una nuova (al massimo 4 secondi)
+    const cap = window.Capacitor, G = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.Geolocation;
+    try {
+      if (G) { const pos = await G.getCurrentPosition({ enableHighAccuracy: true, timeout: 4000 }); if (pos && pos.coords) setMe(pos.coords.latitude, pos.coords.longitude); return; }
+      if (!navigator.geolocation || !me) return; // senza permesso già dato non si chiede nulla al rientro
+      await new Promise((ok) => { const t = setTimeout(ok, 4500); navigator.geolocation.getCurrentPosition((pos) => { setMe(pos.coords.latitude, pos.coords.longitude); clearTimeout(t); ok(); }, () => { clearTimeout(t); ok(); }, { enableHighAccuracy: true, timeout: 4000, maximumAge: 10000 }); });
+    } catch (e) { /* resta l'ultima posizione nota */ }
+  }
+  async function controllaRitorno() {
+    const p = navPend(); if (!p || p.chiesto || ritornoIn || fgStato) return;
+    if (Date.now() - p.ora > ARRIVO_MAX_MS) { ls.set('dp.navpend', null); return; }
+    ritornoIn = true; try { await posizioneFresca(); } finally { ritornoIn = false; }
+    const q = navPend(); if (!q || q.chiesto || q.ora !== p.ora || fgStato || !$('#welcome').hidden || !$('#aggiorna').hidden) return;
+    if (me && dist(me.lat, me.lon, q.lat, q.lon) <= CFG.ARRIVO_M) arrivatoVicino(q); else ritornoLontano(q);
+  }
+  function segnaChiesto(p) { p.chiesto = true; const q = navPend(); if (q && q.ora === p.ora) ls.set('dp.navpend', p); } // il foglio compare una sola volta per navigazione
+  function arrivatoVicino(p) { p = p || navPend(); if (!p) return; segnaChiesto(p); fgMostra('qui', { p }); }
+  function ritornoLontano(p) { p = p || navPend(); if (!p) return; segnaChiesto(p); fgMostra('come', { p, elenco: dentroElenco(p) }); }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(controllaRitorno, 500); });
+  (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
+    if (A) { A.addListener('resume', () => setTimeout(controllaRitorno, 500)); A.addListener('appStateChange', (st) => { if (st && st.isActive) setTimeout(controllaRitorno, 500); }); } })();
+  if (ls.get('dp.benvenuto', false)) setTimeout(controllaRitorno, 2500); // app riaperta da zero durante la navigazione
+
+  // --- il foglio in basso (uno solo, con più stati: come, qui, pb, salvata, auto) ---
+  let fgStato = null, fgDati = {}, fgFuoco = null, pbMk = [], autoMk = null;
+  const oraDi = (t) => new Date(t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  function quandoAuto(t) {
+    const d = new Date(t), oggi = new Date(), ieri = new Date(Date.now() - 864e5), st = (x) => x.toDateString();
+    return (st(d) === st(oggi) ? 'oggi' : st(d) === st(ieri) ? 'ieri' : 'il ' + d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })) + ' alle ' + oraDi(t);
+  }
+  function trascorso(ms) {
+    const m = Math.floor(ms / 60000); if (m < 1) return 'proprio adesso'; if (m < 60) return (m === 1 ? '1 minuto' : m + ' minuti') + ' fa';
+    const h = Math.floor(m / 60), r = m % 60; if (h < 24) return (h === 1 ? '1 ora' : h + ' ore') + (r ? ' e ' + (r === 1 ? '1 minuto' : r + ' minuti') : '') + ' fa';
+    const g = Math.floor(h / 24); return (g === 1 ? '1 giorno' : g + ' giorni') + ' fa';
+  }
+  const bottoneX = (etic) => `<button class="fg-x" data-fg="chiudi" aria-label="${esc(etic)}">${icon('x')}</button>`;
+  function fgMostra(stato, dati, senzaFuoco) {
+    const prima = fgStato, attivo = document.activeElement, dentro = !!attivo && $('#fg-sheet').contains(attivo), tasto = dentro ? attivo.dataset.fg : null, eraTitolo = dentro && attivo.id === 'fg-h';
+    if (!prima) fgFuoco = attivo;
+    fgStato = stato; fgDati = dati || {};
+    const r = fgHtml(stato, fgDati);
+    document.body.classList.add('fg-on'); $('#fg').hidden = false; $('#fg-top').hidden = !r.top; $('#fg-top').innerHTML = r.top || '';
+    $('#fg-sheet').innerHTML = '<div class="handle"></div>' + r.html;
+    const volta = tasto && $('#fg-sheet').querySelector(`[data-fg="${tasto}"]`), h = $('#fg-h');
+    if (!senzaFuoco || eraTitolo) { if (h) h.focus({ preventScroll: true }); } else if (volta) volta.focus({ preventScroll: true });
+    if (!senzaFuoco) { if (stato === 'come' || stato === 'pb') fgProposta(); fgMappa(); }
+  }
+  function fgRinfresca() { if (fgStato === 'come' || fgStato === 'pb') fgProposta(); else if (fgStato) fgMostra(fgStato, fgDati, true); }
+  function fgChiudi() {
+    if (!fgStato) return; fgStato = null; fgDati = {}; pbPulisci();
+    document.body.classList.remove('fg-on'); $('#fg').hidden = true; $('#fg-top').hidden = true;
+    const f = fgFuoco; fgFuoco = null; if (f && f.isConnected && f !== document.body && f.focus) { try { f.focus({ preventScroll: true }); } catch (e) { /* ignora */ } }
+    if (pronta) map.easeTo({ padding: selId ? (LARGO() ? padPC() : { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }) : padHome(), duration: 300 });
+  }
+  function fgInquadra(pts) { // porta in vista i punti sopra il foglio
+    if (!pronta || !pts.length) return;
+    const pad = LARGO() ? padPC(50) : { top: 120, bottom: $('#fg-sheet').offsetHeight + 40, left: 50, right: 50 };
+    map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }); seguo = false;
+    if (pts.length === 1) { map.easeTo({ center: pts[0], zoom: Math.max(map.getZoom(), 16.5), padding: pad, duration: 500 }); return; }
+    const b = new maplibregl.LngLatBounds(pts[0], pts[0]); pts.slice(1).forEach((q) => b.extend(q)); map.fitBounds(b, { padding: pad, maxZoom: 17, duration: 500 });
+  }
+  function fgMappa() {
+    const p = fgDati.p, a = autoSalvata();
+    if (fgStato === 'auto' && a) fgInquadra(me ? [[a.lon, a.lat], [me.lon, me.lat]] : [[a.lon, a.lat]]);
+    else if (fgStato === 'salvata' && a) fgInquadra([[a.lon, a.lat]]);
+    else if ((fgStato === 'qui' || fgStato === 'come') && p) fgInquadra([[p.lon, p.lat]]);
+  }
+  function fgHtml(stato, d) {
+    const p = d.p, a = autoSalvata();
+    if (stato === 'come') return { html: `${bottoneX('Chiudi, non ora')}
+      <div class="fg-testa"><div class="eyebrow">Verso ${esc(p.t)}</div><h2 id="fg-h" tabindex="-1">Com'è andata?</h2></div>
+      <button class="primary" data-fg="parcheggiato">${icon('check')}<span>Ho parcheggiato qui</span></button>
+      <button class="btn2" data-fg="occupato"><span>${esc(d.etichetta || 'Occupato, portami al prossimo')}</span></button>
+      ${d.prox || ''}
+      <button class="btn3" data-fg="chiudi">Non ora</button>` };
+    if (stato === 'qui') { const m = me ? dist(me.lat, me.lon, p.lat, p.lon) : null; return { html: `${bottoneX('Chiudi, non ora')}
+      <div class="fg-testa"><div class="eyebrow">${m != null && m >= 10 ? 'Sei a ' + fmtDist(m) + ' dal posto' : 'Sei arrivato al posto'}</div><h2 id="fg-h" tabindex="-1">Hai parcheggiato qui?</h2>
+        <p class="muted">Se sì, salvo la posizione dell'auto e al ritorno ti ci riporto.</p></div>
+      <button class="primary" data-fg="parcheggiato">${icon('check')}<span>Sì, salva la posizione</span></button>
+      <button class="btn2" data-fg="occupato"><span>No, era occupato</span></button>
+      <button class="btn3" data-fg="altrove">Ho parcheggiato altrove</button>` }; }
+    if (stato === 'pb') {
+      const P = d.prop, n0 = P && P.out[0], n1 = P && P.out[1];
+      const top = `${icon('nav')}<div><b>Piano B attivo</b><span>${P && !P.usoMe ? 'Ti porto al posto libero più vicino a quello occupato' : 'Ti porto al posto libero più vicino a te'}</span></div>`;
+      if (!n0) return { top, html: `${bottoneX('Chiudi il piano B')}
+        <div class="fg-testa"><div class="eyebrow">Piano B</div><h2 id="fg-h" tabindex="-1">${P && !d.attesa ? 'Non trovo altri posti qui vicino' : 'Cerco il prossimo posto…'}</h2>${P && !d.attesa ? '<p class="muted">Prova a cercare un indirizzo o a spostare la mappa.</p>' : ''}</div>
+        <button class="btn2" data-fg="cerca"><span>Cerca un altro posto</span></button><button class="btn3" data-fg="altrove-trovato">Ho trovato posto altrove</button>` };
+      return { top, html: `${bottoneX('Chiudi il piano B')}
+        <div class="fg-testa"><div class="eyebrow">Prossimo posto</div><h2 id="fg-h" tabindex="-1">${esc(titolo(n0.s))}</h2><div class="muted">${esc(descrizione(n0, P))}</div></div>
+        <button class="primary" data-fg="vai">${icon('nav')}<span>Portami al numero ${n0.num}</span></button>
+        ${n1 ? `<div class="fg-sez"><div class="eyebrow">Se è occupato anche quello</div><div class="fg-prox"><span class="num" aria-hidden="true">${n1.num}</span><span class="t"><b><span class="vh">Numero ${n1.num}: </span>${esc(titolo(n1.s))}</b><span>${esc(descrizione(n1, P))}</span></span></div></div>` : ''}
+        <button class="btn3" data-fg="altrove-trovato">Ho trovato posto altrove</button>` };
+    }
+    if (stato === 'salvata' && a) return { html: `${bottoneX('Chiudi')}
+      <div class="fg-ok" aria-hidden="true">${icon('car')}</div>
+      <div class="fg-testa"><h2 id="fg-h" tabindex="-1">Auto salvata</h2><div class="b">${esc(a.t)} · ${esc(quandoAuto(a.ora))}</div>
+        <p class="muted">Quando vuoi tornare, tocca «La tua auto» sulla mappa. La posizione resta solo su questo telefono.</p></div>
+      ${a.nota && !d.nota ? `<div class="fg-nota"><span class="muted small">La tua nota</span><b>${esc(a.nota)}</b></div>` : ''}
+      ${d.nota ? `<div class="fg-campo"><label for="fg-nota" class="lab">Nota (piano, settore)</label><input id="fg-nota" maxlength="80" value="${esc(a.nota || '')}" autocomplete="off" enterkeyhint="done"><button class="primary" data-fg="nota-ok">${icon('check')}<span>Salva la nota</span></button></div>`
+        : `<button class="btn2" data-fg="nota"><span>${a.nota ? 'Modifica la nota' : 'Aggiungi una nota (piano, settore)'}</span></button>`}
+      <button class="primary" data-fg="chiudi">${icon('check')}<span>Fatto</span></button>
+      <button class="btn3 dang" data-fg="togli">Non salvare la posizione</button>` };
+    if (stato === 'auto' && a) {
+      const m = me ? dist(me.lat, me.lon, a.lat, a.lon) : null; // niente richieste di rete: la posizione dell'auto non esce dal telefono; i minuti sono una stima (strada = linea d'aria x 1,25, 80 m al minuto)
+      const min = m != null && m <= 2500 ? 'circa ' + fmtMin(m * 1.25 / 80 * 60) : '';
+      return { html: `${bottoneX('Chiudi')}
+        <div class="fg-testa"><div class="eyebrow">La tua auto</div><h2 id="fg-h" tabindex="-1">${esc(a.t)}</h2><div class="muted">Parcheggiata ${esc(quandoAuto(a.ora))} · ${esc(trascorso(Date.now() - a.ora))}</div></div>
+        ${m != null ? `<div class="fg-stat"><div><b>${esc(fmtDist(m))}</b><span>dalla tua posizione</span></div>${min ? `<div><b>${esc(min)}</b><span>a piedi</span></div>` : ''}</div>` : ''}
+        ${a.nota ? `<div class="fg-nota"><span class="muted small">La tua nota</span><b>${esc(a.nota)}</b></div>` : ''}
+        <button class="primary" data-fg="riporta">${icon('nav')}<span>Riportami all'auto</span></button>
+        <button class="btn3 dang" data-fg="togli">Sono ripartito, togli la posizione</button>` };
+    }
+    return { html: '' };
+  }
+  function fgAggiornaAuto() { // la distanza dall'auto cambia mentre cammini: ridisegno il foglio solo se il numero mostrato è cambiato
+    if (fgStato !== 'auto') return; const a = autoSalvata(); if (!a || !me) return;
+    const k = fmtDist(dist(me.lat, me.lon, a.lat, a.lon)); if (fgDati.k === k) return; fgDati.k = k; fgRinfresca();
+  }
+  $('#fg').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-fg]'); if (!b) return; const k = b.dataset.fg, d = fgDati, p = d.p;
+    if (k === 'chiudi') { fgChiudi(); return; }
+    if (k === 'parcheggiato') { esito('parcheggiato', { posto: p }); return; }
+    if (k === 'altrove') { esito('parcheggiato', { posto: p, altrove: true }); return; }
+    if (k === 'occupato') {
+      if (d.elenco && fgStato === 'come') { // con l'elenco numerato vale "Occupato? Portami al numero N" dell'elenco: stessa numerazione
+        const i = lista.findIndex((x) => x.s.id === p.id); fgChiudi(); ls.set('dp.navpend', null);
+        if (i >= 0 && prossimoElenco(i) >= 0) { inCorso = i; avantiElenco(); } else { segnaOccupato(p); arrivo(false); toast('Non ci sono altri posti nell\'elenco.'); }
+        return;
+      }
+      esito('occupato', { posto: p }); return;
+    }
+    if (k === 'vai') { const n0 = d.prop && d.prop.out[0]; if (!n0) return; const n = n0.num - 1; fgChiudi(); naviga(n0.s, 'piano', n); return; }
+    if (k === 'altrove-trovato') { fgChiudi(); toast('Va bene, piano B chiuso.'); return; }
+    if (k === 'cerca') { fgChiudi(); apriRicerca(); return; }
+    if (k === 'nota') { d.nota = true; fgMostra('salvata', d, true); const i = $('#fg-nota'); if (i) { i.focus(); i.select(); } return; }
+    if (k === 'nota-ok') { const a = autoSalvata(), i = $('#fg-nota'); if (a && i) { a.nota = i.value.trim().slice(0, 80); ls.set('dp.auto', a); } d.nota = false; fgMostra('salvata', d, true); const bt = $('#fg-sheet').querySelector('[data-fg="nota"]'); if (bt) bt.focus(); return; }
+    if (k === 'togli') { ls.set('dp.auto', null); disegnaAuto(); fgChiudi(); toast('Posizione dell\'auto eliminata.'); return; }
+    if (k === 'riporta') { const a = autoSalvata(); if (a) apri(`https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}&travelmode=walking`); }
+  });
+  $('#fg').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'fg-nota') { e.preventDefault(); const b = $('#fg-sheet').querySelector('[data-fg="nota-ok"]'); if (b) b.click(); } });
+
+  // --- piano B: il prossimo posto libero, dalla posizione di adesso ---
+  function fgPianoB(p, n) { fgMostra('pb', { p, n, piano: true }); }
+  function pbPulisci() { pbMk.forEach((m) => m.remove()); pbMk = []; }
+  function proposte(p) { // i due posti liberi più vicini a dove sei adesso (o al posto occupato, se la posizione non è nota)
+    const usoMe = !!me, ref = me || { lat: p.lat, lon: p.lon }, esclusi = [{ lat: p.lat, lon: p.lon }];
+    for (const id of occupati) { const o = stalli.get(id); if (o) esclusi.push(o); }
+    const tutti = [];
+    for (const s of stalli.values()) {
+      if (s.id === p.id || occupati.has(s.id) || !passa(s)) continue; const d = dist(ref.lat, ref.lon, s.lat, s.lon); if (d > 5000) continue;
+      if (esclusi.some((o) => dist(o.lat, o.lon, s.lat, s.lon) < 25)) continue; tutti.push({ s, d });
+    }
+    tutti.sort((a, b) => a.d - b.d); const out = [];
+    for (const x of tutti) { if (!out.some((y) => dist(x.s.lat, x.s.lon, y.s.lat, y.s.lon) < 25)) out.push(x); if (out.length === 2) break; }
+    return { usoMe, ref, out };
+  }
+  function proposteElenco(p) { // con l'elenco numerato: i due successivi non occupati, con i loro numeri
+    const out = []; for (let i = lista.findIndex((x) => x.s.id === p.id) + 1; i < lista.length && out.length < 2; i++) if (!occupati.has(lista[i].s.id)) out.push({ s: lista[i].s, d: lista[i].d, num: i + 1, elenco: true });
+    return { usoMe: false, ref: { lat: dest ? dest.lat : p.lat, lon: dest ? dest.lon : p.lon }, out };
+  }
+  function descrizione(x, P) { // "Verificato · 1 posto · 2 min in auto"
+    const r = P.usoMe ? (traffico(x.s) || suStrada(me, x.s, 'car')) : null;
+    return [affidabilita(x.s)[1], posti(x.s.posti), r ? fmtMin(r.sec) + ' in auto' : 'a ' + fmtDist(x.d) + (x.elenco ? ' dalla destinazione' : P.usoMe ? ' da te' : ' da qui')].join(' · ');
+  }
+  function fgProposta() { // calcola i candidati e ridisegna il foglio; si richiama da sé quando arrivano tempi, indirizzi o dati nuovi
+    const d = fgDati, p = d.p; if (!p || (fgStato !== 'come' && fgStato !== 'pb')) return;
+    const P = d.elenco ? proposteElenco(p) : proposte(p), n0 = (p.piano || 0) + 2;
+    P.out.forEach((x, i) => { x.num = x.num || (d.piano ? d.n + 1 + i : n0 + i); trovaVia(x.s); });
+    d.prop = P;
+    if (fgStato === 'come') {
+      const x = P.out[0]; d.etichetta = x ? (d.elenco ? `Occupato, portami al numero ${x.num}` : 'Occupato, portami al prossimo') : 'Occupato';
+      const r = x && P.usoMe ? (traffico(x.s) || suStrada(me, x.s, 'car')) : null;
+      d.prox = x ? `<div class="fg-prox"><span class="num" aria-hidden="true">${x.num}</span><span class="t"><b>Il prossimo: ${esc(titolo(x.s))}</b><span>${esc(r ? fmtMin(r.sec) + ' in auto da dove sei' : 'a ' + fmtDist(x.d) + (d.elenco ? ' dalla destinazione' : P.usoMe ? ' da dove sei' : ' da qui'))}</span></span></div>` : '';
+    }
+    if (!P.out.length && !d.caricato && !d.elenco) { // nessun posto in memoria attorno: carico la zona una volta sola
+      d.caricato = d.attesa = true;
+      carica(P.ref.lat - 0.024, P.ref.lon - 0.035, P.ref.lat + 0.024, P.ref.lon + 0.035, false).then(() => { d.attesa = false; if (fgDati === d) fgProposta(); });
+    }
+    if (P.usoMe && P.out.length) tempi(me, P.out.map((x) => ({ s: x.s })), 'car').then((ok) => { if (ok && fgDati === d) fgProposta(); });
+    pbPulisci();
+    P.out.forEach((x, i) => { const el = document.createElement('div'); el.className = 'mnum' + (i === 0 ? ' on' : ''); el.textContent = x.num; el.setAttribute('role', 'img'); el.setAttribute('aria-label', `Posto numero ${x.num}`); pbMk.push(new maplibregl.Marker({ element: el }).setLngLat([x.s.lon, x.s.lat]).addTo(map)); });
+    fgMostra(fgStato, d, true);
+    if (fgStato === 'pb' && P.out.length && !d.inquadrato) { d.inquadrato = true; const pts = [[p.lon, p.lat]]; if (me) pts.push([me.lon, me.lat]); P.out.forEach((x) => pts.push([x.s.lon, x.s.lat])); fgInquadra(pts); }
+  }
+
+  // --- l'auto salvata: segnaposto, tasto in alto, foglio "La tua auto" ---
+  function disegnaAuto() {
+    const a = autoSalvata();
+    if (!a) { if (autoMk) { autoMk.remove(); autoMk = null; } }
+    else if (!autoMk) {
+      const el = document.createElement('button'); el.className = 'mauto'; el.type = 'button'; el.setAttribute('aria-label', 'La tua auto: apri i dettagli'); el.innerHTML = icon('car');
+      el.onclick = (e) => { e.stopPropagation(); apriAuto(); }; autoMk = new maplibregl.Marker({ element: el }).setLngLat([a.lon, a.lat]).addTo(map);
+    } else autoMk.setLngLat([a.lon, a.lat]);
+    aggiornaPillAuto();
+  }
+  function aggiornaPillAuto() {
+    const a = autoSalvata(), b = $('#b-auto'), era = !b.hidden; b.hidden = !a; document.body.classList.toggle('con-auto', !!a);
+    if (a) { const t = me ? `La tua auto · ${fmtDist(dist(me.lat, me.lon, a.lat, a.lon))}` : 'La tua auto', sp = b.querySelector('span'); if (sp.textContent !== t) sp.textContent = t; }
+    if (era !== !!a && pronta && !selId && !dest && !aggiungo) map.setPadding(padHome());
+  }
+  function apriAuto() {
+    const a = autoSalvata(); if (!a) return;
+    fgMostra('auto', { k: me ? fmtDist(dist(me.lat, me.lon, a.lat, a.lon)) : '' });
+  }
+  $('#b-auto').onclick = apriAuto;
+  disegnaAuto();
+  window.DPArrivo = { navigazioneAvviata, arrivatoVicino, ritornoLontano, esito, controllaRitorno, apriAuto };
 
   // ---------- schermata 6 · segnala un posto nuovo ----------
   const nuovo = { tipo: 'generico', posti: 1, via: '', comune: '', doppio: false };

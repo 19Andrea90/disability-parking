@@ -353,3 +353,60 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 
 /* Regola della password sotto il campo, nel modulo di accesso */
 .acc .reg{margin:-2px 0 0;font-size:13px;line-height:1.35}
+
+/* ---------- arrivo, piano B, auto salvata, ricerca per tipo di luogo ---------- */
+.autopill{align-self:flex-start;min-height:48px;padding:0 18px 0 14px;border-radius:999px;background:var(--blu);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow)}
+.autopill .ic{color:var(--giallo)}
+.autopill:focus-visible{outline-color:var(--ink)}
+@media (max-width:899px){body.con-auto .maplibregl-ctrl-bottom-right{top:calc(var(--sat) + 198px)}body.con-auto #toast{top:calc(var(--sat) + 194px)}}
+.mauto{width:46px;height:46px;border-radius:50%;background:var(--blu);color:var(--giallo);border:3px solid var(--giallo);box-shadow:0 4px 12px rgba(11,31,68,.4);display:grid;place-items:center}
+.mauto .ic{width:24px;height:24px}
+.mnum.occ{background:#6b7686;color:#fff}
+.mnum.occ .ic{width:18px;height:18px;stroke-width:3}
+.arow.occ{background:var(--soft);border-style:dashed}
+.arow.occ .num{background:#6b7686}
+.arow.occ .t b{text-decoration:line-through}
+
+#fg{position:fixed;left:0;right:0;bottom:0;z-index:26;pointer-events:none}
+#fg>*{pointer-events:auto}
+#fg .sheet{position:relative;max-height:calc(100vh - var(--sat) - 96px);overflow-y:auto;overscroll-behavior:contain}
+body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-on #card,body.fg-on #add{display:none}
+.fg-top{position:fixed;left:16px;right:16px;top:calc(var(--sat) + 12px);background:var(--blu);color:#fff;border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+.fg-top .ic{color:var(--giallo);width:26px;height:26px}
+.fg-top div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.fg-top b{font-size:17px}
+.fg-top span{font-size:15px;color:#d5e1f6}
+.fg-x{position:absolute;right:8px;top:8px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.fg-testa{display:flex;flex-direction:column;gap:6px;padding-right:40px;margin-top:4px}
+#fg h2{margin:0;font-size:24px;line-height:1.15;overflow-wrap:anywhere;outline:none}
+#fg p{margin:0}
+.fg-testa .eyebrow{overflow-wrap:anywhere}
+.fg-ok{width:52px;height:52px;border-radius:16px;background:var(--giallo);color:var(--giallo-ink);display:grid;place-items:center}
+.fg-ok .ic{width:30px;height:30px}
+.btn2{min-height:56px;border:2px solid var(--blu);border-radius:18px;background:#fff;color:var(--blu);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:8px 14px;text-align:center;flex:none}
+.btn3{min-height:48px;font-size:16px;font-weight:700;color:var(--blu);width:100%;flex:none}
+.btn3.dang{color:#8f1d15}
+#fg button:focus-visible,.catgrid button:focus-visible{outline:3px solid var(--blu);outline-offset:2px}
+#fg .primary:focus-visible{outline-color:var(--ink)}
+.fg-prox{display:flex;gap:12px;align-items:center;border-radius:16px;background:var(--soft);padding:12px 14px}
+.fg-prox .num{width:36px;height:36px;font-size:16px;flex:none}
+.fg-prox .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fg-prox .t b{font-size:16px;line-height:1.2;overflow-wrap:anywhere}
+.fg-prox .t span{font-size:14px;color:var(--muted)}
+.fg-sez{display:flex;flex-direction:column;gap:8px}
+.fg-stat{display:flex;gap:10px}
+.fg-stat>div{flex:1;min-width:0;border-radius:14px;background:var(--soft);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.fg-stat b{font-size:22px;line-height:1.1}
+.fg-stat span{font-size:15px;color:var(--muted)}
+.fg-nota{border-radius:14px;background:var(--soft);padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.fg-nota b{font-size:18px;overflow-wrap:anywhere}
+.fg-campo{display:flex;flex-direction:column;gap:8px}
+.fg-campo input{height:56px;border:2px solid var(--blu);border-radius:14px;padding:0 14px;font:inherit;font-size:18px;color:var(--ink);background:#fff;width:100%}
+.fg-campo .primary{height:52px;font-size:18px}
+
+@media (min-width:900px){
+  #fg{left:16px;right:auto;width:var(--col);bottom:16px}
+  #fg .sheet{max-height:calc(100vh - 32px)}
+  .fg-top{left:16px;right:auto;width:var(--col);top:16px}
+  body.con-auto #home{top:208px}
+}
