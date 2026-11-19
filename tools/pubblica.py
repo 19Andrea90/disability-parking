@@ -5,13 +5,53 @@ L'elenco non è scritto a mano: parte da index.html, admin.html, manifest.json, 
 riferimenti reali (src, href, url() nei CSS, icone del manifest, SHELL del service worker). Se un file referenziato manca,
 lo script si ferma con un messaggio. I file di partenza non vengono mai spostati: GitHub Pages continua a servire la radice.
 
-Uso: python3 tools/pubblica.py [cartella]      (default: dist; viene ricreata da zero)
+Due disposizioni della cartella di uscita (i sorgenti nel deposito non cambiano mai):
+  attuale  (default) come il deposito: radice = web app, sito/ = vetrina, admin.html = pannello admin (GitHub Pages).
+  dominio  per https://sostabile.it/: radice = sito vetrina, app/ = web app, admin/ = pannello admin (admin/index.html).
+           I collegamenti tra le parti si riscrivono con SOSTITUZIONI_DOMINIO (sotto); se una non trova riscontro, errore.
+
+Uso: python3 tools/pubblica.py [cartella] [--disposizione attuale|dominio]      (default: dist; viene ricreata da zero)
 """
-import json, os, re, shutil, sys
+import argparse, json, os, re, shutil, sys
 from urllib.parse import urlsplit, unquote
 
+_ap = argparse.ArgumentParser(description='Prepara la cartella da pubblicare su Cloudflare Pages.')
+_ap.add_argument('cartella', nargs='?', default='dist')
+_ap.add_argument('--disposizione', choices=('attuale', 'dominio'), default='attuale')
+_args = _ap.parse_args()
+DOMINIO = _args.disposizione == 'dominio'
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-USCITA = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else 'dist')
+USCITA = os.path.abspath(_args.cartella)
+
+# Collegamenti tra le parti che nella disposizione "dominio" cambiano. Ogni voce: (file sorgente, testo atteso, sostituto, quante volte).
+# Se il testo non compare esattamente quel numero di volte, lo script si ferma: vuol dire che un sorgente è cambiato.
+# Tutto il resto (manifest start_url/scope, registrazione del service worker, ritorno dell'accesso Google, CFG.SITO) funziona
+# già in entrambe le disposizioni perché usa percorsi relativi o l'indirizzo della pagina corrente.
+SITO_DOM = 'https://sostabile.it/'
+def _canon(pagina): return '<link rel="canonical" href="%s%s">\n<link rel="icon" href="icona.png">' % (SITO_DOM, pagina)
+SOSTITUZIONI_DOMINIO = [
+    # sito -> app: "../" (la radice del deposito) diventa app/
+    ('sito/index.html', 'href="../">Apri la versione web', 'href="app/">Apri la versione web', 1),
+    ('sito/index.html', 'href="../">Versione web', 'href="app/">Versione web', 1),
+    # sito: og:image assoluta e canonical sul dominio
+    ('sito/index.html', '<meta property="og:image" content="https://19andrea90.github.io/disability-parking/sito/icona.png">',
+     '<meta property="og:image" content="%sicona.png">\n<meta property="og:url" content="%s">\n<link rel="canonical" href="%s">' % (SITO_DOM, SITO_DOM, SITO_DOM), 1),
+    ('sito/privacy.html', '<link rel="icon" href="icona.png">', _canon('privacy.html'), 1),
+    ('sito/fonti.html', '<link rel="icon" href="icona.png">', _canon('fonti.html'), 1),
+    ('sito/condizioni.html', '<link rel="icon" href="icona.png">', _canon('condizioni.html'), 1),
+    # admin -> app: l'admin sta in admin/ e riusa foglio di stile e icona della web app in ../app/
+    ('admin.html', 'href="index.html">← App', 'href="../app/">← App', 1),
+    ('admin.html', '<link rel="stylesheet" href="app.css">', '<link rel="stylesheet" href="../app/app.css">', 1),
+    ('admin.html', '<link rel="icon" href="icons/icon-192.png">', '<link rel="icon" href="../app/icons/icon-192.png">', 1),
+    # service worker dell'app (ambito /app/): admin.html, admin.js e config.js non stanno sotto app/, addAll() fallirebbe
+    ('sw.js', "'./admin.html', ", '', 1),
+    ('sw.js', "'./admin.js', ", '', 1),
+    ('sw.js', "'./config.js', ", '', 1),
+]
+# Percorsi (nel deposito) che nella disposizione "dominio" vanno in admin/ e in radice; tutto il resto va in app/.
+ADMIN_FILE = {'admin.html': 'admin/index.html', 'admin.js': 'admin/admin.js', 'config.js': 'admin/config.js'}
+# Unico file pubblicato in cui l'indirizzo github.io può restare (costante SITO_ANDROID, finché il dominio non è attivo).
+RESIDUO_GITHUB_OK = {'app/mobile/www/app.js'}
 
 # Punti di partenza: pagine e file di primo livello. Tutto il resto lo trova seguendo i riferimenti.
 PARTENZA = ['index.html', 'sw.js', 'manifest.json', 'admin.html', 'config.js']
@@ -90,6 +130,10 @@ if errori:
 
 # robots.txt: se esiste già (radice o sito/) si integra, altrimenti si parte da zero
 def robots():
+    if DOMINIO:
+        out = "# Il sito vetrina (radice) e l'app sono indicizzabili; il pannello admin no.\nUser-agent: *\nDisallow: /admin/\nDisallow: /admin\n"
+        for b in AI_BOT: out += "\n# Crawler per l'addestramento di modelli AI\nUser-agent: %s\nDisallow: /\n" % b
+        return out
     esistente = ''
     for p in ('robots.txt', 'sito/robots.txt'):
         if os.path.isfile(os.path.join(R, p)): esistente = open(os.path.join(R, p), encoding='utf-8').read().rstrip() + '\n'; break
@@ -127,17 +171,107 @@ HEADERS = """# Intestazioni per Cloudflare Pages (generato da tools/pubblica.py)
   Cache-Control: no-cache
 """
 
+HEADERS_DOMINIO = """# Intestazioni per Cloudflare Pages, disposizione "dominio" (generato da tools/pubblica.py)
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# L'app si aggiorna da sola solo se pagina e service worker non restano in cache a lungo
+/app/
+  Cache-Control: no-cache
+/app/index.html
+  Cache-Control: no-cache
+/app/sw.js
+  Cache-Control: no-cache
+/app/manifest.json
+  Cache-Control: no-cache
+
+# Pannello admin: non da indicizzare
+/admin/
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+/admin/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+"""
+# Cloudflare Pages: vecchi indirizzi (GitHub Pages) -> nuovi. La vecchia web app in radice non serve più (la radice è la vetrina).
+REDIRECTS_DOMINIO = """# Generato da tools/pubblica.py (disposizione "dominio")
+/sito /  301
+/sito/* /:splat 301
+/admin.html /admin/ 301
+"""
+
+def sostituzioni(rel, testo):
+    """Applica a un file le voci di SOSTITUZIONI_DOMINIO che lo riguardano, verificando i conteggi."""
+    for f, vecchio, nuovo, n in SOSTITUZIONI_DOMINIO:
+        if f != rel: continue
+        c = testo.count(vecchio)
+        if c != n: errori.append('sostituzione "dominio" in %s: attese %d occorrenze di %r, trovate %d' % (rel, n, vecchio, c)); continue
+        testo = testo.replace(vecchio, nuovo)
+    return testo
+
+def destinazione(rel):
+    if not DOMINIO: return rel
+    if rel in ADMIN_FILE: return ADMIN_FILE[rel]
+    if rel.startswith('sito/'): return rel[len('sito/'):]
+    return 'app/' + rel
+
+def verifica_dominio(radice):
+    """Controlla la cartella finita: riferimenti locali esistenti, SHELL del service worker, nessun github.io fuori dal consentito."""
+    ko = []
+    for d, _, fs in os.walk(radice):
+        for f in fs:
+            ab = os.path.join(d, f); rel = os.path.relpath(ab, radice).replace(os.sep, '/')
+            if not rel.lower().endswith(('.html', '.css', '.js', '.json', '.txt')) and rel not in ('_headers', '_redirects'): continue
+            t = open(ab, encoding='utf-8', errors='replace').read()
+            if '19andrea90.github.io' in t and rel not in RESIDUO_GITHUB_OK: ko.append('%s: contiene ancora un indirizzo github.io' % rel)
+            rifs = []
+            if rel.endswith('.html'):
+                for m in re.finditer(r'<(?:script|img|source|link|a|iframe)\b[^>]*>', t, re.I):
+                    for a in re.finditer(r'\b(?:src|href)\s*=\s*["\']([^"\']*)["\']', m.group(0), re.I):
+                        if m.group(0)[:2].lower() == '<a' and not re.search(r'\.(html?|png|jpe?g|svg|pdf|txt)([?#]|$)|/$', a.group(1)): continue
+                        rifs.append(a.group(1))
+            if rel.endswith(('.html', '.css')): rifs += [a.group(1) for a in re.finditer(r'url\(\s*["\']?([^)"\']+)["\']?\s*\)', t)]
+            if rel.endswith('sw.js'):
+                m = re.search(r"const W = '([^']*)'", t); w = m.group(1) if m else ''
+                sh = re.search(r'const SHELL = \[(.*?)\];', t, re.S)
+                rifs += [(w if a.group(1) else '') + a.group(2) for a in re.finditer(r"""(W\s*\+\s*)?'([^']*)'""", sh.group(1))] if sh else []
+            if rel.endswith('manifest.json'):
+                j = json.loads(t); rifs += [i.get('src', '') for i in j.get('icons', [])] + [j.get('start_url', '')]
+            for r in rifs:
+                l = locale(r)
+                if l is None: continue
+                if l.endswith('/') or l == '.': l += 'index.html'
+                dst = l.lstrip('/') if l.startswith('/') else os.path.normpath(os.path.join(os.path.dirname(rel), l)).replace(os.sep, '/')
+                if dst.startswith('..') or not os.path.isfile(os.path.join(radice, dst)): ko.append('%s: riferimento che non porta a un file: %s' % (rel, r))
+    return ko
+
 if os.path.exists(USCITA):
     if os.path.abspath(USCITA) in (R, os.path.dirname(R), '/') or os.path.exists(os.path.join(USCITA, '.git')): sys.exit('Cartella di uscita non valida: ' + USCITA)
     shutil.rmtree(USCITA)
 os.makedirs(USCITA)
 tot = 0
 print('Copio in %s:' % USCITA)
+altri = [('_headers', HEADERS_DOMINIO if DOMINIO else HEADERS), ('robots.txt', robots())] + ([('_redirects', REDIRECTS_DOMINIO)] if DOMINIO else [])
 for rel in sorted(copiati):
-    dst = os.path.join(USCITA, rel); os.makedirs(os.path.dirname(dst), exist_ok=True)
-    shutil.copyfile(copiati[rel], dst); n = os.path.getsize(dst); tot += n
-    print('  %8.1f KB  %s' % (n / 1024, rel))
-for nome, testo in (('_headers', HEADERS), ('robots.txt', robots())):
+    dst = os.path.join(USCITA, destinazione(rel)); os.makedirs(os.path.dirname(dst), exist_ok=True)
+    if DOMINIO and rel.lower().endswith(('.html', '.js', '.json')):
+        t = open(copiati[rel], encoding='utf-8').read(); t2 = sostituzioni(rel, t)
+        with open(dst, 'w', encoding='utf-8', newline='') as f: f.write(t2)
+    else: shutil.copyfile(copiati[rel], dst)
+    n = os.path.getsize(dst); tot += n
+    print('  %8.1f KB  %s' % (n / 1024, destinazione(rel) if DOMINIO else rel))
+if DOMINIO:
+    for f in {f for f, _, _, _ in SOSTITUZIONI_DOMINIO}:
+        if f not in copiati: errori.append('sostituzione "dominio": il file %s non è tra quelli pubblicati' % f)
+for nome, testo in altri:
     with open(os.path.join(USCITA, nome), 'w', encoding='utf-8', newline='\n') as f: f.write(testo)
     n = os.path.getsize(os.path.join(USCITA, nome)); tot += n; print('  %8.1f KB  %s (generato)' % (n / 1024, nome))
-print('Totale: %d file, %.2f MB' % (len(copiati) + 2, tot / 1048576))
+if DOMINIO:
+    errori.extend(verifica_dominio(USCITA))
+    if errori:
+        shutil.rmtree(USCITA)
+        print('ERRORE: la cartella di pubblicazione NON è stata creata.', file=sys.stderr)
+        for e in errori: print('  - ' + e, file=sys.stderr)
+        sys.exit(1)
+print('Totale: %d file, %.2f MB' % (len(copiati) + len(altri), tot / 1048576))

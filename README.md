@@ -30,3 +30,5 @@ Il sito per Cloudflare Pages si prepara con:
 python3 tools/pubblica.py dist
 ```
 La cartella di uscita è `dist` (ignorata da git, ricreata da zero a ogni esecuzione): contiene solo web app, pannello admin e `sito/`, più `_headers` e `robots.txt`. Restano fuori dati, modelli, strumenti, SQL e sorgenti mobile. Lo script segue i riferimenti reali dei file e si ferma se ne manca uno.
+
+Per il dominio `sostabile.it` (sito in radice, app in `/app/`, admin in `/admin/`): `python3 tools/pubblica.py dist --disposizione dominio`. Cosa cambiare nei servizi esterni: `docs/passaggio-dominio.md`.

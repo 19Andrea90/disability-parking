@@ -10,6 +10,7 @@ Con --prova manda comunque un'email di prova.
 import datetime as dt, html, json, os, sys, urllib.parse, urllib.request
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
+# Da cambiare in https://sostabile.it/admin/ quando il dominio è attivo (vedi docs/passaggio-dominio.md)
 ADMIN = 'https://19andrea90.github.io/disability-parking/admin.html'
 STATO = '/storage/v1/object/modelli/scan/notifiche.json'
 KEY = os.environ['SUPABASE_SERVICE_KEY']

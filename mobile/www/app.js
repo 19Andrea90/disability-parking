@@ -1,6 +1,11 @@
 /* SostAbile · app Android (Capacitor). Passo 1: primo avvio, mappa, posto più vicino, scheda del posto. */
 (() => {
   'use strict';
+  // Indirizzo base del sito vetrina (con / finale). Sul web aperto da sostabile.it (o www.) è il dominio; altrove (GitHub Pages,
+  // prove in locale) e su Android resta quello provvisorio. È l'unico punto dell'app dove compare un indirizzo del sito.
+  const SITO_ANDROID = 'https://19andrea90.github.io/disability-parking/sito/'; // da cambiare in https://sostabile.it/ quando il dominio è attivo
+  const sitoBase = (host, nativo) => (!nativo && /^(www\.)?sostabile\.it$/i.test(host || '')) ? 'https://sostabile.it/' : SITO_ANDROID;
+  const SITO_NATIVO = () => { const cap = window.Capacitor; return !!(cap && cap.isNativePlatform && cap.isNativePlatform()); };
   const CFG = {
     SB: 'https://wwereqrojlwktgwlrsib.supabase.co',
     // chiave "anon": è pubblica per natura, i permessi li decide il database
@@ -13,7 +18,7 @@
     VICINO_M: 80,           // entro questa distanza si può confermare "c'è / non c'è più"
     GOOGLE: true,           // accesso con Google: fornitore configurato su Supabase il 19/11/2026
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
-    SITO: 'https://19andrea90.github.io/disability-parking/sito/', // indirizzo base del sito vetrina (con / finale): l'unico punto dell'app dove compare; cambiarlo qui quando cambia l'indirizzo
+    SITO: sitoBase(location.hostname, SITO_NATIVO()), // indirizzo base del sito vetrina (con / finale): vedi sitoBase() qui sopra
   };
   const $ = (s) => document.querySelector(s);
   const ls = {
