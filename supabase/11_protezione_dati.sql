@@ -87,7 +87,7 @@ revoke all on function public._limite_dati(integer) from public, anon, authentic
 
 -- 3) Posti di una zona piccola: le stesse colonne che l'app leggeva dalla vista stalli_con_conferme.
 --    Al massimo 0,05° di altezza (circa 5,5 km) e 0,075° di larghezza: la vista dell'utente è al massimo 3 km più il
---    margine del 25% per lato. Solo stalli pubblicati e non "personalizzati". Al massimo 400 righe, quelle più vicine
+--    margine del 25% per lato. Solo stalli pubblicati e non "personalizzati". Al massimo 2500 righe (nei centri più densi un riquadro pieno ne contiene circa 2000), quelle più vicine
 --    al centro della zona richiesta. Errore 400 (PT400) se la zona è troppo ampia o i valori non sono validi.
 create or replace function public.stalli_zona(p_s double precision, p_w double precision, p_n double precision, p_e double precision)
 returns table (id uuid, lat double precision, lon double precision, tipo text, posti integer, nome text, indirizzo text,
@@ -111,7 +111,7 @@ begin
     where s.stato in ('proposto', 'verificato', 'ufficiale') and s.tipo <> 'personalizzato'
       and s.lat >= p_s and s.lat <= p_n and s.lon >= p_w and s.lon <= p_e
     order by (s.lat - (p_s + p_n) / 2) ^ 2 + ((s.lon - (p_w + p_e) / 2) * 0.7) ^ 2
-    limit 400;
+    limit 2500;
 end $$;
 
 -- 4) Conteggi a griglia per la mappa larga: per ogni cella il CENTRO della cella (mai la posizione dei posti), il
