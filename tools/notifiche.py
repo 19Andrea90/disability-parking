@@ -11,7 +11,7 @@ import datetime as dt, html, json, os, sys, urllib.parse, urllib.request
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 # Da cambiare in https://sostabile.it/admin/ quando il dominio è attivo (vedi docs/passaggio-dominio.md)
-ADMIN = 'https://19andrea90.github.io/disability-parking/admin.html'
+ADMIN = 'https://sostabile.it/admin/'
 STATO = '/storage/v1/object/modelli/scan/notifiche.json'
 KEY = os.environ['SUPABASE_SERVICE_KEY']
 H = {'apikey': KEY, 'Authorization': 'Bearer ' + KEY}
