@@ -10,7 +10,7 @@ Con --prova manda comunque un'email di prova.
 import datetime as dt, html, json, os, sys, urllib.parse, urllib.request
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
-ADMIN = 'https://19andrea90.github.io/disability-parking/admin.html'
+ADMIN = 'https://sostabile.it/admin/'
 STATO = '/storage/v1/object/modelli/scan/notifiche.json'
 KEY = os.environ['SUPABASE_SERVICE_KEY']
 H = {'apikey': KEY, 'Authorization': 'Bearer ' + KEY}
