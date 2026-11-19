@@ -716,12 +716,15 @@
       if (remoto && (vuoto || (remoto.agg || 0) > locale.agg)) { applica(remoto); if (nuovoQui) await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); } else if (!vuoto) { ls.set('dp.agg', locale.agg || Date.now()); await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); }
     } catch (e) { /* si riprova al prossimo cambiamento */ }
   }
+  // Lunghezza minima per i nuovi account (la stessa regola è impostata su Supabase). Conta la lunghezza, non i simboli:
+  // chi ha già un account con una password più corta continua a entrare.
+  const PASS_MIN = 10;
   async function accedi(email, password, nuovoAccount) {
     // Sul web il link di conferma riporta alla pagina da cui ci si è iscritti (non all'indirizzo predefinito di Supabase).
     const ritorno = nuovoAccount && !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) ? '?redirect_to=' + encodeURIComponent(location.origin + location.pathname) : '';
     const r = await fetch(`${CFG.SB}/auth/v1/${nuovoAccount ? 'signup' + ritorno : 'token?grant_type=password'}`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? 'La password deve avere almeno 6 caratteri.' : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
+    if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? `La password deve avere almeno ${PASS_MIN} caratteri.` : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
     traccia(nuovoAccount ? 'registrazione' : 'accesso');
     if (!j.access_token) return 'conferma'; // account creato: serve il clic sul link ricevuto per email
     entra2(j); await allinea(); return 'ok';
@@ -756,7 +759,7 @@
     const acc = sessione
       ? `<div class="chi"><span class="av">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span><button class="bsm" data-a="esci">Esci</button></div>`
       : `<div class="acc"><div class="b">Accedi per non perderli</div><p>I posti salvati ti seguono se cambi telefono. È facoltativo: l'app funziona anche senza.</p>${formAperto
-        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><input id="a-pass" type="password" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password"><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
+        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><input id="a-pass" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="a-reg"><p class="reg" id="a-reg">Per un nuovo account: almeno ${PASS_MIN} caratteri. Una frase è più facile da ricordare.</p><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
         : `${CFG.GOOGLE ? `<button class="bw gg" data-a="google"><span class="g" aria-hidden="true">G</span>Continua con Google</button>` : ''}<button class="${CFG.GOOGLE ? 'bo' : 'bw'}" data-a="form">Usa la tua email</button>${CFG.GOOGLE ? '' : '<p>L\'accesso con Google arriva presto.</p>'}`}</div>`;
     const luogo = (k, nome, ic) => l[k]
       ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}">Cambia</button><button data-a="togli" data-k="${k}">Togli</button></div></div>`
@@ -779,7 +782,8 @@
     if (a === 'form') { formAperto = true; menu(); $('#a-email').focus(); }
     else if (a === 'entra' || a === 'crea') {
       const email = $('#a-email').value.trim(), pass = $('#a-pass').value;
-      if (!/^\S+@\S+\.\S+$/.test(email) || pass.length < 6) { $('#m-body .msg').textContent = 'Scrivi la tua email e una password di almeno 6 caratteri.'; return; }
+      if (!/^\S+@\S+\.\S+$/.test(email) || !pass) { $('#m-body .msg').textContent = 'Scrivi la tua email e la password.'; return; }
+      if (a === 'crea' && pass.length < PASS_MIN) { $('#m-body .msg').textContent = `Per creare un account la password deve avere almeno ${PASS_MIN} caratteri: ne mancano ${PASS_MIN - pass.length}.`; $('#a-pass').focus(); return; }
       b.disabled = true; $('#m-body .msg').textContent = 'Un momento…';
       try { const esito = await accedi(email, pass, a === 'crea'); if (esito === 'conferma') { $('#m-body .msg').textContent = 'Ti abbiamo mandato un\'email: apri il link di conferma, poi torna qui e tocca "Accedi".'; b.disabled = false; } else { formAperto = false; menu(); toast('Accesso fatto. I tuoi posti ora ti seguono.'); } }
       catch (err) { $('#m-body .msg').textContent = err.message; b.disabled = false; }
