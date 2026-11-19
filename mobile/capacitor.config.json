@@ -1,6 +1,6 @@
 {
   "appId": "it.disabilityparking.app",
-  "appName": "Disability Parking",
+  "appName": "SostAbile",
   "webDir": "www",
   "android": { "adjustMarginsForEdgeToEdge": "force" }
 }

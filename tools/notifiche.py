@@ -59,8 +59,8 @@ def main():
                      for m, v in sorted(gruppi.items(), key=lambda kv: -len(kv[1]))[:15]) + '</ul>')
     if prova and not parti: parti.append('<p>Email di prova: le notifiche funzionano.</p>'); oggetto.append('prova notifiche')
     corpo = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.45">' + ''.join(parti) + f'<p><a href="{ADMIN}">Apri il pannello admin</a></p></div>'
-    msg = {'from': os.environ.get('NOTIFICHE_DA') or 'Disability Parking <onboarding@resend.dev>', 'to': [os.environ['NOTIFICHE_A']],
-           'subject': 'Disability Parking: ' + ', '.join(oggetto), 'html': corpo}
+    msg = {'from': os.environ.get('NOTIFICHE_DA') or 'SostAbile <onboarding@resend.dev>', 'to': [os.environ['NOTIFICHE_A']],
+           'subject': 'SostAbile: ' + ', '.join(oggetto), 'html': corpo}
     req = urllib.request.Request('https://api.resend.com/emails', method='POST', data=json.dumps(msg).encode(),
                                  headers={'Authorization': 'Bearer ' + os.environ['RESEND_KEY'], 'Content-Type': 'application/json', 'User-Agent': 'disability-parking-notifiche'})
     with urllib.request.urlopen(req, timeout=60) as r: print('Email inviata:', r.status, r.read()[:200])

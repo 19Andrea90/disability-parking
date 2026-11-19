@@ -1,4 +1,4 @@
-# Disability Parking
+# SostAbile
 
 App per trovare e segnalare gli stalli di sosta riservati alle persone con disabilità. PWA installabile, dati su Supabase.
 

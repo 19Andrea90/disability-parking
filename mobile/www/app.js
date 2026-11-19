@@ -1,4 +1,4 @@
-/* Disability Parking · app Android (Capacitor). Passo 1: primo avvio, mappa, posto più vicino, scheda del posto. */
+/* SostAbile · app Android (Capacitor). Passo 1: primo avvio, mappa, posto più vicino, scheda del posto. */
 (() => {
   'use strict';
   const CFG = {
@@ -13,7 +13,7 @@
     VICINO_M: 80,           // entro questa distanza si può confermare "c'è / non c'è più"
     GOOGLE: true,           // accesso con Google: fornitore configurato su Supabase il 19/11/2026
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
-    SITO: 'https://19andrea90.github.io/disability-parking/sito/',
+    SITO: 'https://19andrea90.github.io/disability-parking/sito/', // indirizzo base del sito vetrina (con / finale): l'unico punto dell'app dove compare; cambiarlo qui quando cambia l'indirizzo
   };
   const $ = (s) => document.querySelector(s);
   const ls = {
@@ -404,8 +404,8 @@
     const cap = window.Capacitor, Sh = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.Share;
     traccia('condividi', { comune: s.comune || null });
     try {
-      if (Sh) await Sh.share({ title: 'Disability Parking', text, url, dialogTitle: 'Condividi il posto' });
-      else if (navigator.share) await navigator.share({ title: 'Disability Parking', text, url });
+      if (Sh) await Sh.share({ title: 'SostAbile', text, url, dialogTitle: 'Condividi il posto' });
+      else if (navigator.share) await navigator.share({ title: 'SostAbile', text, url });
       else { await navigator.clipboard.writeText(text + ' ' + url); toast('Link copiato'); }
     } catch (e) { /* condivisione annullata */ }
   };
@@ -795,7 +795,7 @@
     else if (a === 'consiglia') consiglia();
     else if (a === 'stat') { const on = !statAttive(); if (!on) traccia('stat_off', null, true); ls.set('dp.stat', on); menu(); toast(on ? 'Statistiche anonime attivate. Grazie!' : 'Statistiche anonime disattivate.'); }
     else if (a === 'google') accediGoogle();
-    else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-ver').textContent = 'Disability Parking, versione di prova ' + (window.DP_VERSIONE || ''); }
+    else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
   $('#f-back').onclick = () => { $('#fonti').hidden = true; };
 
@@ -818,12 +818,12 @@
 
   // ---------- consiglia l'app e invito a lasciare una recensione su Play ----------
   async function consiglia() {
-    const text = 'Disability Parking trova i parcheggi riservati alle persone con disabilità in tutta Italia e ti porta lì. È gratis.', url = NATIVO() ? CFG.PLAY : CFG.SITO;
+    const text = 'SostAbile trova i parcheggi riservati alle persone con disabilità in tutta Italia e ti porta lì. È gratis.', url = NATIVO() ? CFG.PLAY : CFG.SITO;
     const cap = window.Capacitor, Sh = NATIVO() && cap.Plugins && cap.Plugins.Share;
     traccia('consiglia');
     try {
-      if (Sh) await Sh.share({ title: 'Disability Parking', text, url, dialogTitle: 'Consiglia l\'app' });
-      else if (navigator.share) await navigator.share({ title: 'Disability Parking', text, url });
+      if (Sh) await Sh.share({ title: 'SostAbile', text, url, dialogTitle: 'Consiglia l\'app' });
+      else if (navigator.share) await navigator.share({ title: 'SostAbile', text, url });
       else { await navigator.clipboard.writeText(text + ' ' + url); toast('Link copiato: incollalo dove vuoi'); }
     } catch (e) { /* condivisione annullata */ }
   }
