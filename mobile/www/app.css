@@ -421,11 +421,6 @@ body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-
 .s-msg{display:flex;flex-direction:column;gap:12px;padding:8px 0}
 .s-msg .bsm{align-self:flex-start;height:48px}
 
-.fg-durate{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.fg-durate .btn2{padding:8px 4px;font-size:16px}
-.fg-orario{display:flex;gap:10px}
-.fg-orario input{flex:1;min-width:0}
-.fg-orario .btn2{width:auto;flex:none;padding:8px 20px}
 @media (min-width:900px){
   #fg{left:16px;right:auto;width:var(--col);bottom:16px}
   #fg .sheet{max-height:calc(100vh - 32px)}

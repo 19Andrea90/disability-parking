@@ -697,7 +697,7 @@
       traccia('parcheggiato', { comune: p.comune || null, dettaglio: (opz.altrove ? 'altrove' : String(p.id)).slice(0, 80) });
       ls.set('dp.navpend', null);
       if (selId) chiudiScheda(); if (dest) chiudiDest(); // si è parcheggiato: si torna alla schermata principale, dove c'è il tasto dell'auto
-      cancellaScadenza(); const a = { lat, lon, t: t || 'Posizione dell\'auto', ora: Date.now(), nota: '' }; ls.set('dp.auto', a);
+      const a = { lat, lon, t: t || 'Posizione dell\'auto', ora: Date.now(), nota: '' }; ls.set('dp.auto', a);
       disegnaAuto(); fgMostra('salvata', {}); $('#fg-live').textContent = `Auto salvata: ${a.t}, alle ${oraDi(a.ora)}`;
       if (nuovaVia) indirizzoDa(lat, lon).then((v) => { const c = autoSalvata(); if (v && c && c.ora === a.ora) { c.t = v; ls.set('dp.auto', c); fgRinfresca(); } });
     }
@@ -812,7 +812,6 @@
       <div class="fg-testa"><h2 id="fg-h" tabindex="-1">Auto salvata</h2><div class="b">${esc(a.t)} · ${esc(quandoAuto(a.ora))}</div>
         <p class="muted">Quando vuoi tornare, tocca «La tua auto» sulla mappa. La posizione resta solo su questo telefono.</p></div>
       ${a.nota && !d.nota ? `<div class="fg-nota"><span class="muted small">La tua nota</span><b>${esc(a.nota)}</b></div>` : ''}
-      ${blocchiScadenza(a, d)}
       ${d.nota ? `<div class="fg-campo"><label for="fg-nota" class="lab">Nota (piano, settore)</label><input id="fg-nota" maxlength="80" value="${esc(a.nota || '')}" autocomplete="off" enterkeyhint="done"><button class="primary" data-fg="nota-ok">${icon('check')}<span>Salva la nota</span></button></div>`
         : `<button class="btn2" data-fg="nota"><span>${a.nota ? 'Modifica la nota' : 'Aggiungi una nota (piano, settore)'}</span></button>`}
       <button class="primary" data-fg="chiudi">${icon('check')}<span>Fatto</span></button>
@@ -824,21 +823,10 @@
         <div class="fg-testa"><div class="eyebrow">La tua auto</div><h2 id="fg-h" tabindex="-1">${esc(a.t)}</h2><div class="muted">Parcheggiata ${esc(quandoAuto(a.ora))} · ${esc(trascorso(Date.now() - a.ora))}</div></div>
         ${m != null ? `<div class="fg-stat"><div><b>${esc(fmtDist(m))}</b><span>dalla tua posizione</span></div>${min ? `<div><b>${esc(min)}</b><span>a piedi</span></div>` : ''}</div>` : ''}
         ${a.nota ? `<div class="fg-nota"><span class="muted small">La tua nota</span><b>${esc(a.nota)}</b></div>` : ''}
-        ${a.scade && a.scade > Date.now() ? `<div class="fg-nota"><span class="muted small">Scadenza della sosta</span><b>Scade alle ${esc(oraDi(a.scade))} · ti avviso alle ${esc(oraDi(a.scade - AVVISO_PRIMA_MIN * 60000))}</b></div>` : ''}
         <button class="primary" data-fg="riporta">${icon('nav')}<span>Riportami all'auto</span></button>
         <button class="btn3 dang" data-fg="togli">Sono ripartito, togli la posizione</button>` };
     }
     return { html: '' };
-  }
-  // «Avvisami prima della scadenza»: solo nell'app Android (sul sito non c'è la notifica locale)
-  function blocchiScadenza(a, d) {
-    if (!NAT() || !LN() || d.nota) return '';
-    if (a.scade && a.scade > Date.now()) return `<div class="fg-nota" role="status"><span class="muted small">Avviso impostato</span><b>Ti avviso alle ${esc(oraDi(a.scade - AVVISO_PRIMA_MIN * 60000))} (scade alle ${esc(oraDi(a.scade))})</b></div>`;
-    if (!d.scad) return '<button class="btn2" data-fg="scad">Avvisami prima della scadenza</button>';
-    return `<div class="fg-sez"><div class="eyebrow" id="fg-scad-h">Tra quanto scade la sosta?</div>
-      <div class="fg-durate" role="group" aria-labelledby="fg-scad-h"><button class="btn2" data-fg="scad-30">30 minuti</button><button class="btn2" data-fg="scad-60">1 ora</button><button class="btn2" data-fg="scad-120">2 ore</button></div>
-      <div class="fg-campo"><label for="fg-ora" class="lab">Oppure l'ora di scadenza</label><div class="fg-orario"><input id="fg-ora" type="time"><button class="btn2" data-fg="scad-ora">Imposta</button></div></div>
-      <p class="muted small">Ti avviso ${AVVISO_PRIMA_MIN} minuti prima.</p></div>`;
   }
   function fgAggiornaAuto() { // la distanza dall'auto cambia mentre cammini: ridisegno il foglio solo se il numero mostrato è cambiato
     if (fgStato !== 'auto') return; const a = autoSalvata(); if (!a || !me) return;
@@ -862,15 +850,7 @@
     if (k === 'cerca') { fgChiudi(); apriRicerca(); return; }
     if (k === 'nota') { d.nota = true; fgMostra('salvata', d, true); const i = $('#fg-nota'); if (i) { i.focus(); i.select(); } return; }
     if (k === 'nota-ok') { const a = autoSalvata(), i = $('#fg-nota'); if (a && i) { a.nota = i.value.trim().slice(0, 80); ls.set('dp.auto', a); } d.nota = false; fgMostra('salvata', d, true); const bt = $('#fg-sheet').querySelector('[data-fg="nota"]'); if (bt) bt.focus(); return; }
-    if (k === 'scad') { d.scad = true; fgMostra('salvata', d, true); const b = $('#fg-sheet').querySelector('[data-fg="scad-30"]'); if (b) b.focus(); return; }
-    if (/^scad-\d+$/.test(k) || k === 'scad-ora') {
-      let fine = 0;
-      if (k === 'scad-ora') { const v = ($('#fg-ora') || {}).value; if (!v) { toast('Scegli prima l\'ora di scadenza.', 3000); return; } const [h, m] = v.split(':').map(Number), t = new Date(); t.setHours(h, m, 0, 0); fine = t.getTime(); if (fine < Date.now()) { toast('Quell\'ora è già passata: scegli un\'ora di oggi.', 3500); return; } }
-      else fine = Date.now() + (+k.slice(5)) * 60000;
-      impostaScadenza(fine).then((fatto) => { if (fgStato !== 'salvata') return; if (fatto) { d.scad = false; $('#fg-live').textContent = `Avviso impostato per le ${oraDi(fine - AVVISO_PRIMA_MIN * 60000)}`; } fgMostra('salvata', d, true); });
-      return;
-    }
-    if (k === 'togli') { cancellaScadenza(); ls.set('dp.auto', null); disegnaAuto(); fgChiudi(); toast('Posizione dell\'auto eliminata.'); return; }
+    if (k === 'togli') { ls.set('dp.auto', null); disegnaAuto(); fgChiudi(); toast('Posizione dell\'auto eliminata.'); return; }
     if (k === 'riporta') { const a = autoSalvata(); if (a) apri(`https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}&travelmode=walking`); }
   });
   $('#fg').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'fg-nota') { e.preventDefault(); const b = $('#fg-sheet').querySelector('[data-fg="nota-ok"]'); if (b) b.click(); } });
@@ -942,15 +922,15 @@
   disegnaAuto();
   window.DPArrivo = { navigazioneAvviata, arrivatoVicino, ritornoLontano, esito, controllaRitorno, apriAuto };
 
-  // ---------- solo app Android: avviso all'arrivo e scadenza della sosta ----------
+  // ---------- solo app Android: avviso all'arrivo ----------
   // Sul sito (senza Capacitor) niente di tutto questo si attiva. Plugin: @capacitor-community/background-geolocation (posizione mentre
   // l'app è in secondo piano, con servizio in primo piano di tipo "location": serve solo il permesso "mentre usi l'app") e
-  // @capacitor/local-notifications (notifica all'arrivo con due azioni, avviso di scadenza).
+  // @capacitor/local-notifications (notifica all'arrivo con due azioni).
   // Le azioni della notifica richiamano i punti di aggancio qui sopra (esito, controllaRitorno).
   const NAT = () => SITO_NATIVO();
   const LN = () => plug('LocalNotifications');
   const plug = (n) => { const cap = window.Capacitor; try { return (NAT() && ((cap.Plugins && cap.Plugins[n]) || (cap.registerPlugin && cap.registerPlugin(n)))) || null; } catch (e) { return null; } };
-  const ID_ARRIVO = 41, ID_SCADENZA = 42, ASCOLTO_MAX_MS = 60 * 60000, AVVISO_PRIMA_MIN = 10;
+  const ID_ARRIVO = 41, ASCOLTO_MAX_MS = 60 * 60000;
   let ascolto = null; // { id, timer, ora }
   const fuoriPronta = (f) => { const t = setInterval(() => { if (pronta) { clearInterval(t); f(); } }, 200); setTimeout(() => clearInterval(t), 20000); };
 
@@ -972,7 +952,6 @@
     const L = LN(); if (!L) return false;
     try {
       await L.createChannel({ id: 'arrivo', name: 'Arrivo al posto', description: 'Ti avvisa quando sei vicino al posto riservato', importance: 4, visibility: 1, vibration: true });
-      await L.createChannel({ id: 'scadenza', name: 'Scadenza della sosta', description: 'Ti avvisa prima che scada la sosta', importance: 4, visibility: 1, vibration: true });
       await L.registerActionTypes({ types: [{ id: 'ARRIVO', actions: [{ id: 'parcheggiato', title: 'Ho parcheggiato' }, { id: 'occupato', title: 'Occupato' }] }] });
       return true;
     } catch (e) { return false; }
@@ -1020,19 +999,6 @@
   }
   if (NAT() && LN()) { try { LN().addListener('localNotificationActionPerformed', azioneNotifica); } catch (e) { /* senza ascolto restano i fogli */ } }
 
-  // avviso prima della scadenza della sosta: notifica locale 10 minuti prima, una sola per volta
-  const fmtScad = (t) => oraDi(t);
-  async function impostaScadenza(fine) {
-    const a = autoSalvata(); if (!a) return false;
-    if (fine - AVVISO_PRIMA_MIN * 60000 < Date.now() + 60000) { toast('Troppo vicina: scegli una scadenza tra almeno 12 minuti.', 3500); return false; }
-    if (!(await chiediNotifiche('Per avvisarti prima che scada la sosta, SostAbile ha bisogno del permesso di mostrarti notifiche.'))) { toast('Senza il permesso per le notifiche non posso avvisarti.', 3500); return false; }
-    await preparaNotifiche(); await annullaNotifica(ID_SCADENZA);
-    try {
-      await LN().schedule({ notifications: [{ id: ID_SCADENZA, title: 'La sosta sta per scadere', body: `Scade alle ${fmtScad(fine)}: hai ancora ${AVVISO_PRIMA_MIN} minuti. La tua auto è in ${a.t}.`, channelId: 'scadenza', schedule: { at: new Date(fine - AVVISO_PRIMA_MIN * 60000), allowWhileIdle: true } }] });
-    } catch (e) { toast('Non sono riuscito a programmare l\'avviso.', 3500); return false; }
-    const c = autoSalvata(); if (c) { c.scade = fine; ls.set('dp.auto', c); } return true;
-  }
-  const cancellaScadenza = () => { if (NAT()) annullaNotifica(ID_SCADENZA); };
 
   // ---------- ricerca per tipo di luogo (in aggiunta alla ricerca per indirizzo) ----------
   // Categorie della Search API di TomTom (categorySearch / poiSearch), verificate con chiamate reali su Udine, Milano, Trieste, Roma.
