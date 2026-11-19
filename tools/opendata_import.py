@@ -212,8 +212,12 @@ def modena():  # il server di Modena chiude le connessioni da qui: uso lo zip sc
         yield rec('Modena', int(f['GID']), la, lo, 1, via(f.get('NOME_VIA'), int(f['CIVICO']) if f.get('CIVICO') else None, f.get('ESPONENTE')), '')
 
 
+def latina():  # risposta del Comune a un accesso civico (novembre 2026): rilievo PUMS in shapefile + ordinanze; già elaborati in data/opendata/
+    return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'latina_accesso_civico_2026.json'), encoding='utf-8'))
+
+
 FONTI = {'bologna': bologna, 'firenze': firenze, 'trento': trento, 'cesena': cesena, 'ferrara': ferrara, 'siena': siena, 'livorno': livorno,
-         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena}
+         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena, 'latina': latina}
 
 
 def sb(method, path, key, body=None, prefer='return=minimal'):
