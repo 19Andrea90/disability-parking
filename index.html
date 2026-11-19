@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>SostAbile</title>
-<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=ba139f88">
-<link rel="stylesheet" href="mobile/www/app.css?v=ba139f88">
+<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=5e888570">
+<link rel="stylesheet" href="mobile/www/app.css?v=5e888570">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -241,6 +241,16 @@
   </div>
 </div>
 
+<!-- Frase di spiegazione prima del permesso per le notifiche (solo app Android) -->
+<div id="velo-n" class="velo" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vn-h">
+    <h2 id="vn-h" tabindex="-1">Vuoi un avviso?</h2>
+    <p id="vn-p"></p>
+    <button class="bp" id="vn-si">Continua</button>
+    <button class="bl" id="vn-no">Non ora</button>
+  </div>
+</div>
+
 <!-- Invito a lasciare una recensione (solo app Android) -->
 <div id="voto" class="velo" hidden>
   <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="v-t">
@@ -306,9 +316,9 @@
   </div>
 </div>
 
-<script src="mobile/www/vendor/maplibre-gl.js?v=ba139f88"></script>
-<script src="mobile/www/chiavi.js?v=ba139f88"></script>
-<script src="mobile/www/app.js?v=ba139f88"></script>
-<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web ba139f88'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
+<script src="mobile/www/vendor/maplibre-gl.js?v=5e888570"></script>
+<script src="mobile/www/chiavi.js?v=5e888570"></script>
+<script src="mobile/www/app.js?v=5e888570"></script>
+<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web 5e888570'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
 </body>
 </html>

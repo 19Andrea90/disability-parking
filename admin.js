@@ -56,6 +56,7 @@
         ${card('Usano davvero l\'app (7 giorni)', pct(d.navigatori_7g, d.attivi_7g), `hanno avviato il navigatore: ${fmt(d.navigatori_7g)} su ${fmt(d.attivi_7g)}`)}
         ${card('Segnalazioni nuove (24 h)', fmt(d.segnalazioni_24h), `da approvare: ${fmt(d.segnalazioni_da_vedere)}`)}
         ${card('Conferme sul posto (24 h)', fmt(d.conferme_24h), `"non c'è più" in 7 giorni: ${fmt(d.non_esiste_7g)}`)}
+        ${d.parcheggiati_7g == null ? '' : card('Arrivati al posto (7 giorni)', fmt(d.parcheggiati_7g), `hanno parcheggiato: ${fmt(d.parcheggiati_7g)} · trovato occupato: ${fmt(d.occupati_7g)}`)}
         ${card('Posti aperti (24 h)', fmt(d.schede_24h), `Street View 7 g: ${fmt(d.streetview_7g)} · condivisi: ${fmt(d.condivisioni_7g)} · salvati: ${fmt(d.salvati_7g)}`)}
         ${card('Suggerimenti da leggere', fmt(d.suggerimenti_nuovi), '<a href="#sug-box" onclick="document.getElementById(\'sug-box\').open=true">apri l\'elenco</a>')}
         ${card('Errori dell\'app (24 h)', fmt(d.errori_24h), `su ${fmt(d.errori_telefoni_24h)} telefoni · <a href="#err-box" onclick="document.getElementById('err-box').open=true">vedi</a>`)}
