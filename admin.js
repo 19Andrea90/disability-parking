@@ -245,7 +245,7 @@
     // ---- barra dei filtri ----
     const periodo = PERIODI.map(([k, l]) => `<button type="button" class="btn sm" data-p="${k}" aria-pressed="${SF.p === k}">${l}</button>`).join('');
     const pers = SF.p === 'pers' ? `<div class="sf-date"><label>Dal <input type="date" id="sf-dal" value="${esc(SF.dal)}" max="${t}"></label><label>Al <input type="date" id="sf-al" value="${esc(SF.al)}" max="${t}"></label></div>` : '';
-    const filtri = `<div class="sf-bar" role="group" aria-label="Filtri delle statistiche">
+    const filtri = `<h3 class="sec-h">Come viene usata l'app</h3><div class="sf-bar" role="group" aria-label="Filtri delle statistiche">
       <div class="sf-gr"><span class="sf-lab" id="sf-lp">Periodo</span><div class="sf-seg" role="group" aria-labelledby="sf-lp">${periodo}</div>${pers}</div>
       <div class="sf-gr"><label class="sf-lab" for="sf-pl">Piattaforma</label><select id="sf-pl">${PIATT.map(([k, l]) => `<option value="${k}"${SF.pl === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
       <label class="sf-sw"><input type="checkbox" id="sf-reali"${SF.reali ? ' checked' : ''}><span>Escludi test e robot</span></label>
