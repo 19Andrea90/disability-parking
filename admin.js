@@ -15,7 +15,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const sb = window.supabase.createClient(C.SUPABASE_URL, C.SUPABASE_ANON_KEY);
   const TIPO = { generico: 'Generico', personalizzato: 'Personalizzato', sconosciuto: 'Sconosciuto' };
-  let rows = [], filter = 'utenti', sel = null, nuovaPos = null, map, layer, markers = new Map();
+  let rows = [], filter = 'utenti', sel = null, nuovaPos = null, sposto = false, cerca = '', map, layer, markers = new Map();
 
   // ---------- auth ----------
   async function session() { const { data } = await sb.auth.getSession(); return data.session; }
@@ -222,13 +222,17 @@
     $('#kpi').innerHTML = [['Segnalazioni utenti', rows.filter((r) => r.fonte === 'utente' && r.stato === 'proposto').length], ['Da approvare', n('proposto')], ['Verificati', n('verificato')], ['Ufficiali', n('ufficiale')], ['Con "non esiste"', rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato').length], ['Totale attivi', rows.filter((r) => ['proposto', 'verificato', 'ufficiale'].includes(r.stato)).length]].map((k) => `<div>${k[0]}<b>${k[1]}</b></div>`).join('');
   }
   document.querySelectorAll('.tabs .btn').forEach((b) => b.onclick = () => { document.querySelectorAll('.tabs .btn').forEach((x) => x.classList.remove('active')); b.classList.add('active'); filter = b.dataset.f; render(); });
-  function visible() { return filter === 'utenti' ? rows.filter((r) => r.fonte === 'utente' && r.stato === 'proposto') : filter === 'segnalati' ? rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato') : rows.filter((r) => r.stato === filter); }
+  const norm = (x) => (x || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  let qT; $('#q-st').addEventListener('input', (e) => { clearTimeout(qT); qT = setTimeout(() => { cerca = norm(e.target.value); sel = null; render(); }, 250); });
+  function visible() { const v = visibleTab(); if (!cerca) return v; const parole = cerca.split(' '); // tutte le parole cercate devono comparire in indirizzo, nome o comune
+    return v.filter((r) => { const t = ' ' + norm([r.indirizzo, r.nome, r.comune].join(' ')) + ' '; return parole.every((w) => t.includes(w)); }); }
+  function visibleTab() { return filter === 'utenti' ? rows.filter((r) => r.fonte === 'utente' && r.stato === 'proposto') : filter === 'segnalati' ? rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato') : rows.filter((r) => r.stato === filter); }
   function render() {
-    const v = visible();
+    const v = visible(); $('#q-n').textContent = cerca ? (v.length === 1 ? '1 trovato' : v.length + ' trovati') + ' in questa scheda' : '';
     $('#rows').innerHTML = v.length ? v.slice(0, 300).map((r) => `<div class="row-item${sel && sel.id === r.id ? ' sel' : ''}" data-id="${r.id}">
       <div><div class="n">${esc(r.nome || r.indirizzo || TIPO[r.tipo])} · ${r.posti} ${r.posti > 1 ? 'posti' : 'posto'}</div>
       <div class="s">${TIPO[r.tipo]} · ${r.comune || '—'} · ${r.fonte} · ${new Date(r.created_at).toLocaleDateString('it-IT')}${r.conferme_esiste ? ` · ✓${r.conferme_esiste}` : ''}${r.conferme_non_esiste ? ` · ✗${r.conferme_non_esiste}` : ''}${r.foto_url ? ' · 📷' : ''}</div></div>
-      <div class="s">${r.stato}</div></div>`).join('') : `<div class="empty">${filter === 'utenti' ? 'Nessuna segnalazione degli utenti da controllare.' : 'Niente qui.'}</div>`;
+      <div class="s">${r.stato}</div></div>`).join('') : `<div class="empty">${filter === 'utenti' ? 'Nessuna segnalazione degli utenti da controllare.' : cerca ? 'Nessuno stallo trovato in questa scheda. Prova un\'altra scheda (es. Verificati) o meno parole.' : 'Niente qui.'}</div>`;
     if (v.length && !sel && v.length <= 2000) map.fitBounds(v.map((r) => [r.lat, r.lon]), { padding: [20, 20], maxZoom: 15 });
     drawPins();
   }
@@ -238,8 +242,8 @@
     for (const r of visible()) {
       const isSel = sel && sel.id === r.id;
       if (!isSel && (!b.contains([r.lat, r.lon]) || n >= 1500)) continue; n++;
-      const m = L.marker(isSel && nuovaPos ? nuovaPos : [r.lat, r.lon], { icon: icon(r, isSel), draggable: isSel, zIndexOffset: isSel ? 1000 : 0 }); m.on('click', () => select(r.id));
-      if (isSel) m.on('dragend', () => { const p = m.getLatLng(); nuovaPos = [+p.lat.toFixed(6), +p.lng.toFixed(6)]; mostraSposta(); }); // il pin selezionato si trascina nel punto giusto
+      const m = L.marker(isSel && nuovaPos ? nuovaPos : [r.lat, r.lon], { icon: icon(r, isSel), draggable: isSel && sposto, zIndexOffset: isSel ? 1000 : 0 }); m.on('click', () => select(r.id));
+      if (isSel && sposto) m.on('dragend', () => { const p = m.getLatLng(); nuovaPos = [+p.lat.toFixed(6), +p.lng.toFixed(6)]; mostraSposta(); }); // il pin selezionato si trascina nel punto giusto
       layer.addLayer(m); markers.set(r.id, m);
     }
   }
@@ -247,7 +251,7 @@
 
   // ---------- modifica ----------
   function select(id) {
-    sel = rows.find((r) => r.id === id); if (!sel) return; nuovaPos = null;
+    sel = rows.find((r) => r.id === id); if (!sel) return; nuovaPos = null; sposto = false;
     render(); map.setView([sel.lat, sel.lon], Math.max(map.getZoom(), 17));
     const s = sel;
     $('#edit').innerHTML = `
@@ -276,9 +280,9 @@
         <button class="btn danger" data-st="rifiutato">✗ Rifiuta</button>
         <button class="btn danger" data-st="rimosso">Rimosso dalla strada</button>
         <button class="btn" id="e-save">Salva modifiche</button>
+        <button class="btn" id="e-move">📍 Riposiziona sulla mappa</button>
       </div>
-      <div class="sub">Per spostare il posto trascina il suo pin sulla mappa (ingrandisci o usa la vista satellite per essere precisi).</div>
-      <div class="sposta" id="e-sposta" hidden><span id="e-sposta-t"></span><button class="btn primary" id="e-sposta-ok">Salva nuova posizione</button><button class="btn" id="e-sposta-no">Annulla</button></div>
+      <div class="sposta" id="e-sposta" hidden><span id="e-sposta-t"></span><button class="btn primary" id="e-sposta-ok" disabled>Salva nuova posizione</button><button class="btn" id="e-sposta-no">Annulla</button></div>
       <div class="sub" id="e-msg"></div>`;
     $('#edit').querySelectorAll('[data-st]').forEach((b) => b.onclick = () => {
       const extra = { stato: b.dataset.st };
@@ -289,12 +293,17 @@
       save(extra);
     });
     $('#e-save').onclick = () => save({});
-    $('#e-sposta-ok').onclick = async () => { if (!nuovaPos) return; const ok = await save({ lat: nuovaPos[0], lon: nuovaPos[1] }); if (ok) { nuovaPos = null; select(sel.id); } };
-    $('#e-sposta-no').onclick = () => { nuovaPos = null; $('#e-sposta').hidden = true; drawPins(); };
+    $('#e-move').onclick = () => { // modalità sposta: la mappa va vicinissima al pin, il pin si può trascinare, poi Salva
+      sposto = true; nuovaPos = null; $('#e-move').hidden = true; $('#e-sposta').hidden = false; $('#e-sposta-ok').disabled = true;
+      $('#e-sposta-t').textContent = 'Trascina il pin nel punto giusto (puoi usare la vista satellite), poi premi Salva.';
+      map.setView([sel.lat, sel.lon], 19); drawPins(); $('#amap').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    $('#e-sposta-ok').onclick = async () => { if (!nuovaPos) return; const ok = await save({ lat: nuovaPos[0], lon: nuovaPos[1] }); if (ok) { nuovaPos = null; sposto = false; select(sel.id); $('#e-msg').textContent = 'Posizione salvata ' + new Date().toLocaleTimeString('it-IT'); } };
+    $('#e-sposta-no').onclick = () => { nuovaPos = null; sposto = false; $('#e-sposta').hidden = true; $('#e-move').hidden = false; drawPins(); };
   }
   function mostraSposta() {
     const d = Math.round(L.latLng(sel.lat, sel.lon).distanceTo(nuovaPos));
-    $('#e-sposta-t').textContent = `Nuova posizione: ${nuovaPos[0].toFixed(6)}, ${nuovaPos[1].toFixed(6)} (spostato di ${d} m)`; $('#e-sposta').hidden = false;
+    $('#e-sposta-t').textContent = `Nuova posizione: ${nuovaPos[0].toFixed(6)}, ${nuovaPos[1].toFixed(6)} (spostato di ${d} m)`; $('#e-sposta').hidden = false; $('#e-sposta-ok').disabled = false;
   }
   function formValues() {
     const seg = $('#e-seg').value;

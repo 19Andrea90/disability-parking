@@ -16,6 +16,7 @@ body{overflow:auto;background:var(--bg)}
 .bar .sp{flex:1}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .tabs .btn{padding:9px 12px;min-height:40px}
+.cerca-st{display:flex;gap:10px;align-items:center;margin-bottom:12px}.cerca-st input{flex:1;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg)}.cerca-st .s{color:var(--mut,#666);font-size:13px;white-space:nowrap}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media (max-width:820px){.grid{grid-template-columns:1fr}}
 #amap{height:380px;border-radius:16px;position:relative;inset:auto}
@@ -132,6 +133,7 @@ body{overflow:auto;background:var(--bg)}
       <button class="btn" data-f="rifiutato">Rifiutati</button>
       <button class="btn" data-f="segnalati">Con "non esiste"</button>
     </div>
+    <div class="cerca-st"><input type="search" id="q-st" placeholder="Cerca per indirizzo, nome o comune (es. via Roma 12 Udine)" autocomplete="off" aria-label="Cerca uno stallo per indirizzo"><span class="s" id="q-n"></span></div>
     <div class="grid">
       <div>
         <div id="amap"></div>
@@ -157,6 +159,6 @@ body{overflow:auto;background:var(--bg)}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js?v=0.9.0"></script>
-<script src="admin.js?v=0.9.1"></script>
+<script src="admin.js?v=0.9.2"></script>
 </body>
 </html>
