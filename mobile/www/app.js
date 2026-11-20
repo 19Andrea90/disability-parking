@@ -277,7 +277,7 @@
     const imp = (id, v) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v); };
     baseVis.forEach(([id, v]) => imp(id, sat ? 'none' : v)); (satIds || []).forEach((id) => imp(id, sat ? 'visible' : 'none'));
     $('#map').classList.toggle('sat', sat); document.body.classList.toggle('sat', sat);
-    const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { const ap = sat && LARGO(); at.classList.toggle('maplibregl-compact-show', ap); if (ap) at.setAttribute('open', ''); else at.removeAttribute('open'); } // sul computer i crediti Esri partono aperti, sul telefono chiusi nella «i»
+    const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { at.classList.remove('maplibregl-compact-show'); at.removeAttribute('open'); } // i crediti restano chiusi nella «i» anche con la vista satellitare, come sulla mappa stradale
     btnSat.hidden = !chiaveEsri || satKO; btnSat.setAttribute('aria-pressed', String(sat)); btnSat.setAttribute('aria-label', 'Vista satellitare, ' + (sat ? 'attiva' : 'non attiva'));
   }
   function satErrore() { // chiave scaduta, quota finita o servizio giù: si torna da soli alla mappa stradale, senza riprovare fino al prossimo avvio
