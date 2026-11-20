@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>SostAbile</title>
-<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=bf1d209b">
-<link rel="stylesheet" href="mobile/www/app.css?v=bf1d209b">
+<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=6ec65b4a">
+<link rel="stylesheet" href="mobile/www/app.css?v=6ec65b4a">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -22,6 +22,7 @@
     <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-5 8-5s6.5 1 8 5"/></symbol>
     <symbol id="i-nav" viewBox="0 0 24 24"><path d="M21 3L3 10.5l7.5 3L13.5 21z"/></symbol>
     <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 16.5 9 5 9-5"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
@@ -79,7 +80,10 @@
 <div id="home">
   <div class="float">
     <button id="b-add" class="pill"><svg class="ic"><use href="#i-plus"/></svg><span>Segnala un posto</span></button>
-    <button id="b-me" class="round" aria-label="Centra la mappa sulla mia posizione"><svg class="ic"><use href="#i-locate"/></svg></button>
+    <div class="dx">
+      <button id="b-sat" class="round" aria-pressed="false" aria-label="Vista satellitare, non attiva" hidden><svg class="ic"><use href="#i-layers"/></svg></button>
+      <button id="b-me" class="round" aria-label="Centra la mappa sulla mia posizione"><svg class="ic"><use href="#i-locate"/></svg></button>
+    </div>
   </div>
   <section id="near" class="sheet" aria-label="Posti vicini">
     <button class="handle" aria-label="Mostra più posti vicini" aria-expanded="false"></button>
@@ -316,9 +320,9 @@
   </div>
 </div>
 
-<script src="mobile/www/vendor/maplibre-gl.js?v=bf1d209b"></script>
-<script src="mobile/www/chiavi.js?v=bf1d209b"></script>
-<script src="mobile/www/app.js?v=bf1d209b"></script>
-<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web bf1d209b'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
+<script src="mobile/www/vendor/maplibre-gl.js?v=6ec65b4a"></script>
+<script src="mobile/www/chiavi.js?v=6ec65b4a"></script>
+<script src="mobile/www/app.js?v=6ec65b4a"></script>
+<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web 6ec65b4a'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
 </body>
 </html>
