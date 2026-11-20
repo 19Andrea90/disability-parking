@@ -469,3 +469,29 @@ body.sat .me{background:rgba(255,255,255,.3)}
 #recupero,#nuova{z-index:45}
 #x-tit:focus,#re-tit:focus,#n-tit:focus{outline:none}
 .sug .reg{font-size:14px;color:var(--muted)}
+
+/* i tuoi posti riorganizzato: sezioni, elenchi raggruppati, il mio account */
+#m-body,#ac-body{gap:20px}
+#ac-body{display:flex;flex-direction:column}
+.sez{display:flex;flex-direction:column;gap:10px}
+.sez h2{margin:0;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sez h2~h2{margin-top:6px}
+.chi.btn{width:100%;min-height:72px;padding:10px 14px;border:1px solid var(--bordo);border-radius:18px;text-align:left}
+.chi .chev,.rg .chev{width:18px;height:18px;flex:none;color:var(--muted)}
+.acc h2.b{margin:0}
+.grp{display:flex;flex-direction:column;border:1px solid var(--bordo);border-radius:16px;overflow:hidden}
+.grp>*{border-top:1px solid var(--line)}.grp>:first-child{border-top:0}
+.grp .riga{padding-left:12px;min-height:60px}
+.grp .riga .apri{min-height:60px}
+.grp .vaip{border:0;border-radius:0;min-height:60px;font-size:16px}
+.rg{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:6px 14px;text-align:left;font-size:16px;font-weight:600}
+.rg>.ic{width:20px;height:20px;flex:none;color:var(--blu)}
+.rg .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rg .t b{font-size:16px}
+.rg .t span{font-size:13px;font-weight:400;color:var(--muted)}
+.rg .mk{width:40px;height:40px;flex:none;border-radius:12px;background:var(--giallo);color:var(--giallo-ink);display:grid;place-items:center}
+.rg.tutti{justify-content:center;min-height:48px;background:var(--soft);font-size:15px;color:var(--blu)}
+.grp .rg.int{font-size:14px;font-weight:400;color:var(--muted);text-decoration:underline;min-height:48px}
+.zona{display:flex;flex-direction:column;gap:10px;margin-top:8px;padding-top:20px;border-top:1px solid var(--line)}
+.dng{height:56px;border:2px solid #b3261e;border-radius:16px;background:var(--panel);color:#b3261e;font-size:17px;font-weight:700}
+.zona p{margin:0;font-size:13px;line-height:1.4;color:var(--muted);text-align:center}

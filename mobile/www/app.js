@@ -524,7 +524,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (fgStato) fgChiudi(); else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (fgStato) fgChiudi(); else if (!$('#nuova').hidden) $('#nuova').hidden = true; else if (!$('#elimina').hidden) $('#elimina').hidden = true; else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#account').hidden) chiudiAccount(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (fgStato) fgChiudi(); else chiudiScheda(true); } });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -1312,7 +1312,9 @@
       if (si && !eInterno()) { ls.set('dp.interno', 1); traccia('attivo'); }
     } catch (e) { /* si riprova alla prossima apertura */ }
   }
-  function entra2(j) { sessione = { token: j.access_token, refresh: j.refresh_token, scade: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sessione && sessione.email) || '' }; ls.set('dp.sessione', sessione); }
+  // come si accede: 'google' se l'account ha solo Google (niente password), 'email' se ha anche la password; '' se non si sa
+  const provDa = (u) => { const m = (u && u.app_metadata) || {}, p = Array.isArray(m.providers) && m.providers.length ? m.providers : m.provider ? [m.provider] : []; return !p.length ? '' : p.includes('email') ? 'email' : p[0]; };
+  function entra2(j) { sessione = { token: j.access_token, refresh: j.refresh_token, scade: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sessione && sessione.email) || '', prov: provDa(j.user) || (sessione && sessione.prov) || '' }; ls.set('dp.sessione', sessione); }
   // i telefoni usati con questo account: servono a ritrovare le proprie segnalazioni anche da un telefono nuovo
   const dispositivi = (altri) => [...new Set([deviceId, ...ls.get('dp.dispositivi', []), ...(altri || [])])].slice(0, 20);
   const pacchetto = () => ({ salvati: [...salvati.values()], luoghi: luoghi(), profilo: profilo(), dispositivi: dispositivi(), agg: ls.get('dp.agg', 0) });
@@ -1323,7 +1325,7 @@
   function toccato() { ls.set('dp.agg', Date.now()); if (!sessione) return; clearTimeout(sincT); sincT = setTimeout(() => { aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }).catch(() => {}); }, 1200); }
   async function allinea() { // dopo l'accesso: vince la copia più recente tra telefono e account
     try {
-      const r = await aut('/auth/v1/user'); if (!r.ok) return; const u = await r.json(), remoto = (u.user_metadata || {}).dp;
+      const r = await aut('/auth/v1/user'); if (!r.ok) return; const u = await r.json(), remoto = (u.user_metadata || {}).dp; if (provDa(u) && sessione && sessione.prov !== provDa(u)) { sessione.prov = provDa(u); ls.set('dp.sessione', sessione); }
       const nuovoQui = !remoto || !(remoto.dispositivi || []).includes(deviceId); if (remoto) ls.set('dp.dispositivi', dispositivi(remoto.dispositivi));
       const locale = pacchetto(), vuoto = !locale.salvati.length && !Object.keys(locale.luoghi).length && !locale.profilo.scadenza;
       if (remoto && (vuoto || (remoto.agg || 0) > locale.agg)) { applica(remoto); if (nuovoQui) await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); } else if (!vuoto) { ls.set('dp.agg', locale.agg || Date.now()); await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); }
@@ -1365,7 +1367,7 @@
     const h = new URLSearchParams(String(href).split('#')[1] || ''), at = h.get('access_token');
     if (!at) { if (h.get('error')) toast('Accesso con Google non riuscito. Riprova.'); return false; }
     let email = ''; try { email = JSON.parse(atob(at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch (e) { /* email non leggibile */ }
-    entra2({ access_token: at, refresh_token: h.get('refresh_token'), expires_in: +h.get('expires_in') || 3600, user: { email } });
+    entra2({ access_token: at, refresh_token: h.get('refresh_token'), expires_in: +h.get('expires_in') || 3600, user: { email, app_metadata: { provider: 'google' } } });
     traccia('accesso', { dettaglio: 'google' }); ls.set('dp.google', 0); controllaAdmin();
     try { await allinea(); } catch (e) { /* si riallinea alla prossima modifica */ }
     if (!$('#menu').hidden) menu(); toast('Accesso fatto. I tuoi posti ora ti seguono.'); return true;
@@ -1393,7 +1395,9 @@
       setTimeout(() => { btn.disabled = false; }, 8000);
     } catch (e) { msg.textContent = 'Non riesco a mandare la richiesta. Controlla la connessione e riprova.'; btn.disabled = false; }
   };
-  function apriNuova(scaduto) {
+  let cambioPw = false; // true: la schermata serve a cambiare la password con l'accesso già fatto (da "Il mio account"), non dopo il link di recupero
+  function apriNuova(scaduto, cambio) {
+    cambioPw = !!cambio; $('#n-annulla').hidden = !cambio;
     $('#n-form').hidden = !!scaduto; $('#n-scaduto').hidden = !scaduto; $('#n-msg').textContent = ''; $('#n-go').disabled = false;
     ['#n-p1', '#n-p2'].forEach((q) => { $(q).value = ''; nascondiPass($(q)); });
     $('#nuova').hidden = false; $('#n-tit').focus({ preventScroll: true });
@@ -1406,24 +1410,28 @@
   }
   $('#n-nuovo').onclick = () => { $('#nuova').hidden = true; apriRecupero(''); };
   $('#n-chiudi').onclick = () => { $('#nuova').hidden = true; };
+  $('#n-annulla').onclick = () => { $('#nuova').hidden = true; cambioPw = false; };
   $('#n-go').onclick = async () => {
-    const btn = $('#n-go'), msg = $('#n-msg'), p1 = $('#n-p1').value, p2 = $('#n-p2').value; if (!recTok || btn.disabled) return;
+    const btn = $('#n-go'), msg = $('#n-msg'), p1 = $('#n-p1').value, p2 = $('#n-p2').value; if ((!recTok && !cambioPw) || btn.disabled) return;
     const manca = passMancante(p1);
     if (manca.length) { msg.textContent = 'Alla password manca: ' + manca.join(', ') + '.'; $('#n-p1').focus(); return; }
     if (p1 !== p2) { msg.textContent = 'Le due password non coincidono.'; $('#n-p2').focus(); return; }
     btn.disabled = true; msg.textContent = 'Un momento…';
     try {
-      const r = await fetch(`${CFG.SB}/auth/v1/user`, { method: 'PUT', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + recTok.at }, body: JSON.stringify({ password: p1 }) });
+      const r = cambioPw ? await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: p1 }) }) : await fetch(`${CFG.SB}/auth/v1/user`, { method: 'PUT', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + recTok.at }, body: JSON.stringify({ password: p1 }) });
       const j = await r.json().catch(() => ({})), m = String(j.msg || j.message || j.error_description || '').toLowerCase();
+      if (cambioPw && (r.status === 401 || r.status === 403 || /expired|invalid jwt|invalid token/.test(m))) { msg.textContent = 'La sessione è scaduta: esci, accedi di nuovo e riprova.'; btn.disabled = false; return; }
+      if (cambioPw && /reauth|nonce/.test(m)) { msg.textContent = 'Per sicurezza esci, accedi di nuovo e riprova.'; btn.disabled = false; return; }
       if (r.status === 401 || r.status === 403 || /expired|invalid jwt|invalid token/.test(m)) { recTok = null; apriNuova(true); return; }
       if (!r.ok) { msg.textContent = /different|same/.test(m) ? 'La nuova password deve essere diversa da quella attuale.' : r.status === 429 ? 'Troppi tentativi. Riprova tra qualche minuto.' : /password/.test(m) ? `La password deve avere almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.` : 'Non riesco a cambiare la password. Riprova.'; btn.disabled = false; return; }
+      if (cambioPw) { cambioPw = false; $('#nuova').hidden = true; $('#n-p1').value = ''; $('#n-p2').value = ''; toast('Password cambiata', 4000); return; }
       let email = j.email || ''; if (!email) try { email = JSON.parse(atob(recTok.at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch (e) { /* email non leggibile */ }
       entra2({ access_token: recTok.at, refresh_token: recTok.rt, expires_in: recTok.exp, user: { email } }); recTok = null;
       traccia('accesso', { dettaglio: 'recupero_password' }); controllaAdmin();
       $('#nuova').hidden = true; $('#n-p1').value = ''; $('#n-p2').value = ''; chiudiRecupero(); toast('Password cambiata', 4000);
       try { await allinea(); } catch (e) { /* si riallinea alla prossima modifica */ }
       if (!$('#menu').hidden) menu();
-    } catch (e) { msg.textContent = 'Non riesco a cambiare la password. Controlla la connessione e riprova.'; btn.disabled = false; }
+    } catch (e) { msg.textContent = /sessione scaduta/.test(String(e && e.message)) ? 'La sessione è scaduta: esci, accedi di nuovo e riprova.' : 'Non riesco a cambiare la password. Controlla la connessione e riprova.'; btn.disabled = false; }
   };
   if (/access_token=|error_description=|error_code=/.test(location.hash)) { const h = location.hash; history.replaceState(null, '', location.pathname + location.search); setTimeout(() => { if (!daRecupero(h)) daGoogle(h); }, 300); }
   (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App; if (A) A.addListener('appUrlOpen', (e) => { if (e && e.url && e.url.indexOf('it.disabilityparking.app://login') === 0) daGoogle(e.url); }); })();
@@ -1470,7 +1478,7 @@
     try {
       const r = await aut('/rest/v1/rpc/elimina_mio_account', { method: 'POST', body: '{}' });
       if (!r.ok) throw new Error('http ' + r.status);
-      traccia('account_eliminato'); pulisciAccount(); chiudiElimina(); menu(); toast('Account eliminato', 4000);
+      traccia('account_eliminato'); pulisciAccount(); chiudiElimina(); $('#account').hidden = true; formAperto = false; accessoAperto = false; menu(); toast('Account eliminato', 4000);
     } catch (err) {
       $('#x-msg').textContent = /sessione scaduta/.test(String(err && err.message)) ? 'La sessione è scaduta: esci, accedi di nuovo e riprova.' : 'Non è stato possibile eliminare l\'account, scrivi a info@sostabile.it';
       btn.disabled = $('#x-conf').value.trim().toUpperCase() !== 'ELIMINA';
@@ -1478,32 +1486,57 @@
   };
 
   // ---------- schermata 7 · i tuoi posti ----------
-  let formAperto = false, toccoVers = 0, toccoVersT = 0;
-  function apriMenu() { formAperto = false; $('#menu').hidden = false; menu(); }
+  let formAperto = false, accessoAperto = false, toccoVers = 0, toccoVersT = 0;
+  function apriMenu() { formAperto = false; accessoAperto = false; $('#menu').hidden = false; menu(); }
+  const sez = (id, tit, corpo) => `<section class="sez" aria-labelledby="${id}"><h2 id="${id}">${tit}</h2>${corpo}</section>`;
+  const dataIt = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
   function menu(msg) {
-    const l = luoghi(), v = [...salvati.values()];
+    const l = luoghi(), v = [...salvati.values()], PRIMI = 3;
+    const login = formAperto
+      ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><span class="pw"><input id="a-pass" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="a-reg"><button type="button" class="occhio" aria-label="Mostra password" aria-pressed="false" aria-controls="a-pass">${icon('eye')}</button></span><button type="button" class="lnk" data-a="dimenticata">Password dimenticata?</button><p class="reg" id="a-reg">Per un nuovo account: almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.</p><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
+      : accessoAperto
+        ? `${CFG.GOOGLE ? `<button class="bw gg" data-a="google"><span class="g" aria-hidden="true">G</span>Continua con Google</button>` : ''}<button class="${CFG.GOOGLE ? 'bo' : 'bw'}" data-a="form">Usa la tua email</button>${CFG.GOOGLE ? '' : '<p>L\'accesso con Google arriva presto.</p>'}`
+        : '<button class="bw" data-a="accedi">Accedi o crea un account</button>';
     const acc = sessione
-      ? `<div class="chi"><span class="av">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span><button class="bsm" data-a="esci">Esci</button></div>`
-      : `<div class="acc"><div class="b">Accedi per non perderli</div><p>I posti salvati ti seguono se cambi telefono. È facoltativo: l'app funziona anche senza.</p>${formAperto
-        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><span class="pw"><input id="a-pass" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="a-reg"><button type="button" class="occhio" aria-label="Mostra password" aria-pressed="false" aria-controls="a-pass">${icon('eye')}</button></span><button type="button" class="lnk" data-a="dimenticata">Password dimenticata?</button><p class="reg" id="a-reg">Per un nuovo account: almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.</p><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
-        : `${CFG.GOOGLE ? `<button class="bw gg" data-a="google"><span class="g" aria-hidden="true">G</span>Continua con Google</button>` : ''}<button class="${CFG.GOOGLE ? 'bo' : 'bw'}" data-a="form">Usa la tua email</button>${CFG.GOOGLE ? '' : '<p>L\'accesso con Google arriva presto.</p>'}`}</div>`;
+      ? `<button class="chi btn" data-a="account"><span class="av" aria-hidden="true">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>Contrassegno, segnalazioni e sicurezza</span></span>${icon('chev', 'chev')}</button>`
+      : `<div class="acc"><h2 class="b">Ritrova i tuoi posti su ogni telefono</h2><p>Con un account ritrovi Casa, Lavoro e i posti salvati su ogni telefono, ricevi per email l'avviso prima che scada il contrassegno e segui le tue segnalazioni. È facoltativo.</p>${login}</div>`;
     const luogo = (k, nome, ic) => l[k]
-      ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}">Cambia</button><button data-a="togli" data-k="${k}">Togli</button></div></div>`
-      : `<div class="luogo vuoto"><button class="vai" data-a="imposta" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>Imposta l'indirizzo</span></span></button></div>`;
+      ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}" aria-label="Cambia ${nome}">Cambia</button><button data-a="rimuovi" data-k="${k}" aria-label="Rimuovi ${nome}">Rimuovi</button></div></div>`
+      : `<div class="luogo vuoto"><button class="vai" data-a="imposta" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>Imposta</span></span></button></div>`;
+    const riga = (a, ic, t) => `<button class="rg" data-a="${a}">${icon(ic)}<span class="t">${t}</span>${icon('chev', 'chev')}</button>`;
+    const salv = v.length
+      ? `<div class="grp">${v.slice(0, PRIMI).map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('')}${v.length > PRIMI ? '<button class="rg tutti" data-a="tutti">Vedi tutti i salvati</button>' : ''}</div>`
+      : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>';
     $('#m-body').innerHTML = `${acc}
-      <div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>
-      <button class="vaip" data-a="profilo"><span class="mk">${icon('wc')}</span><span class="t">Il mio contrassegno e gli avvisi</span>${icon('chev')}</button>
-      <button class="vaip" data-a="segn"><span class="mk">${icon('plus')}</span><span class="t">Le mie segnalazioni</span>${icon('chev')}</button>
-      <button class="vaip" data-a="regole"><span class="mk">${icon('shield')}</span><span class="t">Regole della sosta con il contrassegno</span>${icon('chev')}</button>
-      <button class="vaip" data-a="sugg"><span class="mk">${icon('idea')}</span><span class="t">Suggerisci un miglioramento</span>${icon('chev')}</button>
-      <button class="vaip" data-a="consiglia"><span class="mk">${icon('share')}</span><span class="t">Consiglia l'app a un amico</span>${icon('chev')}</button>
-      <button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>
-      ${eInterno() ? '<button class="int" data-a="interno-off">Dispositivo interno · tocca per togliere</button>' : ''}
-      <div><div class="eyebrow">Posti salvati</div>${v.length ? v.map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('') : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>'}</div>
-      ${sessione ? `<button class="vaip pericolo" data-a="elimina"><span class="mk">${icon('x')}</span><span class="t">Elimina account</span>${icon('chev')}</button>` : ''}
-      <div class="piede"><button data-a="fonti">Fonti e avvertenze</button></div>
+      ${sez('h-posti', 'Dove vai spesso', `<div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>`)}
+      ${sez('h-salvati', 'Posti salvati' + (v.length ? ' · ' + v.length : ''), salv)}
+      ${sez('h-info', 'Aiuto e informazioni', `<div class="grp">${riga('regole', 'shield', 'Regole della sosta con il contrassegno')}${riga('sugg', 'idea', 'Suggerisci un miglioramento')}${riga('consiglia', 'share', 'Consiglia l\'app a un amico')}${riga('fonti', 'flag', 'Fonti, condizioni e privacy')}</div>`)}
+      ${sez('h-imp', 'Impostazioni', `<div class="grp"><button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>${eInterno() ? '<button class="rg int" data-a="interno-off">Dispositivo interno · tocca per togliere</button>' : ''}</div>`)}
       <div class="vers" data-a="versione">Versione ${esc(window.DP_VERSIONE || '')}</div>`;
   }
+  // ---------- il mio account (solo con l'accesso fatto): contrassegno, segnalazioni, password, esci, elimina ----------
+  function account() {
+    if (!sessione) return;
+    const pr = profilo(), g = pr.scadenza ? giorniA(pr.scadenza) : null;
+    const contr = !pr.scadenza ? 'Aggiungi la scadenza per ricevere un avviso' : `${g < 0 ? 'Scaduto il' : 'Scade il'} ${dataIt(pr.scadenza)}${pr.notifica ? ` · avviso ${pr.giorni} giorni prima` : ''}`;
+    const solo = sessione.prov === 'google';
+    const riga = (a, ic, t, sub, mk) => `<button class="rg" data-a="${a}">${mk ? `<span class="mk">${icon(ic)}</span>` : icon(ic)}<span class="t"><b>${t}</b>${sub ? `<span>${sub}</span>` : ''}</span>${a === 'esci' ? '' : icon('chev', 'chev')}</button>`;
+    $('#ac-body').innerHTML = `<div class="chi"><span class="av" aria-hidden="true">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span></div>
+      ${sez('h-per', 'Per te', `<div class="grp">${riga('profilo', 'wc', 'Il mio contrassegno', contr, 1)}${riga('segn', 'plus', 'Le mie segnalazioni', 'Quelle che hai inviato e a che punto sono', 1)}</div>`)}
+      ${sez('h-sic', 'Accesso e sicurezza', `<div class="grp">${riga('cambiapw', 'edit', 'Cambia password', solo ? 'Accedi con Google: non serve una password' : '')}${riga('esci', 'user', 'Esci da questo dispositivo', 'I posti restano su questo telefono')}</div>`)}
+      <div class="zona"><button class="dng" data-a="elimina">Elimina il mio account</button><p>Cancella email, posti salvati, Casa e Lavoro e dati del contrassegno, anche su questo telefono. Le segnalazioni già fatte restano in mappa, anonime. Non si può annullare.</p></div>`;
+  }
+  function apriAccount() { if (!sessione) return; account(); $('#account').hidden = false; $('#account').scrollTop = 0; $('#ac-tit').focus({ preventScroll: true }); }
+  function chiudiAccount() { $('#account').hidden = true; const r = document.querySelector('#m-body [data-a=account]'); if (r && !$('#menu').hidden) r.focus({ preventScroll: true }); }
+  $('#ac-back').onclick = chiudiAccount;
+  $('#ac-body').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
+    if (a === 'profilo') { $('#profilo').hidden = false; scheda8(); }
+    else if (a === 'segn') apriSegnalazioni();
+    else if (a === 'cambiapw') { if (sessione && sessione.prov === 'google') toast('Accedi con Google: non serve una password.', 4000); else apriNuova(false, true); }
+    else if (a === 'esci') { esci(); chiudiAccount(); formAperto = false; accessoAperto = false; menu(); toast('Sei uscito. I posti restano su questo telefono.'); }
+    else if (a === 'elimina') apriElimina();
+  });
   $('#m-back').onclick = () => { $('#menu').hidden = true; };
   $('#m-body').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a, k = b.dataset.k;
@@ -1518,15 +1551,14 @@
       try { const esito = await accedi(email, pass, a === 'crea'); if (esito === 'conferma') { $('#m-body .msg').textContent = 'Ti abbiamo mandato un\'email: apri il link di conferma, poi torna qui e tocca "Accedi".'; b.disabled = false; } else { formAperto = false; menu(); toast('Accesso fatto. I tuoi posti ora ti seguono.'); } }
       catch (err) { $('#m-body .msg').textContent = err.message; b.disabled = false; }
     }
-    else if (a === 'esci') { esci(); menu(); toast('Sei uscito. I posti restano su questo telefono.'); }
+    else if (a === 'accedi') { accessoAperto = true; menu(); const p = document.querySelector('#m-body .acc button'); if (p) p.focus({ preventScroll: true }); }
+    else if (a === 'account') apriAccount();
+    else if (a === 'tutti') { $('#menu').hidden = true; apriRicerca(''); const c = document.querySelector('.s-chips [data-k=salvati]'); if (c) c.click(); }
     else if (a === 'vai') { $('#menu').hidden = true; vaiA(Object.assign({ k }, luoghi()[k])); }
     else if (a === 'imposta') { $('#menu').hidden = true; apriRicerca('', k); }
-    else if (a === 'togli') { const l = luoghi(); delete l[k]; ls.set('dp.luoghi', l); toccato(); menu(); }
+    else if (a === 'rimuovi') { const l = luoghi(); delete l[k]; ls.set('dp.luoghi', l); toccato(); menu(); toast(`${k === 'casa' ? 'Casa rimossa' : 'Lavoro rimosso'}.`); }
     else if (a === 'salvato') { $('#menu').hidden = true; apriSalvato(b.dataset.id); }
     else if (a === 'via') { salvati.delete(b.dataset.id); ls.set('dp.salvati', [...salvati.values()]); toccato(); menu(); }
-    else if (a === 'profilo') { $('#profilo').hidden = false; scheda8(); }
-    else if (a === 'elimina') apriElimina();
-    else if (a === 'segn') apriSegnalazioni();
     else if (a === 'sugg') apriSuggerimento();
     else if (a === 'regole') apriRegole(null);
     else if (a === 'consiglia') consiglia();
@@ -1537,7 +1569,7 @@
     }
     else if (a === 'interno-off') { ls.set('dp.interno', 0); menu(); toast('Dispositivo non più interno: rientra nelle statistiche.', 3500); }
     else if (a === 'google') accediGoogle();
-    else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-cond').href = CFG.SITO + 'condizioni.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
+    else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-cond').href = CFG.SITO + 'condizioni.html'; $('#f-priv').href = CFG.SITO + 'privacy.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
   $('#f-back').onclick = () => { $('#fonti').hidden = true; };
 
@@ -1630,7 +1662,7 @@
   };
   $('#g-body').addEventListener('click', (e) => {
     const b = e.target.closest('button.segn'); if (!b) return;
-    $('#segn').hidden = true; $('#menu').hidden = true; seguo = false;
+    $('#segn').hidden = true; $('#account').hidden = true; $('#menu').hidden = true; seguo = false;
     const la = +b.dataset.la, lo = +b.dataset.lo, id = b.dataset.id;
     map.jumpTo({ center: [lo, la], zoom: 17 }); carica(la - 0.004, lo - 0.006, la + 0.004, lo + 0.006, false).then(() => { if (stalli.has(id)) apriScheda(id); });
   });
@@ -1660,7 +1692,7 @@
       </div>
       <p class="small muted" style="margin:0">La foto del contrassegno resta solo su questo telefono. Nell'account viene salvata soltanto la data di scadenza.</p>`;
   }
-  $('#p-back').onclick = () => { $('#profilo').hidden = true; altroAperto = false; };
+  $('#p-back').onclick = () => { $('#profilo').hidden = true; altroAperto = false; if (!$('#account').hidden) account(); };
   $('#p-body').addEventListener('change', (e) => {
     if (e.target.id === 'p-data') salvaProfilo({ scadenza: e.target.value || '' });
     if (e.target.id === 'p-altro') { const n = Math.max(1, Math.min(365, parseInt(e.target.value, 10) || 60)); altroAperto = ![30, 60, 90].includes(n); salvaProfilo({ giorni: n }); }
