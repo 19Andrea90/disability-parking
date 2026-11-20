@@ -173,7 +173,10 @@
   }
 
   // ---------- mappa ----------
-  const map = new maplibregl.Map({ container: 'map', style: CFG.STYLE, center: CFG.HOME, zoom: 14.5, attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false });
+  let chiaveEsri = ''; // la dà il database (app_config.chiave_esri), mai scritta nel codice; vuota = niente vista satellitare
+  const ESRI_HOST = /^https:\/\/[^/]*\.arcgis\.com\//;
+  const map = new maplibregl.Map({ container: 'map', style: CFG.STYLE,
+    transformRequest: (url) => (chiaveEsri && ESRI_HOST.test(url) && !/[?&]token=/.test(url)) ? { url: url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(chiaveEsri) } : undefined, center: CFG.HOME, zoom: 14.5, attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false });
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   window.__dp = { map, stalli }; // per le prove
@@ -207,7 +210,9 @@
     map.getSource('zone').setData(l ? { type: 'FeatureCollection', features: riepilogo[l].map((v) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [v.lon, v.lat] }, properties: { n: v.n, t: v.t, tl: num(v.t) } })) } : VUOTO);
   }
   fetch(CFG.SB + '/storage/v1/object/public/foto/copertura/riepilogo.json').then((r) => r.ok ? r.json() : null).then((j) => { if (j && j.regioni) { riepilogo = j; zone(); vicini(); } }).catch(() => {});
+  let baseVis = null; // i livelli della mappa stradale e come erano: servono per nasconderli in vista satellitare
   map.on('load', () => {
+    baseVis = map.getStyle().layers.map((l) => [l.id, (l.layout && l.layout.visibility) || 'visible']);
     map.addImage('wc-w', glifo('#ffffff'), { pixelRatio: 2 }); map.addImage('wc-b', glifo('#0b2a5b'), { pixelRatio: 2 }); map.addImage('wc-d', glifo('#2b2300'), { pixelRatio: 2 }); map.addImage('x-w', glifoX('#ffffff'), { pixelRatio: 2 });
     map.addSource('stalli', { type: 'geojson', data: VUOTO, cluster: true, clusterRadius: 42, clusterMaxZoom: 15 });
     map.addSource('sel', { type: 'geojson', data: VUOTO }); map.addSource('conteggi', { type: 'geojson', data: VUOTO });
@@ -229,6 +234,72 @@
     const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { at.classList.remove('maplibregl-compact-show'); at.removeAttribute('open'); } // i crediti della mappa partono chiusi (si aprono dalla i)
     pronta = true; vediPosti(false); if (LARGO()) { map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right'); espandi(true); }
     map.setPadding(padHome()); disegna(); zone(); caricaVista();
+  });
+
+  // ---------- vista satellitare (immagini Esri) ----------
+  // Il database dà la chiave (app_config, una sola chiamata per avvio, anche per l'aggiornamento obbligatorio). Senza chiave il pulsante non c'è.
+  // Gli stili Esri ("Basemap Styles", v2) si scaricano SOLO alla prima attivazione: immagini (arcgis/imagery) + nomi di strade e luoghi in italiano
+  // (arcgis/imagery/labels). Si aggiungono alla mappa SOTTO i nostri livelli e si nascondono quelli stradali: i pin, i cerchi e le etichette restano sopra.
+  // Con la vista stradale i livelli Esri sono nascosti, quindi non si chiede nessun riquadro a Esri.
+  const configApp = fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
+    .then((r) => r.ok ? r.json() : null).catch(() => null);
+  const ESRI_STILI = 'https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/', ESRI_ERR = [401, 403, 429, 498, 499];
+  let sat = false, satKO = false, satIds = null, satOcc = false, satTesto = '';
+  const btnSat = $('#b-sat');
+  const crediti = { el: null, onAdd() { // «Powered by Esri» sempre in vista; le fonti delle immagini si aprono con «Fonti» (già aperte sul computer)
+    const d = document.createElement('div'); d.className = 'maplibregl-ctrl esri-pw';
+    d.innerHTML = '<div class="esri-riga"><a href="https://www.esri.com" target="_blank" rel="noopener">Powered by Esri</a><button type="button" class="esri-apri" aria-expanded="false">Fonti</button></div><div class="esri-testo" hidden></div>';
+    const t = d.querySelector('.esri-testo'), bt = d.querySelector('.esri-apri'); t.textContent = satTesto;
+    const apri = (on) => { t.hidden = !on; bt.setAttribute('aria-expanded', String(on)); }; bt.onclick = () => apri(t.hidden); apri(LARGO());
+    this.el = d; return d; }, onRemove() { if (this.el) this.el.remove(); this.el = null; } };
+  const fontEsri = (f) => { const t = JSON.stringify(f || ''); return [/bold/i.test(t) ? 'Noto Sans Bold' : /italic/i.test(t) ? 'Noto Sans Italic' : 'Noto Sans Regular']; }; // i caratteri dei nomi sono quelli già usati dalla mappa
+  function adattaEsri(stile, pre) { // rinomina sorgenti e livelli per non incrociarsi con i nostri; niente icone (lo sprite è un altro)
+    const src = {}, lay = [], testi = [];
+    for (const [k, v] of Object.entries(stile.sources || {})) { const c = Object.assign({}, v), t = c.attribution || c.copyrightText; if (t) testi.push(String(t)); delete c.copyrightText; delete c.attribution; src[pre + k] = c; }
+    for (const l of stile.layers || []) {
+      const c = JSON.parse(JSON.stringify(l)); c.id = pre + l.id; if (c.source) c.source = pre + c.source;
+      if (c.type === 'symbol') { c.layout = c.layout || {}; c.layout['text-font'] = fontEsri(c.layout['text-font']); delete c.layout['icon-image']; }
+      lay.push(c);
+    }
+    return { src, lay, testi };
+  }
+  async function caricaStiliEsri() {
+    const url = (n, x) => ESRI_STILI + n + '?' + (x || '') + 'token=' + encodeURIComponent(chiaveEsri);
+    const [a, b] = await Promise.all([fetch(url('arcgis/imagery')), fetch(url('arcgis/imagery/labels', 'language=it&'))]);
+    if (!a.ok || !b.ok) { const e = new Error('esri'); e.status = a.ok ? b.status : a.status; throw e; }
+    const [ja, jb] = await Promise.all([a.json(), b.json()]), A = adattaEsri(ja, 'esri-i-'), B = adattaEsri(jb, 'esri-l-');
+    const primo = Object.keys(A.src)[0]; if (!primo || !A.lay.length) throw new Error('esri: stile vuoto');
+    satTesto = 'Fonti: ' + [...new Set(A.testi.concat(B.testi).map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean))].join(' · ');
+    for (const k of Object.keys(A.src)) map.addSource(k, A.src[k]); for (const k of Object.keys(B.src)) map.addSource(k, B.src[k]);
+    for (const l of A.lay.concat(B.lay)) map.addLayer(l, 'zone');
+    satIds = A.lay.concat(B.lay).map((l) => l.id);
+  }
+  function togliEsri() { // a metà caricamento qualcosa non è andato: via ogni pezzo di Esri, così non resta nulla di mezzo visibile
+    satIds = null; try { map.getStyle().layers.filter((l) => l.id.startsWith('esri-')).forEach((l) => map.removeLayer(l.id)); Object.keys(map.getStyle().sources).filter((k) => k.startsWith('esri-')).forEach((k) => map.removeSource(k)); } catch (e) { /* già tolto */ }
+  }
+  function mostraVista() {
+    if (!baseVis) return;
+    const imp = (id, v) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v); };
+    baseVis.forEach(([id, v]) => imp(id, sat ? 'none' : v)); (satIds || []).forEach((id) => imp(id, sat ? 'visible' : 'none'));
+    $('#map').classList.toggle('sat', sat); document.body.classList.toggle('sat', sat);
+    if (sat) { if (!crediti.el) map.addControl(crediti, 'bottom-right'); } else if (crediti.el) map.removeControl(crediti);
+    btnSat.hidden = !chiaveEsri || satKO; btnSat.setAttribute('aria-pressed', String(sat)); btnSat.setAttribute('aria-label', 'Vista satellitare, ' + (sat ? 'attiva' : 'non attiva'));
+  }
+  function satErrore() { // chiave scaduta, quota finita o servizio giù: si torna da soli alla mappa stradale, senza riprovare fino al prossimo avvio
+    if (satKO) return; satKO = true; sat = false; mostraVista(); toast('La vista satellitare non è disponibile in questo momento', 4000);
+  }
+  async function passaVista(on, salva) {
+    if (satOcc || satKO || !pronta) return;
+    if (on && !chiaveEsri) return;
+    if (on && !satIds) { satOcc = true; try { await caricaStiliEsri(); } catch (e) { satOcc = false; togliEsri(); satErrore(); return; } satOcc = false; }
+    sat = on; mostraVista(); if (salva) ls.set('dp.vista', on ? 'sat' : '');
+  }
+  map.on('error', (e) => { if (sat && e && e.sourceId && String(e.sourceId).startsWith('esri-') && e.error && ESRI_ERR.includes(e.error.status)) satErrore(); });
+  btnSat.onclick = () => passaVista(!sat, true);
+  configApp.then((c) => {
+    chiaveEsri = c && typeof c.chiave_esri === 'string' && c.chiave_esri.length > 8 ? c.chiave_esri : ''; if (!chiaveEsri) return;
+    const via = () => { btnSat.hidden = false; if (ls.get('dp.vista', '') === 'sat') passaVista(true, false); };
+    if (pronta) via(); else map.once('load', via);
   });
   map.on('error', (e) => { if (!pronta && e && e.error && /style|Failed to fetch|load/i.test(String(e.error.message))) toast('La mappa non si carica. Controlla la connessione.', 5000); });
   let pronta = false, moveT;
@@ -1425,6 +1496,5 @@
   const numeri = (v) => (String(v || '').match(/\d+/g) || []).map(Number);
   function piuVecchia(a, min) { const x = numeri(a), y = numeri(min); if (!x.length || !y.length) return false; for (let i = 0; i < Math.max(x.length, y.length); i++) { const p = x[i] || 0, q = y[i] || 0; if (p !== q) return p < q; } return false; }
   $('#ag-go').onclick = () => apri(CFG.PLAY);
-  if (NATIVO()) fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
-    .then((r) => r.ok ? r.json() : null).then((c) => { if (c && piuVecchia(window.DP_VERSIONE, c.versione_minima_android)) { $('#aggiorna').hidden = false; $('#ag-go').focus(); } }).catch(() => {});
+  if (NATIVO()) configApp.then((c) => { if (c && piuVecchia(window.DP_VERSIONE, c.versione_minima_android)) { $('#aggiorna').hidden = false; $('#ag-go').focus(); } });
 })();

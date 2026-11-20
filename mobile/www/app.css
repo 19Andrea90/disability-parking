@@ -41,9 +41,10 @@ button:focus-visible{outline:3px solid var(--giallo);outline-offset:2px}
 
 #home{position:fixed;left:0;right:0;bottom:0;z-index:6;pointer-events:none}
 #home>*{pointer-events:auto}
-.float{display:flex;justify-content:space-between;align-items:center;padding:0 16px 12px;pointer-events:none}
+.float{display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px 12px;pointer-events:none}
 .float>*{pointer-events:auto}
 .pill{height:48px;padding:0 18px 0 14px;border-radius:999px;background:var(--panel);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow)}
+.dx{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
 .round{width:48px;height:48px;border-radius:50%;background:var(--panel);color:var(--blu);display:grid;place-items:center;box-shadow:var(--shadow)}
 
 .sheet{background:var(--panel);border-radius:28px 28px 0 0;box-shadow:0 -8px 30px rgba(11,31,68,.18);padding:10px 16px calc(18px + var(--sab));display:flex;flex-direction:column;gap:14px}
@@ -427,3 +428,17 @@ body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-
   .fg-top{left:16px;right:auto;width:var(--col);top:16px}
   body.con-auto #home{top:208px}
 }
+
+/* vista satellitare: il pulsante acceso è blu; i crediti Esri restano leggibili sulle immagini */
+#b-sat[aria-pressed="true"]{background:var(--blu);color:#fff;box-shadow:0 0 0 2px #fff,var(--shadow)}
+#b-sat:focus-visible{outline:3px solid var(--blu);outline-offset:2px}
+#b-sat[aria-pressed="true"]:focus-visible{outline-color:#fff;box-shadow:0 0 0 5px var(--blu)}
+#map.sat{background:#1b2a22}
+.esri-pw{background:rgba(255,255,255,.92);border-radius:6px;padding:2px 8px;font-size:12px;line-height:20px;margin:0 0 2px;max-width:260px;text-align:right;color:#1b2a40}
+.esri-riga{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.esri-pw a{color:#0b2a5b;font-weight:700;text-decoration:none}
+.esri-apri{min-height:28px;padding:0 6px;font-size:12px;font-weight:700;color:#0b2a5b;text-decoration:underline}
+.esri-testo{padding:0 0 3px}
+.esri-pw a:focus-visible,.esri-apri:focus-visible{outline:2px solid var(--blu);outline-offset:1px}
+@media (min-width:900px){body.sat .maplibregl-ctrl-bottom-right,body.sat #map:has(~ #arrivo:not([hidden])) .maplibregl-ctrl-bottom-right,body.sat #map:has(~ #card:not([hidden])) .maplibregl-ctrl-bottom-right{right:72px}}
+body.sat .me{background:rgba(255,255,255,.3)}
