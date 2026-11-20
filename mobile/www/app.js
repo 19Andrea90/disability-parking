@@ -238,8 +238,8 @@
 
   // ---------- vista satellitare (immagini Esri) ----------
   // Il database dà la chiave (app_config, una sola chiamata per avvio, anche per l'aggiornamento obbligatorio). Senza chiave il pulsante non c'è.
-  // Gli stili Esri ("Basemap Styles", v2) si scaricano SOLO alla prima attivazione: immagini (arcgis/imagery) + nomi di strade e luoghi in italiano
-  // (arcgis/imagery/labels). Si aggiungono alla mappa SOTTO i nostri livelli e si nascondono quelli stradali: i pin, i cerchi e le etichette restano sopra.
+  // Lo stile Esri ("Basemap Styles", v2, arcgis/imagery) si scarica SOLO alla prima attivazione: immagini + nomi di strade e luoghi in italiano.
+  // Si aggiunge alla mappa SOTTO i nostri livelli e si nascondono quelli stradali: i pin, i cerchi e le etichette restano sopra.
   // Con la vista stradale i livelli Esri sono nascosti, quindi non si chiede nessun riquadro a Esri.
   const configApp = fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
     .then((r) => r.ok ? r.json() : null).catch(() => null);
@@ -257,17 +257,16 @@
     }
     return { src, lay, testi };
   }
-  async function caricaStiliEsri() {
-    const url = (n, x) => ESRI_STILI + n + '?' + (x || '') + 'token=' + encodeURIComponent(chiaveEsri);
-    const [a, b] = await Promise.all([fetch(url('arcgis/imagery')), fetch(url('arcgis/imagery/labels', 'language=it&'))]);
-    if (!a.ok || !b.ok) { const e = new Error('esri'); e.status = a.ok ? b.status : a.status; throw e; }
-    const [ja, jb] = await Promise.all([a.json(), b.json()]), A = adattaEsri(ja, 'esri-i-'), B = adattaEsri(jb, 'esri-l-');
+  async function caricaStiliEsri() { // un solo stile: «arcgis/imagery» contiene già le immagini e i nomi (chiesti in italiano). Caricare anche «imagery/labels» raddoppiava nomi e livelli e appesantiva lo zoom sul telefono
+    const r = await fetch(ESRI_STILI + 'arcgis/imagery?language=it&token=' + encodeURIComponent(chiaveEsri));
+    if (!r.ok) { const e = new Error('esri'); e.status = r.status; throw e; }
+    const A = adattaEsri(await r.json(), 'esri-i-');
     const primo = Object.keys(A.src)[0]; if (!primo || !A.lay.length) throw new Error('esri: stile vuoto');
     // crediti: «Powered by Esri» e le fonti delle immagini stanno nei crediti della mappa (la «i»), come quelli di OpenStreetMap
-    A.src[primo].attribution = '<a href="https://www.esri.com" target="_blank" rel="noopener">Powered by Esri</a> | ' + [...new Set(A.testi.concat(B.testi).map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean))].join(' · ');
-    for (const k of Object.keys(A.src)) map.addSource(k, A.src[k]); for (const k of Object.keys(B.src)) map.addSource(k, B.src[k]);
-    for (const l of A.lay.concat(B.lay)) map.addLayer(l, 'zone');
-    satIds = A.lay.concat(B.lay).map((l) => l.id);
+    A.src[primo].attribution = '<a href="https://www.esri.com" target="_blank" rel="noopener">Powered by Esri</a> | ' + [...new Set(A.testi.map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean))].join(' · ');
+    for (const k of Object.keys(A.src)) map.addSource(k, A.src[k]);
+    for (const l of A.lay) map.addLayer(l, 'zone');
+    satIds = A.lay.map((l) => l.id);
   }
   function togliEsri() { // a metà caricamento qualcosa non è andato: via ogni pezzo di Esri, così non resta nulla di mezzo visibile
     satIds = null; try { map.getStyle().layers.filter((l) => l.id.startsWith('esri-')).forEach((l) => map.removeLayer(l.id)); Object.keys(map.getStyle().sources).filter((k) => k.startsWith('esri-')).forEach((k) => map.removeSource(k)); } catch (e) { /* già tolto */ }
