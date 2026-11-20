@@ -312,10 +312,13 @@
 
   // ---------- posizione ----------
   let meMarker = null, ultimoCarico = null;
-  function setMe(lat, lon) {
-    const primo = !me; me = { lat, lon };
+  let meVecchia = false; // la prima posizione mostrata è l'ultima nota al telefono (subito), in attesa di quella precisa
+  function setMe(lat, lon, vecchia) {
+    if (vecchia && me) return;
+    const primo = !me, affina = !!me && meVecchia && !vecchia && dist(lat, lon, me.lat, me.lon) > 30; meVecchia = !!vecchia; me = { lat, lon };
     if (!meMarker) { const el = document.createElement('div'); el.className = 'me'; el.innerHTML = '<i></i>'; meMarker = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map); } else meMarker.setLngLat([lon, lat]);
     if (primo && seguo && !selId) map.jumpTo({ center: [lon, lat], zoom: 16, padding: padHome() });
+    else if (affina && seguo && !selId) map.easeTo({ center: [lon, lat], duration: 400 }); // la posizione precisa è lontana da quella mostrata subito: la mappa la segue, senza cambiare lo zoom
     if (!ultimoCarico || dist(lat, lon, ultimoCarico.lat, ultimoCarico.lon) > 300) { ultimoCarico = { lat, lon }; carica(lat - 0.024, lon - 0.035, lat + 0.024, lon + 0.035, false); }
     vicini(); if (selId) aggiornaConferma(); aggiornaPillAuto(); fgAggiornaAuto();
   }
@@ -325,11 +328,14 @@
       if (G) {
         let p = await G.checkPermissions();
         if (p.location !== 'granted') { if (!chiedi) return false; p = await G.requestPermissions(); if (p.location !== 'granted') return false; }
+        // subito l'ultima posizione nota (fino a 5 minuti fa), senza aspettare il GPS: la mappa si apre già nel posto giusto, poi arriva quella precisa
+        Promise.resolve(G.getCurrentPosition({ enableHighAccuracy: false, maximumAge: 300000, timeout: 3000 })).then((pos) => { if (pos && pos.coords) setMe(pos.coords.latitude, pos.coords.longitude, true); }).catch(() => {});
         await G.watchPosition({ enableHighAccuracy: true, timeout: 20000 }, (pos) => { if (pos && pos.coords) setMe(pos.coords.latitude, pos.coords.longitude); });
         return true;
       }
       if (!navigator.geolocation) return false;
       if (!chiedi && navigator.permissions) { const st = await navigator.permissions.query({ name: 'geolocation' }).catch(() => null); if (st && st.state !== 'granted') return false; }
+      navigator.geolocation.getCurrentPosition((pos) => setMe(pos.coords.latitude, pos.coords.longitude, true), () => {}, { enableHighAccuracy: false, maximumAge: 300000, timeout: 3000 });
       navigator.geolocation.watchPosition((pos) => setMe(pos.coords.latitude, pos.coords.longitude), () => { if (chiedi) toast('Posizione non disponibile. Puoi comunque muovere la mappa.'); }, { enableHighAccuracy: true, maximumAge: 5000 });
       return true;
     } catch (e) { return false; }
