@@ -1370,10 +1370,87 @@
     try { await allinea(); } catch (e) { /* si riallinea alla prossima modifica */ }
     if (!$('#menu').hidden) menu(); toast('Accesso fatto. I tuoi posti ora ti seguono.'); return true;
   }
-  if (/access_token=|error_description=/.test(location.hash)) { const h = location.hash; history.replaceState(null, '', location.pathname + location.search); setTimeout(() => daGoogle(h), 300); }
+  // ---------- recupero della password ----------
+  // Richiesta: POST /auth/v1/recover. Sul web il link riporta a questa pagina; sul telefono porta alla versione web (https://sostabile.it/app/),
+  // dove si sceglie la nuova password: poi si accede nell'app. Il messaggio è sempre lo stesso, così non si scopre quali email sono registrate.
+  const urlRecupero = () => NATIVO() ? 'https://sostabile.it/app/' : location.origin + location.pathname;
+  let recTok = null; // token del link di recupero: serve solo a cambiare la password
+  function apriRecupero(email) {
+    $('#re-email').value = email || ''; $('#re-msg').textContent = ''; $('#re-go').disabled = false; $('#re-nota').hidden = !NATIVO();
+    $('#recupero').hidden = false; $('#re-tit').focus({ preventScroll: true });
+  }
+  const chiudiRecupero = () => { $('#recupero').hidden = true; };
+  $('#re-back').onclick = chiudiRecupero; $('#re-no').onclick = chiudiRecupero;
+  $('#re-go').onclick = async () => {
+    const btn = $('#re-go'), msg = $('#re-msg'), email = $('#re-email').value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) { msg.textContent = 'Scrivi l\'email con cui ti sei registrato.'; $('#re-email').focus(); return; }
+    btn.disabled = true; msg.textContent = 'Un momento…';
+    try {
+      const r = await fetch(`${CFG.SB}/auth/v1/recover?redirect_to=${encodeURIComponent(urlRecupero())}`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      if (r.status === 429) { msg.textContent = 'Hai chiesto troppi link in poco tempo. Aspetta qualche minuto e riprova.'; btn.disabled = false; return; }
+      if (!r.ok && r.status >= 500) throw new Error('http ' + r.status);
+      msg.textContent = 'Se l\'email è registrata, ti abbiamo mandato un link per scegliere una nuova password. Controlla anche lo spam.' + (NATIVO() ? ' Il link si apre nel browser: lì scegli la nuova password, poi torna nell\'app e accedi.' : '');
+      setTimeout(() => { btn.disabled = false; }, 8000);
+    } catch (e) { msg.textContent = 'Non riesco a mandare la richiesta. Controlla la connessione e riprova.'; btn.disabled = false; }
+  };
+  function apriNuova(scaduto) {
+    $('#n-form').hidden = !!scaduto; $('#n-scaduto').hidden = !scaduto; $('#n-msg').textContent = ''; $('#n-go').disabled = false;
+    ['#n-p1', '#n-p2'].forEach((q) => { $(q).value = ''; nascondiPass($(q)); });
+    $('#nuova').hidden = false; $('#n-tit').focus({ preventScroll: true });
+  }
+  function daRecupero(href) { // true se l'indirizzo porta i codici del link di recupero (o il suo errore)
+    const h = new URLSearchParams(String(href).split('#')[1] || ''), at = h.get('access_token'), desc = h.get('error_description') || '';
+    if (h.get('type') === 'recovery' && at) { recTok = { at, rt: h.get('refresh_token') || '', exp: +h.get('expires_in') || 3600 }; apriNuova(false); return true; }
+    if (!at && (h.get('error_code') === 'otp_expired' || (/expired|invalid|scadut/i.test(desc) && !ls.get('dp.google', 0)))) { recTok = null; apriNuova(true); return true; }
+    return false;
+  }
+  $('#n-nuovo').onclick = () => { $('#nuova').hidden = true; apriRecupero(''); };
+  $('#n-chiudi').onclick = () => { $('#nuova').hidden = true; };
+  $('#n-go').onclick = async () => {
+    const btn = $('#n-go'), msg = $('#n-msg'), p1 = $('#n-p1').value, p2 = $('#n-p2').value; if (!recTok || btn.disabled) return;
+    const manca = passMancante(p1);
+    if (manca.length) { msg.textContent = 'Alla password manca: ' + manca.join(', ') + '.'; $('#n-p1').focus(); return; }
+    if (p1 !== p2) { msg.textContent = 'Le due password non coincidono.'; $('#n-p2').focus(); return; }
+    btn.disabled = true; msg.textContent = 'Un momento…';
+    try {
+      const r = await fetch(`${CFG.SB}/auth/v1/user`, { method: 'PUT', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + recTok.at }, body: JSON.stringify({ password: p1 }) });
+      const j = await r.json().catch(() => ({})), m = String(j.msg || j.message || j.error_description || '').toLowerCase();
+      if (r.status === 401 || r.status === 403 || /expired|invalid jwt|invalid token/.test(m)) { recTok = null; apriNuova(true); return; }
+      if (!r.ok) { msg.textContent = /different|same/.test(m) ? 'La nuova password deve essere diversa da quella attuale.' : r.status === 429 ? 'Troppi tentativi. Riprova tra qualche minuto.' : /password/.test(m) ? `La password deve avere almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.` : 'Non riesco a cambiare la password. Riprova.'; btn.disabled = false; return; }
+      let email = j.email || ''; if (!email) try { email = JSON.parse(atob(recTok.at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch (e) { /* email non leggibile */ }
+      entra2({ access_token: recTok.at, refresh_token: recTok.rt, expires_in: recTok.exp, user: { email } }); recTok = null;
+      traccia('accesso', { dettaglio: 'recupero_password' }); controllaAdmin();
+      $('#nuova').hidden = true; $('#n-p1').value = ''; $('#n-p2').value = ''; chiudiRecupero(); toast('Password cambiata', 4000);
+      try { await allinea(); } catch (e) { /* si riallinea alla prossima modifica */ }
+      if (!$('#menu').hidden) menu();
+    } catch (e) { msg.textContent = 'Non riesco a cambiare la password. Controlla la connessione e riprova.'; btn.disabled = false; }
+  };
+  if (/access_token=|error_description=|error_code=/.test(location.hash)) { const h = location.hash; history.replaceState(null, '', location.pathname + location.search); setTimeout(() => { if (!daRecupero(h)) daGoogle(h); }, 300); }
   (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App; if (A) A.addListener('appUrlOpen', (e) => { if (e && e.url && e.url.indexOf('it.disabilityparking.app://login') === 0) daGoogle(e.url); }); })();
   setTimeout(controllaAdmin, 4000); // chi è già dentro con un account admin (accesso fatto prima di questa versione)
   function esci() { if (sessione) fetch(`${CFG.SB}/auth/v1/logout`, { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + sessione.token } }).catch(() => {}); sessione = null; ls.set('dp.sessione', null); }
+
+  // ---------- occhio sulle password e tastiera ----------
+  // L'occhio non toglie il focus al campo (mousedown annullato) e rimette il cursore dov'era.
+  function nascondiPass(i) { i.type = 'password'; const b = document.querySelector(`.occhio[aria-controls="${i.id}"]`); if (b) { b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Mostra password'); b.querySelector('use').setAttribute('href', '#i-eye'); } }
+  document.addEventListener('mousedown', (e) => { if (e.target.closest('.occhio')) e.preventDefault(); });
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.occhio'); if (!b) return; const i = document.getElementById(b.getAttribute('aria-controls')); if (!i) return;
+    const aveva = document.activeElement === i, s = i.selectionStart, f = i.selectionEnd, mostra = i.type === 'password';
+    i.type = mostra ? 'text' : 'password'; b.setAttribute('aria-pressed', String(mostra)); b.setAttribute('aria-label', mostra ? 'Nascondi password' : 'Mostra password');
+    b.querySelector('use').setAttribute('href', mostra ? '#i-eyeoff' : '#i-eye');
+    if (aveva) { const rimetti = () => { try { i.setSelectionRange(s, f); } catch (er) { /* alcuni tipi non lo permettono */ } }; i.focus({ preventScroll: true }); rimetti(); requestAnimationFrame(rimetti); }
+  });
+  // Quando si apre la tastiera il campo deve restare visibile: si segue visualViewport (--kb = altezza coperta) e si porta il campo al centro.
+  (function () {
+    const vv = window.visualViewport, root = document.documentElement;
+    const campo = () => { const a = document.activeElement; return a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.closest('.page') ? a : null; };
+    const centra = () => { const a = campo(); if (a) a.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+    const kb = () => { if (vv) root.style.setProperty('--kb', Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) + 'px'); };
+    if (vv) { vv.addEventListener('resize', () => { kb(); setTimeout(centra, 60); }); vv.addEventListener('scroll', kb); }
+    document.addEventListener('focusin', (e) => { if (e.target === campo()) setTimeout(() => { kb(); centra(); }, 350); });
+    document.addEventListener('focusout', () => setTimeout(() => { if (!campo()) root.style.setProperty('--kb', '0px'); }, 150));
+  })();
 
   // ---------- eliminazione dell'account ----------
   // Cancella solo l'account Supabase (email, accesso, dati nei user_metadata) con la funzione elimina_mio_account (supabase/16_utenti.sql).
@@ -1383,7 +1460,7 @@
     salvati.clear(); ls.set('dp.salvati', []); ls.set('dp.luoghi', {}); ls.set('dp.profilo', {}); ls.set('dp.contrassegno', ''); ls.set('dp.dispositivi', []); ls.set('dp.agg', 0);
     programmaAvvisi();
   }
-  function apriElimina() { $('#elimina').hidden = false; $('#x-conf').value = ''; $('#x-msg').textContent = ''; $('#x-go').disabled = true; setTimeout(() => $('#x-conf').focus(), 50); }
+  function apriElimina() { $('#elimina').hidden = false; $('#x-conf').value = ''; $('#x-msg').textContent = ''; $('#x-go').disabled = true; $('#elimina').scrollTop = 0; $('#x-tit').focus({ preventScroll: true }); /* il focus va sul titolo: niente tastiera automatica */ }
   const chiudiElimina = () => { $('#elimina').hidden = true; };
   $('#x-back').onclick = chiudiElimina; $('#x-no').onclick = chiudiElimina;
   $('#x-conf').addEventListener('input', () => { $('#x-go').disabled = $('#x-conf').value.trim().toUpperCase() !== 'ELIMINA'; });
@@ -1408,7 +1485,7 @@
     const acc = sessione
       ? `<div class="chi"><span class="av">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span><button class="bsm" data-a="esci">Esci</button></div>`
       : `<div class="acc"><div class="b">Accedi per non perderli</div><p>I posti salvati ti seguono se cambi telefono. È facoltativo: l'app funziona anche senza.</p>${formAperto
-        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><input id="a-pass" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="a-reg"><p class="reg" id="a-reg">Per un nuovo account: almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.</p><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
+        ? `<label class="vh" for="a-email">Email</label><input id="a-email" type="email" placeholder="La tua email" autocomplete="username"><label class="vh" for="a-pass">Password</label><span class="pw"><input id="a-pass" type="password" placeholder="Password" autocomplete="current-password" aria-describedby="a-reg"><button type="button" class="occhio" aria-label="Mostra password" aria-pressed="false" aria-controls="a-pass">${icon('eye')}</button></span><button type="button" class="lnk" data-a="dimenticata">Password dimenticata?</button><p class="reg" id="a-reg">Per un nuovo account: almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.</p><div class="msg" role="status">${esc(msg || '')}</div><button class="bw" data-a="entra">Accedi</button><button class="bo" data-a="crea">Crea un account</button>`
         : `${CFG.GOOGLE ? `<button class="bw gg" data-a="google"><span class="g" aria-hidden="true">G</span>Continua con Google</button>` : ''}<button class="${CFG.GOOGLE ? 'bo' : 'bw'}" data-a="form">Usa la tua email</button>${CFG.GOOGLE ? '' : '<p>L\'accesso con Google arriva presto.</p>'}`}</div>`;
     const luogo = (k, nome, ic) => l[k]
       ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}">Cambia</button><button data-a="togli" data-k="${k}">Togli</button></div></div>`
@@ -1430,7 +1507,8 @@
   $('#m-back').onclick = () => { $('#menu').hidden = true; };
   $('#m-body').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-a]'); if (!b) return; const a = b.dataset.a, k = b.dataset.k;
-    if (a === 'form') { formAperto = true; menu(); $('#a-email').focus(); }
+    if (a === 'dimenticata') apriRecupero((($('#a-email') || {}).value || '').trim());
+    else if (a === 'form') { formAperto = true; menu(); $('#a-email').focus(); }
     else if (a === 'entra' || a === 'crea') {
       const email = $('#a-email').value.trim(), pass = $('#a-pass').value;
       if (!/^\S+@\S+\.\S+$/.test(email) || !pass) { $('#m-body .msg').textContent = 'Scrivi la tua email e la password.'; return; }

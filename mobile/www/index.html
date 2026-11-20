@@ -23,6 +23,7 @@
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.7C3.9 8.5 2 12 2 12s3.5 7 10 7c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
     <symbol id="i-save" viewBox="0 0 24 24"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
     <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M5 13v6h14v-6"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></symbol>
@@ -226,7 +227,7 @@
 
 <!-- Elimina account -->
 <div id="elimina" class="page" hidden role="dialog" aria-labelledby="x-tit">
-  <div class="p-top"><button id="x-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="x-tit">Elimina account</h1></div>
+  <div class="p-top"><button id="x-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="x-tit" tabindex="-1">Elimina account</h1></div>
   <div class="testo sug">
     <p><b>Stai per eliminare il tuo account SostAbile.</b> L'operazione è definitiva: non si può annullare e non possiamo recuperare nulla.</p>
     <div class="xbox"><div class="b">Cosa viene cancellato</div><ul>
@@ -241,6 +242,39 @@
     <div class="msg small muted" id="x-msg" role="status"></div>
     <button class="bp bd" id="x-go" disabled>Elimina definitivamente</button>
     <button class="bp bn" id="x-no">Annulla, tieni il mio account</button>
+  </div>
+</div>
+
+<!-- Password dimenticata -->
+<div id="recupero" class="page" hidden role="dialog" aria-labelledby="re-tit">
+  <div class="p-top"><button id="re-back" aria-label="Torna all'accesso"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="re-tit" tabindex="-1">Password dimenticata</h1></div>
+  <div class="testo sug">
+    <p>Scrivi l'email con cui ti sei registrato: ti mandiamo un link per scegliere una nuova password.</p>
+    <p id="re-nota" hidden>Il link si apre nel browser: lì scegli la nuova password, poi torna nell'app e accedi.</p>
+    <label for="re-email" class="eyebrow">La tua email</label>
+    <input id="re-email" type="email" autocomplete="username" placeholder="La tua email" aria-describedby="re-msg">
+    <div class="msg small muted" id="re-msg" role="status"></div>
+    <button class="bp" id="re-go">Mandami il link</button>
+    <button class="bp bn" id="re-no">Torna all'accesso</button>
+  </div>
+</div>
+
+<!-- Scegli una nuova password (arrivo dal link ricevuto per email) -->
+<div id="nuova" class="page" hidden role="dialog" aria-labelledby="n-tit">
+  <div class="p-top"><h1 id="n-tit" tabindex="-1">Scegli una nuova password</h1></div>
+  <div class="testo sug" id="n-form">
+    <p class="reg">Almeno 10 caratteri, con minuscola, maiuscola, numero e carattere speciale.</p>
+    <label for="n-p1" class="eyebrow">Nuova password</label>
+    <span class="pw"><input id="n-p1" type="password" autocomplete="new-password" placeholder="Password"><button type="button" class="occhio" aria-label="Mostra password" aria-pressed="false" aria-controls="n-p1"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+    <label for="n-p2" class="eyebrow">Ripeti la nuova password</label>
+    <span class="pw"><input id="n-p2" type="password" autocomplete="new-password" placeholder="Password"><button type="button" class="occhio" aria-label="Mostra password" aria-pressed="false" aria-controls="n-p2"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+    <div class="msg small muted" id="n-msg" role="status"></div>
+    <button class="bp" id="n-go">Salva la nuova password</button>
+  </div>
+  <div class="testo sug" id="n-scaduto" hidden>
+    <p><b>Il link non è più valido o è scaduto.</b> Per sicurezza i link funzionano una volta sola e per poco tempo.</p>
+    <button class="bp" id="n-nuovo">Richiedi un nuovo link</button>
+    <button class="bp bn" id="n-chiudi">Chiudi</button>
   </div>
 </div>
 

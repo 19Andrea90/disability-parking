@@ -206,7 +206,7 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .primary:disabled{opacity:.5}
 
 /* --- schermate 7 e 8 · i tuoi posti, profilo --- */
-.page{position:fixed;inset:0;z-index:22;background:var(--panel);padding:calc(var(--sat) + 12px) 16px calc(20px + var(--sab));display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+.page{position:fixed;inset:0;z-index:22;background:var(--panel);padding:calc(var(--sat) + 12px) 16px calc(20px + var(--sab) + var(--kb,0px));display:flex;flex-direction:column;gap:16px;overflow-y:auto}
 #profilo,#fonti{z-index:24}
 .p-top{display:flex;gap:6px;align-items:center;flex:none}
 .p-top button{width:48px;height:48px;flex:none;color:var(--blu);display:grid;place-items:center}
@@ -458,3 +458,14 @@ body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-
 #b-sat[aria-pressed="true"]:focus-visible{outline-color:#fff;box-shadow:0 0 0 5px var(--blu)}
 #map.sat{background:#1b2a22}
 body.sat .me{background:rgba(255,255,255,.3)}
+
+/* occhio per mostrare/nascondere la password (area di tocco 52x52) */
+.pw{position:relative;display:block}
+.pw input{padding-right:56px}
+.occhio{position:absolute;right:0;top:0;width:52px;height:52px;min-width:44px;min-height:44px;display:grid;place-items:center;color:var(--blu);border-radius:14px}
+.occhio[aria-pressed="true"]{color:var(--blu2)}
+.occhio:focus-visible{outline:3px solid var(--giallo);outline-offset:-3px}
+.acc .lnk{color:#fff;font-size:15px;font-weight:700;text-decoration:underline;text-underline-offset:3px;min-height:44px;text-align:left;align-self:flex-start;padding:0 2px}
+#recupero,#nuova{z-index:45}
+#x-tit:focus,#re-tit:focus,#n-tit:focus{outline:none}
+.sug .reg{font-size:14px;color:var(--muted)}

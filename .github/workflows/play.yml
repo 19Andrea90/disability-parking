@@ -53,6 +53,11 @@ jobs:
         run: |
           sed -i '0,/<\/activity>/s##    <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="it.disabilityparking.app" android:host="login" />\n            </intent-filter>\n        </activity>#' android/app/src/main/AndroidManifest.xml
           grep -q 'android:scheme="it.disabilityparking.app"' android/app/src/main/AndroidManifest.xml
+      - name: Tastiera che ridimensiona la finestra (adjustResize), così i campi non restano coperti
+        run: |
+          m=android/app/src/main/AndroidManifest.xml
+          if grep -q 'android:windowSoftInputMode' $m; then sed -i 's#android:windowSoftInputMode="[^"]*"#android:windowSoftInputMode="adjustResize"#' $m; else sed -i '0,/<activity/s#<activity#<activity android:windowSoftInputMode="adjustResize"#' $m; fi
+          grep -q 'android:windowSoftInputMode="adjustResize"' $m
       - name: Plugin locale TestLab (sui dispositivi di prova di Google Play l'app non manda statistiche)
         run: |
           d=android/app/src/main/java/it/disabilityparking/app
