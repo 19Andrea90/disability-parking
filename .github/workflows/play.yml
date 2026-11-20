@@ -53,6 +53,12 @@ jobs:
         run: |
           sed -i '0,/<\/activity>/s##    <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="it.disabilityparking.app" android:host="login" />\n            </intent-filter>\n        </activity>#' android/app/src/main/AndroidManifest.xml
           grep -q 'android:scheme="it.disabilityparking.app"' android/app/src/main/AndroidManifest.xml
+      - name: Plugin locale TestLab (dispositivi di prova di Google Play / Firebase Test Lab: l'app non manda statistiche)
+        run: |
+          d=android/app/src/main/java/it/disabilityparking/app
+          test -f $d/MainActivity.java
+          cp android-extra/TestLabPlugin.java android-extra/MainActivity.java $d/
+          grep -q 'registerPlugin(TestLabPlugin.class)' $d/MainActivity.java
       - name: Permessi per la posizione
         run: |
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml

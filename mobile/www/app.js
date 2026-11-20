@@ -37,6 +37,24 @@
   // Servono al cruscotto del pannello admin (quante persone usano l'app, quante si fanno portare a un posto, dove mancano posti).
   const PIATTAFORMA = (() => { const cap = window.Capacitor; if (cap && cap.isNativePlatform && cap.isNativePlatform()) return (cap.getPlatform && cap.getPlatform()) === 'ios' ? 'ios' : 'android'; return window.matchMedia('(min-width:900px)').matches ? 'pc' : 'web'; })();
   const statAttive = () => ls.get('dp.stat', true) !== false;
+  // Dispositivo INTERNO (Andrea, Giulia, controlli dello sviluppatore): ogni evento porta interno:true e il pannello admin lo toglie dai conteggi
+  // (supabase/20_dispositivi_interni.sql). Si attiva da solo con l'accesso di un account admin (controllaAdmin), dal pannello admin
+  // (stessa origine: scrive lo stesso 'dp.interno') o a mano con 7 tocchi sulla versione in "I tuoi posti". Finché il database non ha la
+  // colonna l'inserimento con interno viene rifiutato (400): si rimanda UNA volta senza il campo e per 24 ore non lo si rimanda.
+  const eInterno = () => !!ls.get('dp.interno', 0);
+  const internoRifiutato = () => Date.now() - ls.get('dp.evInternoNo', 0) < 864e5;
+  // Dispositivi di prova di Google Play (Firebase Test Lab, rapporto di pre-lancio): il plugin nativo locale TestLab (mobile/android-extra/) lo dice
+  // e in quel caso l'app non manda MAI statistiche. Senza plugin (versioni vecchie) nessun errore: si va avanti come sempre.
+  let provaGoogle = false, provaNota = true, provaAttesa = [];
+  (function () {
+    const cap = window.Capacitor; if (!(cap && cap.isNativePlatform && cap.isNativePlatform())) return;
+    let pl = null; try { pl = (cap.Plugins && cap.Plugins.TestLab) || (cap.registerPlugin && cap.registerPlugin('TestLab')); } catch (e) { pl = null; }
+    if (!pl || typeof pl.isTestLab !== 'function') return;
+    provaNota = false;
+    const fine = (t) => { if (provaNota) return; provaGoogle = !!t; provaNota = true; const q = provaAttesa; provaAttesa = []; if (!provaGoogle) q.forEach((f) => f()); };
+    setTimeout(() => fine(false), 3000); // se il plugin non risponde si va avanti come dispositivo normale
+    try { Promise.resolve(pl.isTestLab()).then((r) => fine(r && (r.value === true || r.value === 'true')), () => fine(false)); } catch (e) { fine(false); }
+  })();
   // 'parcheggiato' e 'occupato' sono tipi nuovi (supabase/14_eventi_arrivo.sql). Finché il database non li ammette l'inserimento viene
   // rifiutato (400): in quel caso lo stesso evento si rimanda UNA volta nel formato vecchio (tipo 'conferma', dettaglio 'tipo:posto'), e per
   // le 24 ore successive si manda subito così, senza ritentare ogni volta.
@@ -49,13 +67,22 @@
     // Niente statistiche da test automatici (Playwright/Selenium: navigator.webdriver) né da localhost e anteprime *.pages.dev: ogni origine
     // nuova crea un device_id nuovo e gonfiava i "nuovi telefoni". L'app nativa Capacitor ha hostname 'localhost' ma è un'app vera: non si blocca.
     if (!SITO_NATIVO() && (navigator.webdriver || /^(localhost|127\.0\.0\.1|\[::1\])$|\.pages\.dev$/i.test(location.hostname))) return;
+    if (provaGoogle) return;
+    if (!provaNota) { provaAttesa.push(() => traccia(tipo, x, sempre)); return; } // il plugin sta ancora rispondendo (pochi millisecondi)
     if (!sempre && !statAttive()) return;
     try {
       let corpo = Object.assign({ device_id: deviceId, tipo, piattaforma: PIATTAFORMA, versione: String(window.DP_VERSIONE || '').slice(0, 40) || null }, x || {});
       if (corpo.comune) corpo.comune = String(corpo.comune).slice(0, 80);
       const nuovo = TIPI_ARRIVO.includes(tipo); if (nuovo && arrivoRifiutato()) corpo = comeConferma(corpo);
+      if (eInterno() && !internoRifiutato()) corpo.interno = true;
       const invia = (c) => fetch(CFG.SB + '/rest/v1/eventi', { method: 'POST', keepalive: true, headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(c) });
-      invia(corpo).then((r) => { if (nuovo && r.status === 400 && corpo.tipo === tipo) { ls.set('dp.evArrivoNo', Date.now()); return invia(comeConferma(corpo)); } }).catch(() => {});
+      const senza = (c) => { const n = Object.assign({}, c); delete n.interno; return n; };
+      invia(corpo).then((r) => {
+        if (r.status !== 400) return;
+        // 400: o manca la colonna 'interno' (20) o il tipo nuovo (14/18). Prima si toglie 'interno' (una sola volta, poi 24 ore di pausa)...
+        const p = corpo.interno ? invia(senza(corpo)).then((r2) => { if (r2.status !== 400) ls.set('dp.evInternoNo', Date.now()); return r2; }) : Promise.resolve(r);
+        return p.then((r2) => { if (r2.status === 400 && nuovo && corpo.tipo === tipo) { ls.set('dp.evArrivoNo', Date.now()); return invia(comeConferma(senza(corpo))); } });
+      }).catch(() => {});
     } catch (e) { /* le statistiche non devono mai disturbare l'app */ }
   }
   (function () { // errori dell'app: arrivano nel pannello admin (al massimo 5 per apertura, senza ripetizioni)
@@ -1275,6 +1302,16 @@
     }
     return fetch(CFG.SB + path, Object.assign({}, opt, { headers: Object.assign({ apikey: CFG.KEY, 'Content-Type': 'application/json', Authorization: 'Bearer ' + (sessione ? sessione.token : CFG.KEY) }, (opt || {}).headers) }));
   }
+  // Se l'account con cui si accede è di un admin (public.is_admin() con il suo token), questo dispositivo è del gruppo interno: lo si chiede
+  // UNA volta per account e si ricorda l'esito. Se la chiamata non riesce (offline) si riprova alla prossima apertura.
+  async function controllaAdmin() {
+    try {
+      if (!sessione || !sessione.token) return; const chi = sessione.email || ''; if (!chi || ls.get('dp.adminChk', '') === chi) return;
+      const r = await aut('/rest/v1/rpc/is_admin', { method: 'POST', body: '{}' }); if (!r.ok) return;
+      const si = (await r.json()) === true; ls.set('dp.adminChk', chi);
+      if (si && !eInterno()) { ls.set('dp.interno', 1); traccia('attivo'); }
+    } catch (e) { /* si riprova alla prossima apertura */ }
+  }
   function entra2(j) { sessione = { token: j.access_token, refresh: j.refresh_token, scade: Math.floor(Date.now() / 1000) + (j.expires_in || 3600), email: (j.user && j.user.email) || (sessione && sessione.email) || '' }; ls.set('dp.sessione', sessione); }
   // i telefoni usati con questo account: servono a ritrovare le proprie segnalazioni anche da un telefono nuovo
   const dispositivi = (altri) => [...new Set([deviceId, ...ls.get('dp.dispositivi', []), ...(altri || [])])].slice(0, 20);
@@ -1313,7 +1350,7 @@
     if (!r.ok) { const m = (j.msg || j.error_description || j.message || '').toLowerCase(); throw new Error(/invalid login/.test(m) ? 'Email o password non corrette.' : /not confirmed/.test(m) ? 'Devi prima confermare l\'email: apri il link che ti abbiamo mandato.' : /already registered/.test(m) ? 'Questa email ha già un account: usa "Accedi".' : /password/.test(m) ? `La password deve avere almeno ${PASS_MIN} caratteri, con minuscola, maiuscola, numero e carattere speciale.` : /rate|too many/.test(m) ? 'Troppi tentativi. Riprova tra qualche minuto.' : 'Non riesco ad accedere. Riprova.'); }
     traccia(nuovoAccount ? 'registrazione' : 'accesso');
     if (!j.access_token) return 'conferma'; // account creato: serve il clic sul link ricevuto per email
-    entra2(j); await allinea(); return 'ok';
+    entra2(j); controllaAdmin(); await allinea(); return 'ok';
   }
   // Accesso con Google (OAuth di Supabase). Sul telefono si torna all'app con il link it.disabilityparking.app://login,
   // sul web si torna alla stessa pagina; in entrambi i casi i codici arrivano dopo il # dell'indirizzo.
@@ -1329,12 +1366,13 @@
     if (!at) { if (h.get('error')) toast('Accesso con Google non riuscito. Riprova.'); return false; }
     let email = ''; try { email = JSON.parse(atob(at.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch (e) { /* email non leggibile */ }
     entra2({ access_token: at, refresh_token: h.get('refresh_token'), expires_in: +h.get('expires_in') || 3600, user: { email } });
-    traccia('accesso', { dettaglio: 'google' }); ls.set('dp.google', 0);
+    traccia('accesso', { dettaglio: 'google' }); ls.set('dp.google', 0); controllaAdmin();
     try { await allinea(); } catch (e) { /* si riallinea alla prossima modifica */ }
     if (!$('#menu').hidden) menu(); toast('Accesso fatto. I tuoi posti ora ti seguono.'); return true;
   }
   if (/access_token=|error_description=/.test(location.hash)) { const h = location.hash; history.replaceState(null, '', location.pathname + location.search); setTimeout(() => daGoogle(h), 300); }
   (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App; if (A) A.addListener('appUrlOpen', (e) => { if (e && e.url && e.url.indexOf('it.disabilityparking.app://login') === 0) daGoogle(e.url); }); })();
+  setTimeout(controllaAdmin, 4000); // chi è già dentro con un account admin (accesso fatto prima di questa versione)
   function esci() { if (sessione) fetch(`${CFG.SB}/auth/v1/logout`, { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + sessione.token } }).catch(() => {}); sessione = null; ls.set('dp.sessione', null); }
 
   // ---------- eliminazione dell'account ----------
@@ -1363,7 +1401,7 @@
   };
 
   // ---------- schermata 7 · i tuoi posti ----------
-  let formAperto = false;
+  let formAperto = false, toccoVers = 0, toccoVersT = 0;
   function apriMenu() { formAperto = false; $('#menu').hidden = false; menu(); }
   function menu(msg) {
     const l = luoghi(), v = [...salvati.values()];
@@ -1383,10 +1421,11 @@
       <button class="vaip" data-a="sugg"><span class="mk">${icon('idea')}</span><span class="t">Suggerisci un miglioramento</span>${icon('chev')}</button>
       <button class="vaip" data-a="consiglia"><span class="mk">${icon('share')}</span><span class="t">Consiglia l'app a un amico</span>${icon('chev')}</button>
       <button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>
+      ${eInterno() ? '<button class="int" data-a="interno-off">Dispositivo interno · tocca per togliere</button>' : ''}
       <div><div class="eyebrow">Posti salvati</div>${v.length ? v.map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('') : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>'}</div>
       ${sessione ? `<button class="vaip pericolo" data-a="elimina"><span class="mk">${icon('x')}</span><span class="t">Elimina account</span>${icon('chev')}</button>` : ''}
       <div class="piede"><button data-a="fonti">Fonti e avvertenze</button></div>
-      <div class="vers">Versione ${esc(window.DP_VERSIONE || '')}</div>`;
+      <div class="vers" data-a="versione">Versione ${esc(window.DP_VERSIONE || '')}</div>`;
   }
   $('#m-back').onclick = () => { $('#menu').hidden = true; };
   $('#m-body').addEventListener('click', async (e) => {
@@ -1414,6 +1453,11 @@
     else if (a === 'regole') apriRegole(null);
     else if (a === 'consiglia') consiglia();
     else if (a === 'stat') { const on = !statAttive(); if (!on) traccia('stat_off', null, true); ls.set('dp.stat', on); menu(); toast(on ? 'Statistiche anonime attivate. Grazie!' : 'Statistiche anonime disattivate.'); }
+    else if (a === 'versione') { // 7 tocchi di fila (al massimo 1,5 secondi tra uno e l'altro) segnano questo dispositivo come interno
+      const ora = Date.now(); toccoVers = ora - toccoVersT < 1500 ? toccoVers + 1 : 1; toccoVersT = ora;
+      if (toccoVers >= 7) { toccoVers = 0; if (!eInterno()) { ls.set('dp.interno', 1); traccia('attivo'); } menu(); toast('Questo dispositivo è segnato come interno: non entra nelle statistiche', 4500); }
+    }
+    else if (a === 'interno-off') { ls.set('dp.interno', 0); menu(); toast('Dispositivo non più interno: rientra nelle statistiche.', 3500); }
     else if (a === 'google') accediGoogle();
     else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-cond').href = CFG.SITO + 'condizioni.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
   });

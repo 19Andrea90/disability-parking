@@ -28,6 +28,9 @@
   async function boot() {
     const s = await session(); if (!s) return;
     logged = true; $('#login').hidden = true; $('#shell').hidden = false;
+    // Questo browser è del gruppo "dispositivi interni": l'app (stessa origine, stesso localStorage) manda interno:true in ogni evento e
+    // le statistiche lo escludono (supabase/20). Si imposta solo se l'account è davvero admin.
+    sb.rpc('is_admin').then(({ data }) => { if (data === true) lsSet('dp.interno', 1); }, () => {});
     route(); aggiornaTodo();
     setInterval(() => { if (document.visibilityState !== 'visible') return; aggiornaTodo(); if (current === 'dashboard') statistiche(); }, 30000);
   }
@@ -138,8 +141,10 @@
   const KPI = [['attivi', 'Dispositivi attivi', 'attivi'], ['nuovi', 'Nuovi dispositivi', 'nuovi'], ['sessioni', 'Sessioni (aperture)', 'sessioni'], ['navigazioni', 'Navigazioni avviate', 'naviga'],
     ['arrivati', 'Arrivati al posto', 'arrivati'], ['occupato', 'Trovato occupato', 'occupato'], ['schede', 'Posti aperti', 'schede'], ['segnalazioni', 'Segnalazioni degli utenti', 'segnalazioni'],
     ['registrazioni', 'Registrazioni', 'registrazioni'], ['errori', 'Errori dell\'app', 'errori']];
-  const SF = { pronto: false, p: '30g', dal: '', al: '', pl: '', reali: true, g: '', serie: SERIE_BASE.slice(), msg: '' };
-  const ST = { D: null, chiave: '', vecchia: null, mancante: false, focus: '', hov: -1, n: 0 };
+  // interni: escludi i dispositivi interni (Andrea, Giulia, controlli); soglia: cosa conta come "reale" ('attivo' = resta ~2 minuti; 'azione' = fa almeno un'azione)
+  const SOGLIE = [['attivo', 'Chi resta almeno 2 minuti'], ['azione', 'Solo chi fa un\'azione']];
+  const SF = { pronto: false, p: '30g', dal: '', al: '', pl: '', reali: true, interni: true, soglia: 'attivo', g: '', serie: SERIE_BASE.slice(), msg: '' };
+  const ST = { D: null, chiave: '', vecchia: null, mancante: false, focus: '', hov: -1, n: 0, f4: 0, v20: true, intAperto: false, intElenco: null, intErr: '' };
   const isoD = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(Date.parse(s + 'T12:00:00Z'));
   const addG = (s, n) => new Date(Date.parse(s + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
   const diffG = (a, b) => Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 864e5);
@@ -155,28 +160,29 @@
     if (diffG(SF.dal, SF.al) + 1 > 366) { SF.msg = 'Il periodo può essere lungo al massimo 366 giorni.'; return null; }
     return [SF.dal, SF.al];
   }
-  const filtriChiave = () => JSON.stringify([SF.p, SF.p === 'pers' ? SF.dal : '', SF.p === 'pers' ? SF.al : '', SF.pl, SF.reali, SF.g]);
+  const filtriChiave = () => JSON.stringify([SF.p, SF.p === 'pers' ? SF.dal : '', SF.p === 'pers' ? SF.al : '', SF.pl, SF.reali, SF.interni, SF.soglia, SF.g]);
   function filtriDaHash(params) { // #/dashboard?p=30g&pl=android&r=0&g=2026-11-19 (senza parametri: l'ultima scelta ricordata nel browser)
-    const m = lsGet('adm.statF', {}), has = ['p', 'pl', 'r', 'g', 'dal', 'al'].some((k) => params.has(k)), src = has ? { p: params.get('p'), pl: params.get('pl'), r: params.get('r'), g: params.get('g'), dal: params.get('dal'), al: params.get('al') } : { p: m.p, pl: m.pl, r: m.reali === false ? '0' : '1', g: '', dal: m.dal, al: m.al };
+    const m = lsGet('adm.statF', {}), has = ['p', 'pl', 'r', 'i', 't', 'g', 'dal', 'al'].some((k) => params.has(k)), src = has ? { p: params.get('p'), pl: params.get('pl'), r: params.get('r'), i: params.get('i'), t: params.get('t'), g: params.get('g'), dal: params.get('dal'), al: params.get('al') } : { p: m.p, pl: m.pl, r: m.reali === false ? '0' : '1', i: m.interni === false ? '0' : '1', t: m.soglia, g: '', dal: m.dal, al: m.al };
     SF.p = PERIODI.some((x) => x[0] === src.p) ? src.p : '30g';
     SF.pl = PIATT.some((x) => x[0] === (src.pl || '')) ? (src.pl || '') : '';
-    SF.reali = src.r !== '0'; SF.g = isoD(src.g) ? src.g : ''; SF.dal = isoD(src.dal) ? src.dal : ''; SF.al = isoD(src.al) ? src.al : '';
+    SF.reali = src.r !== '0'; SF.interni = src.i !== '0'; SF.soglia = SOGLIE.some((x) => x[0] === src.t) ? src.t : 'attivo'; SF.g = isoD(src.g) ? src.g : ''; SF.dal = isoD(src.dal) ? src.dal : ''; SF.al = isoD(src.al) ? src.al : '';
     if (SF.p === 'pers' && !SF.dal && !SF.al) SF.p = '30g';
-    if (has) lsSet('adm.statF', { p: SF.p, dal: SF.dal, al: SF.al, pl: SF.pl, reali: SF.reali });
+    if (has) memoFiltri();
     SF.pronto = true;
   }
+  const memoFiltri = () => lsSet('adm.statF', { p: SF.p, dal: SF.dal, al: SF.al, pl: SF.pl, reali: SF.reali, interni: SF.interni, soglia: SF.soglia });
   function hashFiltri() {
     const old = parseHash().params, q = new URLSearchParams(); if (old.get('s')) q.set('s', old.get('s'));
     q.set('p', SF.p); if (SF.p === 'pers') { if (SF.dal) q.set('dal', SF.dal); if (SF.al) q.set('al', SF.al); }
-    if (SF.pl) q.set('pl', SF.pl); if (!SF.reali) q.set('r', '0'); if (SF.g) q.set('g', SF.g);
+    if (SF.pl) q.set('pl', SF.pl); if (!SF.reali) q.set('r', '0'); if (!SF.interni) q.set('i', '0'); if (SF.soglia !== 'attivo') q.set('t', SF.soglia); if (SF.g) q.set('g', SF.g);
     return '#/dashboard?' + q.toString();
   }
   function cambiaFiltri(mod, focus) { // applica un cambio: ricorda la scelta, aggiorna l'indirizzo (la cronologia del browser segue i filtri) e ricarica
     mod(); SF.msg = ''; ST.focus = focus || ''; ST.hov = -1;
-    lsSet('adm.statF', { p: SF.p, dal: SF.dal, al: SF.al, pl: SF.pl, reali: SF.reali });
+    memoFiltri();
     const h = hashFiltri(); if (location.hash !== h) location.hash = h; statistiche();
   }
-  const azzeraFiltri = () => cambiaFiltri(() => { SF.p = '30g'; SF.dal = SF.al = SF.pl = SF.g = ''; SF.reali = true; SF.serie = SERIE_BASE.slice(); }, 'sf-azzera');
+  const azzeraFiltri = () => cambiaFiltri(() => { SF.p = '30g'; SF.dal = SF.al = SF.pl = SF.g = ''; SF.reali = true; SF.interni = true; SF.soglia = 'attivo'; SF.serie = SERIE_BASE.slice(); }, 'sf-azzera');
   function statDaHash(params) { // chiamata dal router a ogni cambio di indirizzo della dashboard
     const prima = filtriChiave(), era = SF.pronto; filtriDaHash(params);
     if (!params.get('p') && current === 'dashboard' && location.hash.indexOf('?s=consumi') < 0) { try { history.replaceState(null, '', hashFiltri()); } catch (e) { /* ok */ } }
@@ -191,7 +197,17 @@
     let nuova = null;
     if (ri) {
       const n = diffG(ri[0], ri[1]) + 1, kr = SF.g ? [SF.g, SF.g] : ri, gr = n === 1 ? [addG(ri[1], -13), ri[1]] : ri; // un solo giorno: il grafico mostra 14 giorni di contesto
-      const rpcF = (r) => sb.rpc('statistiche_admin_filtri', { p_dal: r[0], p_al: r[1], p_piattaforma: SF.pl || null, p_solo_reali: SF.reali });
+      // Con la 20 la funzione ha 6 parametri (interni e soglia); con la sola 19 ne ha 4: se la firma nuova manca si ricade sulla vecchia
+      // (e per 5 minuti non si riprova la nuova, per non fare due chiamate a ogni aggiornamento).
+      const rpcF = async (r) => {
+        const base = { p_dal: r[0], p_al: r[1], p_piattaforma: SF.pl || null, p_solo_reali: SF.reali };
+        if (Date.now() - ST.f4 > 3e5) {
+          const x = await sb.rpc('statistiche_admin_filtri', Object.assign({}, base, { p_escludi_interni: SF.interni, p_soglia: SF.soglia }));
+          if (!(x.error && msgManca(x.error))) { ST.f4 = 0; return x; }
+          ST.f4 = Date.now();
+        }
+        return sb.rpc('statistiche_admin_filtri', base);
+      };
       const stessa = kr[0] === gr[0] && kr[1] === gr[1];
       nuova = Promise.all([rpcF(kr), stessa ? null : rpcF(gr)]).then(([a, b]) => ({ a, b, kr, gr, ri, stessa }));
     }
@@ -204,7 +220,7 @@
       if (msgManca(errore)) { ST.mancante = true; ST.D = null; ST.chiave = 'manca' + JSON.stringify(vr.data && vr.data.agg ? 1 : 0); box.innerHTML = htmlManca(vr); return; }
       box.innerHTML = `<div class="sf-avviso" role="alert">Errore nelle statistiche: ${esc(errore.message)}</div>`; return;
     }
-    ST.mancante = false;
+    ST.mancante = false; ST.v20 = nr.a.data.soglia !== undefined; // la 20 aggiunge 'soglia', 'interni' ecc. alla risposta
     const D = { kpi: nr.a.data, graf: nr.stessa ? nr.a.data : nr.b.data, kr: nr.kr, gr: nr.gr, ri: nr.ri };
     const k = JSON.stringify([filtriChiave(), D.kpi, D.graf, vr.data && [vr.data.conferme_24h, vr.data.suggerimenti_nuovi, vr.data.errori_24h]], (key, v) => (key === 'agg' ? undefined : v));
     ST.agg = D.kpi.agg;
@@ -233,6 +249,8 @@
       <div class="sf-gr"><span class="sf-lab" id="sf-lp">Periodo</span><div class="sf-seg" role="group" aria-labelledby="sf-lp">${periodo}</div>${pers}</div>
       <div class="sf-gr"><label class="sf-lab" for="sf-pl">Piattaforma</label><select id="sf-pl">${PIATT.map(([k, l]) => `<option value="${k}"${SF.pl === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
       <label class="sf-sw"><input type="checkbox" id="sf-reali"${SF.reali ? ' checked' : ''}><span>Escludi test e robot</span></label>
+      <div class="sf-gr"><label class="sf-lab" for="sf-soglia">Conta come reale</label><select id="sf-soglia"${ST.v20 ? '' : ' disabled'}${SF.reali ? '' : ' title="Vale solo con «Escludi test e robot»"'}>${SOGLIE.map(([k, l]) => `<option value="${k}"${SF.soglia === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      <label class="sf-sw"><input type="checkbox" id="sf-int"${SF.interni ? ' checked' : ''}${ST.v20 ? '' : ' disabled'}><span>Escludi dispositivi interni</span></label>
       <button type="button" class="btn sm" id="sf-azzera">Azzera filtri</button></div>`;
     const chips = (SF.g ? `<div class="sf-chips"><button type="button" class="sf-chip" id="sf-g" aria-label="Giorno ${dm(SF.g)} selezionato: tocca per tornare al periodo intero">Giorno: ${dm(SF.g)} <span aria-hidden="true">✕</span></button></div>` : '')
       + (SF.msg ? `<div class="sf-avviso" role="alert">${esc(SF.msg)}</div>` : '');
@@ -241,7 +259,10 @@
     const kc = k.kpi || {}, kp = k.prec || {}, ad = k.adesso || {};
     const periodoTxt = unGiorno(D) ? `${giornoLungo(D.kr[0])}` : `dal ${dm(D.kr[0])} al ${dm(D.kr[1])}`, precTxt = k.prec_dal === k.prec_al ? dm(k.prec_dal) : `${dm(k.prec_dal)}–${dm(k.prec_al)}`;
     const riass = Number(k.giorni_riassunto || 0);
-    const note = [`<div class="sf-nota"><b>${periodoTxt}</b> · confronto con ${precTxt}${SF.pl ? ' · solo ' + (PF[SF.pl] || SF.pl) : ''} · ${SF.reali ? `test e robot esclusi${k.non_reali != null ? ` (${fmt(k.non_reali)} dispositivi: aprono l'app e basta)` : ''}` : '<b>test e robot inclusi</b>'}.</div>`];
+    const manca20 = k.soglia === undefined, nInt = Number(k.interni || 0);
+    const note = [`<div class="sf-nota"><b>${periodoTxt}</b> · confronto con ${precTxt}${SF.pl ? ' · solo ' + (PF[SF.pl] || SF.pl) : ''} · ${SF.reali ? `test e robot esclusi${k.non_reali != null ? ` (${fmt(k.non_reali)} dispositivi: ${k.soglia === 'azione' ? 'non fanno nessuna azione' : 'aprono l\'app e basta'})` : ''}${k.soglia === 'azione' ? ' · conta come reale solo chi fa un\'azione' : ''}` : '<b>test e robot inclusi</b>'}.</div>`];
+    if (manca20) note.push(`<div class="sf-avviso" role="status">Per i filtri «dispositivi interni» e «Conta come reale» esegui <b>supabase/20_dispositivi_interni.sql</b> nell'editor SQL di Supabase. Intanto valgono i filtri di prima.</div>`);
+    else note.push(`<details class="sf-int" id="sf-intl"${ST.intAperto ? ' open' : ''}><summary>${SF.interni ? `${fmt(nInt)} dispositivi interni esclusi` : `<b>Dispositivi interni inclusi</b> (${fmt(nInt)} nel periodo)`} · elenco</summary><div id="sf-intbody">${htmlInterni()}</div></details>`);
     if (riass > 0) note.push(`<div class="sf-nota">Prima del ${dm(k.dettaglio_da)} restano solo i riassunti giornalieri (pulizia degli eventi vecchi): per ${riass === 1 ? 'quel giorno' : 'quei ' + riass + ' giorni'} ci sono sessioni, navigazioni e azioni, ma non dispositivi attivi o nuovi, e il filtro «test e robot» non si applica.</div>`);
     // ---- indicatori ----
     const adesso = `<div class="st-grid sf-adesso">
@@ -274,6 +295,17 @@
       + `<h3 class="sec-h">Andamento giorno per giorno</h3><div class="box sf-graf"><div id="sf-main"></div></div>`
       + `<h3 class="sec-h">Quando e da dove</h3>${dist}<h3 class="sec-h">Dove</h3>${dove}${altri}${legenda}`;
     disegnaTutto(); ripristinaFocus();
+  }
+  function htmlInterni() {
+    if (ST.intErr) return `<div class="sub">${esc(ST.intErr)}</div>`;
+    const v = ST.intElenco; if (!v) return '<div class="sub">Carico l\'elenco…</div>';
+    if (!v.length) return '<div class="sub">Nessun dispositivo interno: apri l\'app con un account admin o tocca 7 volte la versione in «I tuoi posti».</div>';
+    return `<table class="sf-tab"><thead><tr><th>Dispositivo</th><th>Piattaforma</th><th>Ultima attività</th><th>Eventi</th></tr></thead><tbody>${v.map((x) => `<tr><td>${esc(String(x.device_id).slice(0, 14))}</td><td>${esc(PF[x.piattaforma] || x.piattaforma || '?')}</td><td>${esc(dataOra(x.ultima))}</td><td>${fmt(x.eventi)}</td></tr>`).join('')}</tbody></table><div class="sf-nota">Interno = ha mandato almeno una volta un evento da un dispositivo segnato come interno; vale anche per i suoi eventi precedenti.</div>`;
+  }
+  async function caricaInterni() {
+    const { data, error } = await sb.rpc('dispositivi_interni_admin');
+    ST.intErr = error ? (msgManca(error) ? 'Manca il passo sul database: supabase/20_dispositivi_interni.sql.' : 'Errore: ' + error.message) : ''; ST.intElenco = error ? null : data || [];
+    const el = $('#sf-intbody'); if (el) el.innerHTML = htmlInterni();
   }
   function ripristinaFocus() { const f = ST.focus; ST.focus = ''; if (f) { const el = f.indexOf('p:') === 0 ? document.querySelector('[data-p="' + f.slice(2) + '"]') : document.getElementById(f); if (el) el.focus({ preventScroll: true }); } }
   const barraPct = (n, tot) => `<div class="st-bar"><i style="width:${(n / Math.max(1, tot)) * 100}%"></i></div>`;
@@ -374,10 +406,13 @@
       else if (b.dataset.ser) { const s = b.dataset.ser, i = SF.serie.indexOf(s); if (i >= 0 && SF.serie.length > 1) SF.serie.splice(i, 1); else if (i < 0) SF.serie.push(s); disegnaPrincipale(); $$('.stk', box).forEach((k) => { const on = SF.serie.indexOf(k.dataset.s) >= 0; k.classList.toggle('on', on); k.setAttribute('aria-pressed', String(on)); }); const lb = box.querySelector(`.sf-lg[data-ser="${s}"]`); if (lb) lb.focus({ preventScroll: true }); }
       else if (b.dataset.pf) cambiaFiltri(() => { SF.pl = SF.pl === b.dataset.pf ? '' : b.dataset.pf; }, '');
     });
+    box.addEventListener('toggle', (e) => { if (e.target.id === 'sf-intl') { ST.intAperto = e.target.open; if (ST.intAperto) caricaInterni(); } }, true);
     box.addEventListener('change', (e) => {
       const t = e.target;
       if (t.id === 'sf-pl') cambiaFiltri(() => { SF.pl = t.value; }, 'sf-pl');
       else if (t.id === 'sf-reali') cambiaFiltri(() => { SF.reali = t.checked; }, 'sf-reali');
+      else if (t.id === 'sf-int') cambiaFiltri(() => { SF.interni = t.checked; }, 'sf-int');
+      else if (t.id === 'sf-soglia') cambiaFiltri(() => { SF.soglia = t.value; }, 'sf-soglia');
       else if (t.id === 'sf-dal') cambiaFiltri(() => { SF.dal = t.value; SF.g = ''; }, 'sf-dal');
       else if (t.id === 'sf-al') cambiaFiltri(() => { SF.al = t.value; SF.g = ''; }, 'sf-al');
     });
