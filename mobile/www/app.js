@@ -1521,9 +1521,9 @@
     const contr = !pr.scadenza ? 'Aggiungi la scadenza per ricevere un avviso' : `${g < 0 ? 'Scaduto il' : 'Scade il'} ${dataIt(pr.scadenza)}${pr.notifica ? ` · avviso ${pr.giorni} giorni prima` : ''}`;
     const solo = sessione.prov === 'google';
     const riga = (a, ic, t, sub, mk) => `<button class="rg" data-a="${a}">${mk ? `<span class="mk">${icon(ic)}</span>` : icon(ic)}<span class="t"><b>${t}</b>${sub ? `<span>${sub}</span>` : ''}</span>${a === 'esci' ? '' : icon('chev', 'chev')}</button>`;
-    $('#ac-body').innerHTML = `<div class="chi"><span class="av" aria-hidden="true">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>I tuoi posti sono al sicuro nel tuo account</span></span></div>
+    $('#ac-body').innerHTML = `<div class="chi"><span class="av" aria-hidden="true">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>${solo ? 'Accedi con Google: la password la gestisce Google' : 'I tuoi posti sono al sicuro nel tuo account'}</span></span></div>
       ${sez('h-per', 'Per te', `<div class="grp">${riga('profilo', 'wc', 'Il mio contrassegno', contr, 1)}${riga('segn', 'plus', 'Le mie segnalazioni', 'Quelle che hai inviato e a che punto sono', 1)}</div>`)}
-      ${sez('h-sic', 'Accesso e sicurezza', `<div class="grp">${riga('cambiapw', 'edit', 'Cambia password', solo ? 'Accedi con Google: non serve una password' : '')}${riga('esci', 'user', 'Esci da questo dispositivo', 'I posti restano su questo telefono')}</div>`)}
+      ${sez('h-sic', 'Accesso e sicurezza', `<div class="grp">${solo ? '' : riga('cambiapw', 'edit', 'Cambia password', '')}${riga('esci', 'user', 'Esci da questo dispositivo', 'I posti restano su questo telefono')}</div>`)}
       <div class="zona"><button class="dng" data-a="elimina">Elimina il mio account</button><p>Cancella email, posti salvati, Casa e Lavoro e dati del contrassegno, anche su questo telefono. Le segnalazioni già fatte restano in mappa, anonime. Non si può annullare.</p></div>`;
   }
   function apriAccount() { if (!sessione) return; account(); $('#account').hidden = false; $('#account').scrollTop = 0; $('#ac-tit').focus({ preventScroll: true }); }
