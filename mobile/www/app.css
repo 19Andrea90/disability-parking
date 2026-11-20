@@ -41,7 +41,7 @@ button:focus-visible{outline:3px solid var(--giallo);outline-offset:2px}
 
 #home{position:fixed;left:0;right:0;bottom:0;z-index:6;pointer-events:none}
 #home>*{pointer-events:auto}
-.float{display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px 12px;pointer-events:none}
+#home>.float,.float{display:flex;justify-content:space-between;align-items:flex-end;padding:0 16px 12px;pointer-events:none}
 .float>*{pointer-events:auto}
 .pill{height:48px;padding:0 18px 0 14px;border-radius:999px;background:var(--panel);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow)}
 .dx{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
