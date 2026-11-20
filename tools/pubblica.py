@@ -62,7 +62,7 @@ RESIDUO_GITHUB_OK = {'app/mobile/www/app.js'}
 
 # Punti di partenza: pagine e file di primo livello. Tutto il resto lo trova seguendo i riferimenti.
 PARTENZA = ['index.html', 'sw.js', 'manifest.json', 'admin.html', 'config.js']
-CARTELLE_INTERE = ['sito']          # pubblicata per intero (e comunque controllata)
+CARTELLE_INTERE = ['sito', 'poi']   # pubblicate per intero (e comunque controllate); poi/ = punti d'interesse OSM a tasselli (tools/poi_osm.py), caricati a runtime dall'app
 SOLO_FILE_STATICI = ('.html', '.css', '.js', '.json', '.png', '.jpg', '.jpeg', '.svg', '.webp', '.ico', '.woff', '.woff2', '.txt', '.webmanifest')
 VIETATI = ('.pt', '.onnx', '.sql', '.py', '.md', '.keystore')
 AI_BOT = ['GPTBot', 'ClaudeBot', 'CCBot', 'Google-Extended', 'PerplexityBot', 'Bytespider', 'Amazonbot', 'Applebot-Extended']
@@ -180,6 +180,12 @@ HEADERS = """# Intestazioni per Cloudflare Pages (generato da tools/pubblica.py)
 /admin.html
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-cache
+
+# Punti d'interesse OpenStreetMap a tasselli: l'app Android (altra origine) li scarica da qui; l'indice si rilegge sempre, i tasselli hanno la versione nell'indirizzo
+/poi/*
+  Access-Control-Allow-Origin: *
+/poi/meta.json
+  Cache-Control: no-cache
 """
 
 HEADERS_DOMINIO = """# Intestazioni per Cloudflare Pages, disposizione "dominio" (generato da tools/pubblica.py)
@@ -207,6 +213,12 @@ HEADERS_DOMINIO = """# Intestazioni per Cloudflare Pages, disposizione "dominio"
   Cache-Control: no-cache
 /admin/*
   X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-cache
+
+# Punti d'interesse OpenStreetMap a tasselli: l'app Android (altra origine) li scarica da qui; l'indice si rilegge sempre, i tasselli hanno la versione nell'indirizzo
+/app/poi/*
+  Access-Control-Allow-Origin: *
+/app/poi/meta.json
   Cache-Control: no-cache
 """
 # Cloudflare Pages: vecchi indirizzi (GitHub Pages) -> nuovi. La vecchia web app in radice non serve più (la radice è la vetrina).

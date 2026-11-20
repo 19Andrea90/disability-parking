@@ -1084,61 +1084,68 @@
 
 
   // ---------- ricerca per tipo di luogo (in aggiunta alla ricerca per indirizzo) ----------
-  // Categorie di luoghi. Fonte principale: Photon (photon.komoot.io, dati OpenStreetMap, gratuito, funziona anche sul web senza chiavi),
-  // filtrato per tag OSM ("tag": uno per richiesta, così non dipende da come il servizio combina più osm_tag). Solo se Photon non risponde
-  // e c'è la chiave TomTom (app Android) si ripiega sulla Search API di TomTom (campi "cat" / "q", verificati con chiamate reali su Udine,
-  // Milano, Trieste, Roma, che ha solo 2.500 richieste gratis al mese).
-  // "si" / "no": tengono solo i nomi che c'entrano (nei dati liberi e in TomTom si trovano anche padiglioni, studi, erboristerie...).
-  // In ogni voce di "tag", "si" vale solo per quel tag (es. amenity:clinic comprende anche gli studi medici: si tengono le cliniche vere).
-  const SI_OSPEDALE = /ospedal|hospital|policlinic|clinica|presidio|pronto soccorso|casa di cura|irccs|asst|azienda sanitaria/i;
+  // I luoghi vengono da un nostro elenco di punti d'interesse di OpenStreetMap, a tasselli (file statici del sito, generati da tools/poi_osm.py):
+  // funziona uguale sul web e su Android, senza servizi a pagamento. TomTom Search resta solo come riserva (dove c'è la chiave) se il tassello non si scarica.
+  // "e" è l'etichetta usata quando il luogo non ha nome. Le chiavi "k" sono le stesse di tools/poi_osm.py. Il resto (cat, q, si, no) serve solo alla
+  // riserva TomTom: categorie della Search API (categorySearch / poiSearch), "si" tiene solo i nomi che c'entrano.
   const CATEGORIE = [
-    { k: 'ospedali', n: 'Ospedali', ic: 'ospedale', tag: [{ t: 'amenity:hospital' }, { t: 'amenity:clinic', si: SI_OSPEDALE }], q: 'ospedale', cat: '7321', si: SI_OSPEDALE },
-    { k: 'stazioni', n: 'Stazioni', ic: 'treno', tag: [{ t: 'railway:station' }], q: 'stazione', ttq: 'stazione ferroviaria', no: /biglietteria|cargo|\bs\.?p\.?a\.?(\s|$)/i, si: (x) => /^stazione/i.test(x.poi.name) || /national|international/.test((x.poi.categories || []).join()) },
-    { k: 'uffici', n: 'Uffici pubblici', ic: 'ufficio', tag: [{ t: 'amenity:townhall' }, { t: 'office:government' }, { t: 'amenity:post_office' }], q: 'comune', cat: '7367,7324' },
-    { k: 'farmacie', n: 'Farmacie', ic: 'farmacia', tag: [{ t: 'amenity:pharmacy' }], q: 'farmacia', cat: '7326', no: /erboristeria|drogheria/i },
-    { k: 'supermercati', n: 'Supermercati', ic: 'carrello', tag: [{ t: 'shop:supermarket' }], q: 'supermercato', cat: '7332005' },
-    { k: 'scuole', n: 'Scuole', ic: 'scuola', tag: [{ t: 'amenity:school' }, { t: 'amenity:college' }, { t: 'amenity:university' }], q: 'scuola', cat: '7372004,7372005,7372006,7372014,7372007,7372009' },
+    { k: 'ospedali', n: 'Ospedali', e: 'Ospedale', ic: 'ospedale', cat: '7321', si: /ospedal|hospital|policlinic|clinica|presidio|pronto soccorso|casa di cura|irccs|asst|azienda sanitaria/i },
+    { k: 'stazioni', n: 'Stazioni', e: 'Stazione', ic: 'treno', q: 'stazione ferroviaria', si: (x) => (/^stazione/i.test(x.poi.name) || /national|international/.test((x.poi.categories || []).join())) && !/biglietteria|cargo|s\.?p\.?a/i.test(x.poi.name) },
+    { k: 'uffici', n: 'Uffici pubblici', e: 'Ufficio pubblico', ic: 'ufficio', cat: '7367,7324' },
+    { k: 'farmacie', n: 'Farmacie', e: 'Farmacia', ic: 'farmacia', cat: '7326', no: /erboristeria|drogheria/i },
+    { k: 'supermercati', n: 'Supermercati', e: 'Supermercato', ic: 'carrello', cat: '7332005' },
+    { k: 'scuole', n: 'Scuole', e: 'Scuola', ic: 'scuola', cat: '7372004,7372005,7372006,7372014,7372007,7372009' },
   ];
   let luoghiCat = [];
-  // Photon cerca per nome (vuole sempre una parola e non trova, per esempio, i supermercati che si chiamano Conad o Despar): verificato il 20/11.
-  // Finché non avremo un elenco nostro dei luoghi, le categorie restano su TomTom e quindi solo nell'app Android.
-  const htmlCategorie = () => !TT ? '' : `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
+  const htmlCategorie = () => `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
     <div class="catgrid">${CATEGORIE.map((c) => `<button data-cat="${c.k}"><span class="mk">${icon(c.ic)}</span><span>${c.n}</span></button>`).join('')}</div>`;
   const messaggioCat = (testo) => { $('#s-body').innerHTML = `<div class="s-msg" role="status"><div class="empty">${testo}</div><button class="bsm" data-cat-fine="1">Torna alla ricerca</button></div>`; };
-  const RAGGIO_CAT = 10000, PASSI_CAT = [4000, RAGGIO_CAT]; // metri: si allarga la zona solo se vicino non c'è abbastanza
-  // Una richiesta a Photon per un tag OSM, dentro un riquadro attorno al centro. Per Photon "q" è facoltativo quando c'è un filtro:
-  // se il servizio lo pretende (errore 400) si ripete con una parola di ricerca adatta alla categoria.
-  async function photonTag(c, tg, centro, raggio, signal) {
-    const dLat = raggio / 111320, dLon = raggio / (111320 * Math.cos(centro.lat * Math.PI / 180));
-    const base = `https://photon.komoot.io/api/?osm_tag=${encodeURIComponent(tg)}&lat=${centro.lat}&lon=${centro.lon}&limit=40&lang=it&bbox=${(centro.lon - dLon).toFixed(5)},${(centro.lat - dLat).toFixed(5)},${(centro.lon + dLon).toFixed(5)},${(centro.lat + dLat).toFixed(5)}`;
-    let r = await entro(base, signal, 6000);
-    if (r.status === 400) r = await entro(base + '&q=' + encodeURIComponent(c.q), signal, 6000);
-    if (!r.ok) throw new Error('photon ' + r.status);
-    return (await r.json()).features || [];
-  }
-  async function cercaPhoton(c, centro, signal) {
-    const visti = new Set(), v = [];
-    for (const raggio of PASSI_CAT) {
-      const gruppi = await Promise.all(c.tag.map((x) => photonTag(c, x.t, centro, raggio, signal).then((fs) => fs.map((f) => [f, x]))));
-      for (const [f, x] of [].concat(...gruppi)) {
-        const p = f.properties || {}, g = f.geometry && f.geometry.coordinates; if (!p.name || !g || (p.countrycode && p.countrycode !== 'IT')) continue;
-        if ((x.si && !x.si.test(p.name)) || (c.no && c.no.test(p.name))) continue;
-        const id = (p.osm_type || '') + (p.osm_id || '') + p.name; if (visti.has(id)) continue; visti.add(id);
-        const d = dist(centro.lat, centro.lon, g[1], g[0]); if (d > RAGGIO_CAT) continue;
-        v.push({ t: p.name, via: [p.street, p.housenumber].filter(Boolean).join(' '), comune: p.city || p.locality || p.county || '', lat: g[1], lon: g[0], d });
-      }
-      if (v.length >= 6) break; // abbastanza luoghi vicini: non serve allargare
+
+  // Elenco OSM a tasselli. Sul web sta accanto all'app (poi/); su Android l'app è un guscio locale e li scarica dal sito pubblicato.
+  // Ogni tassello (circa 0,25 gradi) si scarica una volta sola: resta in memoria e, con la versione nell'indirizzo, nella cache del browser (anche offline).
+  const POI_RAGGIO = 10000, POI_MAX = 8;
+  const poiBase = () => NATIVO() ? (/sostabile\.it/.test(SITO_ANDROID) ? SITO_ANDROID + 'app/poi/' : SITO_ANDROID.replace(/sito\/$/, 'poi/')) : new URL('poi/', document.baseURI).href;
+  let poiMeta = null; const poiTess = new Map();
+  async function poiLeggi(url, ms, primaCache) {
+    let cache = null; try { cache = await caches.open('dp-poi'); } catch (e) { /* senza cache si va solo in rete */ }
+    if (cache && primaCache) { try { const h = await cache.match(url); if (h) return await h.json(); } catch (e) { /* rete */ } }
+    try {
+      const r = await entro(url, new AbortController().signal, ms); if (!r.ok) throw new Error(r.status);
+      const j = await r.clone().json(); if (cache) { try { cache.put(url, r); } catch (e) { /* non è grave */ } } return j;
+    } catch (e) {
+      if (cache && !primaCache) { try { const h = await cache.match(url); if (h) return await h.json(); } catch (e2) { /* niente copia */ } }
+      throw e;
     }
-    return v;
   }
-  // Riserva: Search API di TomTom (solo se la chiave c'è, cioè nell'app Android)
+  function poiMetaGet() {
+    if (!poiMeta) poiMeta = poiLeggi(poiBase() + 'meta.json', 6000, false).then((m) => { if (!m || !m.d || !Array.isArray(m.tasselli)) throw new Error('meta'); m.set = new Set(m.tasselli); return m; }).catch((e) => { poiMeta = null; throw e; });
+    return poiMeta;
+  }
+  function poiTassello(m, id) {
+    if (!poiTess.has(id)) poiTess.set(id, poiLeggi(`${poiBase()}${id}.json?v=${encodeURIComponent(m.v)}`, 10000, true).catch((e) => { poiTess.delete(id); throw e; }));
+    return poiTess.get(id);
+  }
+  async function cercaPoi(c, centro) {
+    const m = await poiMetaGet(), D = m.d, dla = POI_RAGGIO / 111320, dlo = POI_RAGGIO / (111320 * Math.cos(centro.lat * Math.PI / 180)), ids = [];
+    for (let iy = Math.floor((centro.lat - dla) * D); iy <= Math.floor((centro.lat + dla) * D); iy++)
+      for (let ix = Math.floor((centro.lon - dlo) * D); ix <= Math.floor((centro.lon + dlo) * D); ix++) if (m.set.has(iy + '_' + ix)) ids.push(iy + '_' + ix);
+    const tess = await Promise.all(ids.map((id) => poiTassello(m, id))), v = [];
+    for (const t of tess) for (const p of (t && t[c.k]) || []) { const d = dist(centro.lat, centro.lon, p[0], p[1]); if (d <= POI_RAGGIO) v.push({ t: p[2] || c.e, via: '', comune: '', lat: p[0], lon: p[1], d }); }
+    return ordinaLuoghi(v);
+  }
+  function ordinaLuoghi(v) { // per distanza; niente doppioni a pochi metri l'uno dall'altro; al massimo POI_MAX
+    v.sort((a, b) => a.d - b.d); const out = [];
+    for (const x of v) { if (out.some((y) => dist(x.lat, x.lon, y.lat, y.lon) < 150)) continue; out.push(x); if (out.length === POI_MAX) break; }
+    return out;
+  }
+  // Riserva: TomTom Search (solo dove c'è la chiave: l'app Android), se l'elenco della zona non si scarica
   async function cercaTomTom(c, centro, signal) {
-    const url = `https://api.tomtom.com/search/2/${c.ttq || !c.cat ? 'poiSearch/' + encodeURIComponent(c.ttq || c.q) : 'categorySearch/.'}.json?key=${TT}&lat=${centro.lat}&lon=${centro.lon}&radius=${RAGGIO_CAT}&limit=25&countrySet=IT&language=it-IT${c.cat ? '&categorySet=' + c.cat : ''}`;
+    const url = `https://api.tomtom.com/search/2/${c.q ? 'poiSearch/' + encodeURIComponent(c.q) : 'categorySearch/.'}.json?key=${TT}&lat=${centro.lat}&lon=${centro.lon}&radius=10000&limit=25&countrySet=IT&language=it-IT${c.cat ? '&categorySet=' + c.cat : ''}`;
     const r = await entro(url, signal, 6000); if (!r.ok) throw new Error(r.status);
     const j = await r.json();
-    return (j.results || []).filter((x) => x.poi && x.poi.name && x.position && (!c.si || (typeof c.si === 'function' ? c.si(x) : c.si.test(x.poi.name))) && !(c.no && c.no.test(x.poi.name))).map((x) => {
-      const a = x.address || {}; return { t: x.poi.name, via: [a.streetName, a.streetNumber].filter(Boolean).join(' '), comune: a.municipality || '', lat: x.position.lat, lon: x.position.lon, d: dist(centro.lat, centro.lon, x.position.lat, x.position.lon) };
-    });
+    const v = (j.results || []).filter((x) => x.poi && x.poi.name && x.position && (!c.si || (typeof c.si === 'function' ? c.si(x) : c.si.test(x.poi.name))) && !(c.no && c.no.test(x.poi.name)))
+      .map((x) => { const a = x.address || {}; return { t: x.poi.name, via: [a.streetName, a.streetNumber].filter(Boolean).join(' '), comune: a.municipality || '', lat: x.position.lat, lon: x.position.lon, d: dist(centro.lat, centro.lon, x.position.lat, x.position.lon) }; });
+    return ordinaLuoghi(v);
   }
   async function apriCategoria(k) {
     const c = CATEGORIE.find((x) => x.k === k); if (!c) return;
@@ -1146,22 +1153,15 @@
     $('#s-body').innerHTML = `<div class="empty cerco" role="status">Cerco ${c.n.toLowerCase()} vicino a te…</div>`;
     const centro = me ? { lat: me.lat, lon: me.lon } : { lat: map.getCenter().lat, lon: map.getCenter().lng }, usoMe = !!me;
     try {
-      let v;
-      const ck = `dp.cat.${k}.${centro.lat.toFixed(2)},${centro.lon.toFixed(2)}`, cc = ls.get(ck, null); // stessa zona (~1 km) nelle ultime 24 ore: niente nuova richiesta
-      if (cc && Date.now() - cc.t < 864e5) v = cc.v.map((x) => Object.assign({}, x, { d: dist(centro.lat, centro.lon, x.lat, x.lon) }));
-      else { traccia('categoria'); try { v = await cercaTomTom(c, centro, mio.signal); } catch (e) { if (e.name === 'AbortError' || sCtl !== mio) throw e; v = await cercaPhoton(c, centro, mio.signal); }
-        if (sCtl === mio && v && v.length) ls.set(ck, { t: Date.now(), v }); }
+      let v, osm = true;
+      try { v = await cercaPoi(c, centro); }
+      catch (e) { if (TT) { osm = false; traccia('categoria'); v = await cercaTomTom(c, centro, mio.signal); } else throw e; } // il contatore TomTom Search conta solo le richieste vere
       if (sCtl !== mio) return;
-      v.sort((a, b) => a.d - b.d);
-      luoghiCat = [];
-      for (const x of v) { // niente doppioni a pochi metri l'uno dall'altro; al massimo 8
-        if (luoghiCat.some((y) => dist(x.lat, x.lon, y.lat, y.lon) < 150)) continue;
-        luoghiCat.push(x); if (luoghiCat.length === 8) break;
-      }
+      luoghiCat = v;
       if (!luoghiCat.length) { messaggioCat(`Non trovo ${c.n.toLowerCase()} nei dintorni. Prova a cercare per nome o indirizzo.`); return; }
       $('#s-body').innerHTML = `<div class="cat-testa"><h2 id="cat-h" tabindex="-1">${c.n}</h2><div class="muted">${usoMe ? 'Vicino a te' : 'Vicino al centro della mappa'}</div></div>` +
         luoghiCat.map((x, i) => `<button class="res luogoc" data-luogo="${i}"><span class="mk">${icon(c.ic)}</span><span class="t"><b>${esc(x.t)}</b><span>${esc([x.via, x.comune].filter(Boolean).join(', '))}</span><span class="cnt" data-cnt="${i}"></span></span><span class="d">${fmtDist(x.d)}</span></button>`).join('') +
-        `<div class="cat-piede"><p>Tocca un luogo per vedere i posti numerati attorno, come con un indirizzo.</p><button class="lnk" data-cat-fine="1"><span>Non lo trovi? Cerca per nome o indirizzo</span></button></div>`;
+        `<div class="cat-piede"><p>Tocca un luogo per vedere i posti numerati attorno, come con un indirizzo.</p><button class="lnk" data-cat-fine="1"><span>Non lo trovi? Cerca per nome o indirizzo</span></button>${osm ? '<p class="muted small">Luoghi: © OpenStreetMap contributors</p>' : ''}</div>`;
       const h = $('#cat-h'); if (h) h.focus({ preventScroll: true });
       contaLuoghi(luoghiCat.slice(), mio.signal);
     } catch (e) { if (e.name === 'AbortError' || sCtl !== mio) return; messaggioCat('La ricerca per tipo di luogo non risponde. Controlla la connessione, oppure cerca per nome o indirizzo.'); }
