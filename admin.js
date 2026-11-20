@@ -59,18 +59,22 @@
   const cnt = async (tab, f) => { const { count, error } = await f(sb.from(tab).select('*', { count: 'exact', head: true })); return error ? null : count; };
   const ignorati = () => lsGet('adm.ignNonEsiste', []);
   // "non c'è più": stalli attivi con almeno una conferma "non esiste", tolti quelli che l'admin ha già controllato e lasciato (lista locale)
+  // "posizione da precisare": posti da elenchi ufficiali con solo l'indirizzo, messi sulla via in modo approssimato (nota dell'importazione)
+  const APPROX = '%posizione approssimata%';
+  const nonApprox = (q) => q.or('note.is.null,note.not.ilike.*approssimata*');
   function qNonce(q) { q = q.gt('conferme_non_esiste', 0).in('stato', ['proposto', 'verificato', 'ufficiale']); const ig = ignorati(); return ig.length ? q.not('id', 'in', '(' + ig.join(',') + ')') : q; }
   const giorniFa = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
   async function aggiornaTodo() {
-    const [utenti, proposti, nonce, cand, pecAtt, pecScad, sugg] = await Promise.all([
+    const [utenti, proposti, nonce, precisare, cand, pecAtt, pecScad, sugg] = await Promise.all([
       cnt('stalli_con_conferme', (q) => q.eq('fonte', 'utente').eq('stato', 'proposto')),
-      cnt('stalli_con_conferme', (q) => q.eq('stato', 'proposto').neq('fonte', 'utente')),
+      cnt('stalli_con_conferme', (q) => nonApprox(q.eq('stato', 'proposto').neq('fonte', 'utente'))),
       cnt('stalli_con_conferme', qNonce),
+      cnt('stalli_con_conferme', (q) => q.eq('stato', 'proposto').ilike('note', APPROX)),
       cnt('candidati', (q) => q.eq('stato', 'nuovo')),
       cnt('pec_comuni', (q) => q.in('stato', ['Inviata', 'Risposta ricevuta'])),
       cnt('pec_comuni', (q) => q.in('stato', ['Inviata', 'Risposta ricevuta']).lte('inviata', giorniFa(23))), // scadenza = invio + 30 giorni: entro 7 giorni (o già scaduta)
       cnt('suggerimenti', (q) => q.eq('stato', 'nuovo'))]);
-    Object.assign(todo, { utenti, proposti, nonce, cand, pecAtt, pecScad, sugg });
+    Object.assign(todo, { utenti, proposti, nonce, precisare, cand, pecAtt, pecScad, sugg });
     const tot = [utenti, proposti, nonce, cand].reduce((a, n) => a + (n || 0), 0), b = $('#badge');
     b.textContent = tot > 99 ? '99+' : tot; b.hidden = !tot; b.setAttribute('aria-label', tot + ' da controllare');
     renderTodo(); if (typeof renderQTabs === 'function') renderQTabs();
@@ -81,6 +85,7 @@
     const sErr = (t.sugg == null && t.errori == null) ? null : (t.sugg || 0) + (t.errori || 0);
     $('#todo').innerHTML = tile('#/controllare?t=utenti', t.utenti, 'Segnalazioni degli utenti', 'posti proposti da approvare')
       + tile('#/controllare?t=proposti', t.proposti, 'Posti da approvare', 'proposti da altre fonti')
+      + tile('#/controllare?t=precisare', t.precisare, 'Posizione da precisare', 'dagli elenchi dei Comuni, pin solo sulla via')
       + tile('#/controllare?t=nonce', t.nonce, 'Segnalati "non c\'è più"', 'qualcuno dice che il posto non esiste')
       + tile('#/comuni?f=scad7', t.pecAtt, 'PEC in attesa di risposta', `${v(t.pecScad)} in scadenza entro 7 giorni (o già scadute)`)
       + tile('#/suggerimenti', sErr, 'Suggerimenti ed errori', `${v(t.sugg)} suggerimenti nuovi · ${t.errori == null ? '…' : fmt(t.errori)} errori in 24 h`)
@@ -492,6 +497,7 @@
   const LEDE = {
     utenti: 'Posti segnalati dagli utenti dell\'app. Guarda foto e satellite, poi approva o rifiuta: chi ha segnalato vede il motivo del rifiuto.',
     proposti: 'Posti proposti da altre fonti, in attesa di approvazione.',
+    precisare: 'Posti degli elenchi ufficiali dei Comuni che danno solo l\'indirizzo: il pin è messo sulla via in modo approssimato. Cerca lo stallo sul satellite, poi "Riposiziona e approva"; se non lo trovi, "Salta" e restano qui.',
     nonce: 'Posti per cui qualcuno ha toccato "non c\'è più". "Esiste ancora" lo toglie da questo elenco (solo su questo browser); "Rimuovi" lo toglie dalla mappa.',
     cand: 'La scansione dell\'ortofoto propone i possibili stalli: sopra l\'85% li conferma da sola, sotto il 30% li scarta da sola. Qui controlli quelli in mezzo e, se vuoi, verifichi quelli confermati in automatico.'
   };
@@ -503,12 +509,12 @@
 
   PAGES.controllare = {
     load(force) {
-      const t = parseHash().params.get('t'); if (!force && ['utenti', 'proposti', 'nonce', 'cand'].includes(t)) qTab = t;
+      const t = parseHash().params.get('t'); if (!force && ['utenti', 'proposti', 'precisare', 'nonce', 'cand'].includes(t)) qTab = t;
       renderQTabs(); qCarica(force ? qPag : 0);
     },
     show(p) {
       const t = p.get('t');
-      if (t && ['utenti', 'proposti', 'nonce', 'cand'].includes(t)) { if (t !== qTab) { qTab = t; renderQTabs(); qCarica(0); } history.replaceState(null, '', '#/controllare'); }
+      if (t && ['utenti', 'proposti', 'precisare', 'nonce', 'cand'].includes(t)) { if (t !== qTab) { qTab = t; renderQTabs(); qCarica(0); } history.replaceState(null, '', '#/controllare'); }
       if (cmap) setTimeout(() => cmap.invalidateSize(), 30);
     }
   };
@@ -525,7 +531,8 @@
     if (kind() === 'cand') return sb.from('candidati').select('*', { count: 'exact' }).eq('stato', cf).order('created_at', { ascending: false }).order('id');
     let q = sb.from('stalli_con_conferme').select('*', { count: 'exact' });
     if (qTab === 'utenti') q = q.eq('fonte', 'utente').eq('stato', 'proposto').order('created_at', { ascending: false });
-    else if (qTab === 'proposti') q = q.eq('stato', 'proposto').neq('fonte', 'utente').order('created_at', { ascending: false });
+    else if (qTab === 'proposti') q = nonApprox(q.eq('stato', 'proposto').neq('fonte', 'utente')).order('created_at', { ascending: false });
+    else if (qTab === 'precisare') q = q.eq('stato', 'proposto').ilike('note', APPROX).order('comune').order('indirizzo');
     else if (qTab === 'nonce') q = qNonce(q).order('ultima_conferma', { ascending: false, nullsFirst: false });
     else q = q.eq('stato', 'verificato').like('note', 'Confermato in automatico%').not('note', 'like', '%controllato%').order('created_at', { ascending: false }); // candidati accettati dalla rete da verificare
     return q.order('id');
@@ -650,7 +657,8 @@
         return;
       }
       const upd = {}; if (pos) { upd.lat = pos[0]; upd.lon = pos[1]; }
-      if (qTab === 'utenti' || qTab === 'proposti') upd.stato = 'verificato'; else if (qTab === 'cand') upd.note = (it.note || '') + ' · controllato';
+      if (qTab === 'utenti' || qTab === 'proposti' || qTab === 'precisare') upd.stato = 'verificato'; else if (qTab === 'cand') upd.note = (it.note || '') + ' · controllato';
+      if (qTab === 'precisare') upd.note = (it.note || '').replace(/posizione approssimata sulla via: da verificare;?\s*/i, pos ? 'posizione controllata sul satellite; ' : 'approvato senza spostare il pin; ').trim() || null;
       if (Object.keys(upd).length) chk(await sb.from('stalli').update(upd).eq('id', it.id));
       if (qTab === 'nonce') ignora(it.id);
     })) qFatto(kind() === 'cand' ? 'Stallo creato.' : qTab === 'nonce' ? 'Lasciato in mappa.' : qTab === 'cand' ? 'Confermato.' : 'Approvato.');
