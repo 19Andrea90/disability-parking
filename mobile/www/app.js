@@ -1098,7 +1098,9 @@
     { k: 'scuole', n: 'Scuole', ic: 'scuola', tag: [{ t: 'amenity:school' }, { t: 'amenity:college' }, { t: 'amenity:university' }], q: 'scuola', cat: '7372004,7372005,7372006,7372014,7372007,7372009' },
   ];
   let luoghiCat = [];
-  const htmlCategorie = () => `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
+  // Photon cerca per nome (vuole sempre una parola e non trova, per esempio, i supermercati che si chiamano Conad o Despar): verificato il 20/11.
+  // Finché non avremo un elenco nostro dei luoghi, le categorie restano su TomTom e quindi solo nell'app Android.
+  const htmlCategorie = () => !TT ? '' : `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
     <div class="catgrid">${CATEGORIE.map((c) => `<button data-cat="${c.k}"><span class="mk">${icon(c.ic)}</span><span>${c.n}</span></button>`).join('')}</div>`;
   const messaggioCat = (testo) => { $('#s-body').innerHTML = `<div class="s-msg" role="status"><div class="empty">${testo}</div><button class="bsm" data-cat-fine="1">Torna alla ricerca</button></div>`; };
   const RAGGIO_CAT = 10000, PASSI_CAT = [4000, RAGGIO_CAT]; // metri: si allarga la zona solo se vicino non c'è abbastanza
@@ -1143,8 +1145,10 @@
     const centro = me ? { lat: me.lat, lon: me.lon } : { lat: map.getCenter().lat, lon: map.getCenter().lng }, usoMe = !!me;
     try {
       let v;
-      try { v = await cercaPhoton(c, centro, mio.signal); }
-      catch (e) { if (e.name === 'AbortError' || sCtl !== mio || !TT) throw e; v = await cercaTomTom(c, centro, mio.signal); }
+      const ck = `dp.cat.${k}.${centro.lat.toFixed(2)},${centro.lon.toFixed(2)}`, cc = ls.get(ck, null); // stessa zona (~1 km) nelle ultime 24 ore: niente nuova richiesta
+      if (cc && Date.now() - cc.t < 864e5) v = cc.v.map((x) => Object.assign({}, x, { d: dist(centro.lat, centro.lon, x.lat, x.lon) }));
+      else { try { v = await cercaTomTom(c, centro, mio.signal); } catch (e) { if (e.name === 'AbortError' || sCtl !== mio) throw e; v = await cercaPhoton(c, centro, mio.signal); }
+        if (sCtl === mio && v && v.length) ls.set(ck, { t: Date.now(), v }); }
       if (sCtl !== mio) return;
       v.sort((a, b) => a.d - b.d);
       luoghiCat = [];
