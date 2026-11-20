@@ -104,6 +104,7 @@
       if (params.get('s')) lsSet('adm.dashSez', dashSez);
       $$('.dtab').forEach((b) => { const on = b.dataset.s === dashSez; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
       $('#dp-stat').hidden = dashSez !== 'stat'; $('#dp-consumi').hidden = dashSez !== 'consumi';
+      statDaHash(params);
     }
   };
   function vaiSezione(s, focus) { lsSet('adm.dashSez', s); location.hash = '#/dashboard' + (s === 'consumi' ? '?s=consumi' : '?s=stat'); if (focus) $('#dt-' + s).focus(); }
@@ -120,7 +121,269 @@
       c((q) => q.gt('conferme_non_esiste', 0).neq('stato', 'rifiutato')), c((q) => q.in('stato', ['proposto', 'verificato', 'ufficiale']))]);
     $('#kpi').innerHTML = [['Segnalazioni utenti', s0], ['Da approvare', p], ['Verificati', v], ['Ufficiali', u], ['Con "non esiste"', x], ['Totale attivi', t]].map((k) => `<div>${k[0]}<b>${typeof k[1] === 'number' ? fmt(k[1]) : k[1]}</b></div>`).join('');
   }
-  // ---------- statistiche d'uso (rpc statistiche_admin) ----------
+  // ---------- statistiche d'uso: filtrabili e interattive (rpc statistiche_admin_filtri, supabase/19_statistiche_filtri.sql) ----------
+  // Se la funzione non è ancora nel database la scheda mostra un avviso e ricade sulla vista fissa di statistiche_admin().
+  // Dispositivo "reale" = ha fatto almeno un'azione oltre all'apertura ('avvio'): i test automatici e le anteprime aprono e basta.
+  const PERIODI = [['oggi', 'Oggi'], ['7g', '7 giorni'], ['30g', '30 giorni'], ['90g', '90 giorni'], ['12m', '12 mesi'], ['pers', 'Personalizzato']];
+  const PIATT = [['', 'Tutte'], ['android', 'Android'], ['ios', 'iPhone'], ['web', 'Web da telefono'], ['pc', 'Computer']];
+  const PF = { android: 'Android', ios: 'iPhone', web: 'Web da telefono', pc: 'Web da computer', '?': 'Sconosciuta' };
+  // un colore e un tratteggio per serie, fissi (la serie non cambia colore se ne accendi altre)
+  const SERIE = {
+    attivi: { n: 'Dispositivi attivi', c: '#2a78d6', d: '' }, nuovi: { n: 'Nuovi dispositivi', c: '#eb6834', d: '6 3' },
+    sessioni: { n: 'Sessioni', c: '#1baf7a', d: '2 3' }, naviga: { n: 'Navigazioni', c: '#6250d6', d: '8 3 2 3' },
+    arrivati: { n: 'Arrivati al posto', c: '#008300', d: '' }, occupato: { n: 'Trovato occupato', c: '#c98500', d: '6 3' },
+    schede: { n: 'Posti aperti', c: '#d55181', d: '2 3' }, segnalazioni: { n: 'Segnalazioni', c: '#e34948', d: '8 3 2 3' },
+    registrazioni: { n: 'Registrazioni', c: '#4a5668', d: '' }, errori: { n: 'Errori', c: '#8c1b14', d: '6 3' } };
+  const SERIE_BASE = ['attivi', 'naviga', 'nuovi'];
+  const KPI = [['attivi', 'Dispositivi attivi', 'attivi'], ['nuovi', 'Nuovi dispositivi', 'nuovi'], ['sessioni', 'Sessioni (aperture)', 'sessioni'], ['navigazioni', 'Navigazioni avviate', 'naviga'],
+    ['arrivati', 'Arrivati al posto', 'arrivati'], ['occupato', 'Trovato occupato', 'occupato'], ['schede', 'Posti aperti', 'schede'], ['segnalazioni', 'Segnalazioni degli utenti', 'segnalazioni'],
+    ['registrazioni', 'Registrazioni', 'registrazioni'], ['errori', 'Errori dell\'app', 'errori']];
+  const SF = { pronto: false, p: '30g', dal: '', al: '', pl: '', reali: true, g: '', serie: SERIE_BASE.slice(), msg: '' };
+  const ST = { D: null, chiave: '', vecchia: null, mancante: false, focus: '', hov: -1, n: 0 };
+  const isoD = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '') && !isNaN(Date.parse(s + 'T12:00:00Z'));
+  const addG = (s, n) => new Date(Date.parse(s + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+  const diffG = (a, b) => Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 864e5);
+  const oggiRoma = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+  const dm = (s) => s.slice(8, 10) + '/' + s.slice(5, 7);
+  const giornoLungo = (s) => new Date(s + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+  function intervallo() { // [dal, al] scelti, oppure null se la scelta "Personalizzato" non è valida
+    const t = oggiRoma(), p = SF.p;
+    if (p === 'oggi') return [t, t]; if (p === '7g') return [addG(t, -6), t]; if (p === '30g') return [addG(t, -29), t]; if (p === '90g') return [addG(t, -89), t]; if (p === '12m') return [addG(t, -364), t];
+    if (!isoD(SF.dal) || !isoD(SF.al)) { SF.msg = 'Scegli le due date.'; return null; }
+    if (SF.dal > SF.al) { SF.msg = 'La data iniziale è dopo quella finale.'; return null; }
+    if (SF.al > t) { SF.msg = 'La data finale è nel futuro.'; return null; }
+    if (diffG(SF.dal, SF.al) + 1 > 366) { SF.msg = 'Il periodo può essere lungo al massimo 366 giorni.'; return null; }
+    return [SF.dal, SF.al];
+  }
+  const filtriChiave = () => JSON.stringify([SF.p, SF.p === 'pers' ? SF.dal : '', SF.p === 'pers' ? SF.al : '', SF.pl, SF.reali, SF.g]);
+  function filtriDaHash(params) { // #/dashboard?p=30g&pl=android&r=0&g=2026-11-19 (senza parametri: l'ultima scelta ricordata nel browser)
+    const m = lsGet('adm.statF', {}), has = ['p', 'pl', 'r', 'g', 'dal', 'al'].some((k) => params.has(k)), src = has ? { p: params.get('p'), pl: params.get('pl'), r: params.get('r'), g: params.get('g'), dal: params.get('dal'), al: params.get('al') } : { p: m.p, pl: m.pl, r: m.reali === false ? '0' : '1', g: '', dal: m.dal, al: m.al };
+    SF.p = PERIODI.some((x) => x[0] === src.p) ? src.p : '30g';
+    SF.pl = PIATT.some((x) => x[0] === (src.pl || '')) ? (src.pl || '') : '';
+    SF.reali = src.r !== '0'; SF.g = isoD(src.g) ? src.g : ''; SF.dal = isoD(src.dal) ? src.dal : ''; SF.al = isoD(src.al) ? src.al : '';
+    if (SF.p === 'pers' && !SF.dal && !SF.al) SF.p = '30g';
+    if (has) lsSet('adm.statF', { p: SF.p, dal: SF.dal, al: SF.al, pl: SF.pl, reali: SF.reali });
+    SF.pronto = true;
+  }
+  function hashFiltri() {
+    const old = parseHash().params, q = new URLSearchParams(); if (old.get('s')) q.set('s', old.get('s'));
+    q.set('p', SF.p); if (SF.p === 'pers') { if (SF.dal) q.set('dal', SF.dal); if (SF.al) q.set('al', SF.al); }
+    if (SF.pl) q.set('pl', SF.pl); if (!SF.reali) q.set('r', '0'); if (SF.g) q.set('g', SF.g);
+    return '#/dashboard?' + q.toString();
+  }
+  function cambiaFiltri(mod, focus) { // applica un cambio: ricorda la scelta, aggiorna l'indirizzo (la cronologia del browser segue i filtri) e ricarica
+    mod(); SF.msg = ''; ST.focus = focus || ''; ST.hov = -1;
+    lsSet('adm.statF', { p: SF.p, dal: SF.dal, al: SF.al, pl: SF.pl, reali: SF.reali });
+    const h = hashFiltri(); if (location.hash !== h) location.hash = h; statistiche();
+  }
+  const azzeraFiltri = () => cambiaFiltri(() => { SF.p = '30g'; SF.dal = SF.al = SF.pl = SF.g = ''; SF.reali = true; SF.serie = SERIE_BASE.slice(); }, 'sf-azzera');
+  function statDaHash(params) { // chiamata dal router a ogni cambio di indirizzo della dashboard
+    const prima = filtriChiave(), era = SF.pronto; filtriDaHash(params);
+    if (!params.get('p') && current === 'dashboard' && location.hash.indexOf('?s=consumi') < 0) { try { history.replaceState(null, '', hashFiltri()); } catch (e) { /* ok */ } }
+    if (era && prima !== filtriChiave()) statistiche();
+  }
+  const msgManca = (e) => e && (e.code === 'PGRST202' || /function|does not exist|schema cache|could not find/i.test(e.message || ''));
+  async function statistiche() {
+    if (!SF.pronto) filtriDaHash(parseHash().params);
+    const box = $('#stat'); if (!box) return; box.setAttribute('aria-busy', 'true');
+    const ri = intervallo();
+    const vecchia = sb.rpc('statistiche_admin'); // serve a "Da fare oggi" (errori 24 h) e ai numeri non filtrabili; è la vista di riserva
+    let nuova = null;
+    if (ri) {
+      const n = diffG(ri[0], ri[1]) + 1, kr = SF.g ? [SF.g, SF.g] : ri, gr = n === 1 ? [addG(ri[1], -13), ri[1]] : ri; // un solo giorno: il grafico mostra 14 giorni di contesto
+      const rpcF = (r) => sb.rpc('statistiche_admin_filtri', { p_dal: r[0], p_al: r[1], p_piattaforma: SF.pl || null, p_solo_reali: SF.reali });
+      const stessa = kr[0] === gr[0] && kr[1] === gr[1];
+      nuova = Promise.all([rpcF(kr), stessa ? null : rpcF(gr)]).then(([a, b]) => ({ a, b, kr, gr, ri, stessa }));
+    }
+    const [vr, nr] = await Promise.all([vecchia, nuova]);
+    box.removeAttribute('aria-busy');
+    if (vr.data) { ST.vecchia = vr.data; todo.errori = vr.data.errori_24h; renderTodo(); $('#st-agg').textContent = 'Statistiche aggiornate alle ' + new Date(vr.data.agg).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+    if (!ri) { ST.chiave = ''; ST.D = null; rendi(null, null); return; }
+    const errore = nr.a.error || (nr.b && nr.b.error);
+    if (errore) {
+      if (msgManca(errore)) { ST.mancante = true; ST.D = null; ST.chiave = 'manca' + JSON.stringify(vr.data && vr.data.agg ? 1 : 0); box.innerHTML = htmlManca(vr); return; }
+      box.innerHTML = `<div class="sf-avviso" role="alert">Errore nelle statistiche: ${esc(errore.message)}</div>`; return;
+    }
+    ST.mancante = false;
+    const D = { kpi: nr.a.data, graf: nr.stessa ? nr.a.data : nr.b.data, kr: nr.kr, gr: nr.gr, ri: nr.ri };
+    const k = JSON.stringify([filtriChiave(), D.kpi, D.graf, vr.data && [vr.data.conferme_24h, vr.data.suggerimenti_nuovi, vr.data.errori_24h]], (key, v) => (key === 'agg' ? undefined : v));
+    ST.agg = D.kpi.agg;
+    if (k === ST.chiave) return; // niente è cambiato: non ridisegno (così non si perde un tooltip aperto)
+    ST.chiave = k; ST.D = D; rendi(D, vr.data);
+  }
+  function htmlManca(vr) {
+    return `<div class="sf-avviso" role="alert"><b>Statistiche filtrabili non attive.</b> Esegui <b>supabase/19_statistiche_filtri.sql</b> nell'editor SQL di Supabase: poi qui compariranno filtri, confronti e grafici interattivi, senza i test e i robot. Intanto vedi la vista fissa di sempre.</div>`
+      + (vr.error ? `<div class="sub" style="margin-top:8px">${/function|does not exist|schema cache/i.test(vr.error.message) ? 'Manca il passo sul database: esegui <b>supabase/09_statistiche_suggerimenti.sql</b> nell\'editor SQL di Supabase.' : 'Errore: ' + esc(vr.error.message)}</div>`
+        : `<div class="sf-nota">In questa vista i «nuovi telefoni» e gli utenti includono anche test automatici e anteprime: i numeri possono essere gonfiati.</div>` + htmlVecchia(vr.data));
+  }
+  const unGiorno = (D) => D.kr[0] === D.kr[1];
+  function etichettaPrec(D) { const n = diffG(D.kr[0], D.kr[1]) + 1; return n === 1 ? 'al giorno prima' : `ai ${n} giorni prima`; }
+  function variazione(c, p, cattivo, et) {
+    c = Number(c || 0); p = Number(p || 0); let t, cl = 'eq';
+    if (c === p) t = `= uguale ${et}`; else if (!p) { t = `▲ da 0 a ${fmt(c)} rispetto ${et}`; cl = cattivo ? 'cat' : 'buo'; } else { const d = Math.round((c - p) / p * 100); t = `${d > 0 ? '▲ +' : '▼ '}${d}% rispetto ${et}`; cl = (d > 0) === !!cattivo ? 'cat' : 'buo'; if (d === 0) cl = 'eq'; }
+    return `<span class="sf-var ${cl}">${t}</span>`;
+  }
+  function rendi(D, vecchio) {
+    const box = $('#stat'); if (!box) return;
+    const ri = intervallo(), t = oggiRoma();
+    // ---- barra dei filtri ----
+    const periodo = PERIODI.map(([k, l]) => `<button type="button" class="btn sm" data-p="${k}" aria-pressed="${SF.p === k}">${l}</button>`).join('');
+    const pers = SF.p === 'pers' ? `<div class="sf-date"><label>Dal <input type="date" id="sf-dal" value="${esc(SF.dal)}" max="${t}"></label><label>Al <input type="date" id="sf-al" value="${esc(SF.al)}" max="${t}"></label></div>` : '';
+    const filtri = `<div class="sf-bar" role="group" aria-label="Filtri delle statistiche">
+      <div class="sf-gr"><span class="sf-lab" id="sf-lp">Periodo</span><div class="sf-seg" role="group" aria-labelledby="sf-lp">${periodo}</div>${pers}</div>
+      <div class="sf-gr"><label class="sf-lab" for="sf-pl">Piattaforma</label><select id="sf-pl">${PIATT.map(([k, l]) => `<option value="${k}"${SF.pl === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      <label class="sf-sw"><input type="checkbox" id="sf-reali"${SF.reali ? ' checked' : ''}><span>Escludi test e robot</span></label>
+      <button type="button" class="btn sm" id="sf-azzera">Azzera filtri</button></div>`;
+    const chips = (SF.g ? `<div class="sf-chips"><button type="button" class="sf-chip" id="sf-g" aria-label="Giorno ${dm(SF.g)} selezionato: tocca per tornare al periodo intero">Giorno: ${dm(SF.g)} <span aria-hidden="true">✕</span></button></div>` : '')
+      + (SF.msg ? `<div class="sf-avviso" role="alert">${esc(SF.msg)}</div>` : '');
+    if (!D) { box.innerHTML = filtri + chips; ripristinaFocus(); return; }
+    const k = D.kpi, et = etichettaPrec(D);
+    const kc = k.kpi || {}, kp = k.prec || {}, ad = k.adesso || {};
+    const periodoTxt = unGiorno(D) ? `${giornoLungo(D.kr[0])}` : `dal ${dm(D.kr[0])} al ${dm(D.kr[1])}`, precTxt = k.prec_dal === k.prec_al ? dm(k.prec_dal) : `${dm(k.prec_dal)}–${dm(k.prec_al)}`;
+    const riass = Number(k.giorni_riassunto || 0);
+    const note = [`<div class="sf-nota"><b>${periodoTxt}</b> · confronto con ${precTxt}${SF.pl ? ' · solo ' + (PF[SF.pl] || SF.pl) : ''} · ${SF.reali ? `test e robot esclusi${k.non_reali != null ? ` (${fmt(k.non_reali)} dispositivi: aprono l'app e basta)` : ''}` : '<b>test e robot inclusi</b>'}.</div>`];
+    if (riass > 0) note.push(`<div class="sf-nota">Prima del ${dm(k.dettaglio_da)} restano solo i riassunti giornalieri (pulizia degli eventi vecchi): per ${riass === 1 ? 'quel giorno' : 'quei ' + riass + ' giorni'} ci sono sessioni, navigazioni e azioni, ma non dispositivi attivi o nuovi, e il filtro «test e robot» non si applica.</div>`);
+    // ---- indicatori ----
+    const adesso = `<div class="st-grid sf-adesso">
+      <div class="stc live"><div class="l">Online adesso</div><b>${fmt(ad.online)}</b><div class="x">app aperta negli ultimi 5 minuti${SF.reali ? ' · un telefono conta dopo il primo «attivo» (2 min)' : ''}</div></div>
+      <div class="stc"><div class="l">Dispositivi da sempre</div><b>${fmt(ad.telefoni_totali)}</b><div class="x">${SF.reali ? 'esclusi test e robot' : 'compresi test e robot'}${SF.pl ? ' · ' + (PF[SF.pl] || SF.pl) : ''}</div></div></div>`;
+    const cards = KPI.map(([key, l, s]) => {
+      const x = key === 'registrazioni' ? `<span class="sf-x">accessi: ${fmt(kc.accessi)}</span>` : key === 'nuovi' ? '<span class="sf-x">primo avvio nel periodo</span>' : key === 'attivi' ? '<span class="sf-x">dispositivi, non persone</span>' : key === 'segnalazioni' ? '<span class="sf-x">non filtrate per piattaforma</span>' : '';
+      const sel = SF.serie.indexOf(s) >= 0;
+      const manca = riass > 0 && (key === 'attivi' || key === 'nuovi');
+      return `<button type="button" class="stk${sel ? ' on' : ''}" data-s="${s}" aria-pressed="${sel}" aria-label="${l}: ${fmt(kc[key])}. Mostra nel grafico"><span class="l">${l}</span><b>${fmt(kc[key])}${manca ? '*' : ''}</b>${variazione(kc[key], kp[key], key === 'errori', et)}${x}</button>`;
+    }).join('');
+    const arrivo = (kc.arrivati || kc.occupato) ? `<div class="sf-nota">Arrivati al posto: ${fmt(kc.arrivati)} · trovato occupato: ${fmt(kc.occupato)} (${pct(kc.occupato, (kc.arrivati || 0) + (kc.occupato || 0))} di chi ha detto com'è andata).</div>` : '';
+    const dist = `<div class="st-cols box sf-cols">
+        <div class="sf-sub"><div class="st-h">A che ora si usa</div><div class="sf-nota">Dispositivi attivi per ora del giorno, sommati sui giorni del periodo.</div><div class="sf-wrap" id="sf-ore"></div></div>
+        <div class="sf-sub"><div class="st-h">Da dove usano l'app</div>${htmlPiattaforme(k)}<div class="st-h" style="margin-top:14px">Versioni in uso</div>${htmlVersioni(k)}</div></div>`;
+    const dove = `<div class="st-cols box">
+        <div><div class="st-h">Dove cercano ma mancano posti</div>${listaComuni(k.comuni_vuoti, 'Nessuna ricerca senza posti.')}<div class="sub" style="margin-top:6px">Sono i comuni da completare per primi (PEC, open data, scansione).</div></div>
+        <div><div class="st-h">Dove si fanno portare</div>${listaComuni(k.comuni_naviga, 'Ancora nessuna navigazione.')}</div></div>`;
+    const altri = vecchio ? `<h3 class="sec-h">Altri indicatori (non filtrati)</h3><div class="st-grid">
+        <div class="stc"><div class="l">Conferme sul posto (24 h)</div><b>${fmt(vecchio.conferme_24h)}</b><div class="x">"non c'è più" in 7 giorni: ${fmt(vecchio.non_esiste_7g)}</div></div>
+        <div class="stc"><div class="l">Suggerimenti da leggere</div><b>${fmt(vecchio.suggerimenti_nuovi)}</b><div class="x"><a href="#/suggerimenti">apri l'elenco</a></div></div>
+        <div class="stc"><div class="l">Errori dell'app (24 h)</div><b>${fmt(vecchio.errori_24h)}</b><div class="x">su ${fmt(vecchio.errori_telefoni_24h)} telefoni · <a href="#/suggerimenti">vedi</a></div></div></div>` : '';
+    const legenda = `<details class="sf-leg box"><summary>Come leggere questi numeri</summary><ul>
+      <li><b>Dispositivi, non persone:</b> lo stesso utente su telefono e computer conta due volte.</li>
+      <li><b>Dispositivo reale:</b> ha fatto almeno una cosa oltre ad aprire l'app (restare aperta 2 minuti, cercare, navigare, aprire un posto…). Chi apre e chiude in un attimo senza fare nulla si comporta come un test automatico, un'anteprima o un robot di Google Play, e con «Escludi test e robot» non viene contato.</li>
+      <li><b>Sessione:</b> una apertura dell'app (dopo 30 minuti di pausa se ne conta un'altra). <b>Nuovo dispositivo:</b> il suo primissimo evento cade nel periodo.</li>
+      <li>Gli eventi arrivano solo da chi non ha spento le statistiche, quindi i numeri sono per difetto. Segnalazioni e registrazioni vengono dal database e non dipendono dai filtri di piattaforma e test.</li></ul></details>`;
+    box.innerHTML = filtri + chips + note.join('') + adesso
+      + `<h3 class="sec-h">Il periodo in numeri <span class="sf-hint">tocca un indicatore per vederlo nel grafico</span></h3><div class="stk-grid">${cards}</div>${arrivo}`
+      + `<h3 class="sec-h">Andamento giorno per giorno</h3><div class="box sf-graf"><div id="sf-main"></div></div>`
+      + `<h3 class="sec-h">Quando e da dove</h3>${dist}<h3 class="sec-h">Dove</h3>${dove}${altri}${legenda}`;
+    disegnaTutto(); ripristinaFocus();
+  }
+  function ripristinaFocus() { const f = ST.focus; ST.focus = ''; if (f) { const el = f.indexOf('p:') === 0 ? document.querySelector('[data-p="' + f.slice(2) + '"]') : document.getElementById(f); if (el) el.focus({ preventScroll: true }); } }
+  const barraPct = (n, tot) => `<div class="st-bar"><i style="width:${(n / Math.max(1, tot)) * 100}%"></i></div>`;
+  function htmlPiattaforme(k) {
+    const pf = k.piattaforme || {}, tot = Object.values(pf).reduce((a, b) => a + b, 0), voci = Object.entries(pf).sort((a, b) => b[1] - a[1]);
+    if (!voci.length) return '<div class="sub">Nessun dispositivo nel periodo.</div>';
+    return `<div class="sf-wrap sf-righe" id="sf-pf">${voci.map(([c, n]) => { const filtrabile = c !== '?'; const att = SF.pl === c;
+      return `<button type="button" class="sf-riga${att ? ' on' : ''}" ${filtrabile ? `data-pf="${c}"` : 'disabled'} data-tip="${esc((PF[c] || c) + ': ' + fmt(n) + ' dispositivi (' + pct(n, tot) + ')' + (filtrabile ? (att ? ' · filtro attivo, tocca per toglierlo' : ' · tocca per filtrare') : ''))}" aria-pressed="${att}"><span class="sf-rl"><span>${esc(PF[c] || c)}</span><b>${fmt(n)} · ${pct(n, tot)}</b></span>${barraPct(n, tot)}</button>`; }).join('')}</div>`;
+  }
+  function htmlVersioni(k) {
+    const v = k.versioni || []; if (!v.length) return '<div class="sub">Ancora nessun dato.</div>'; const tot = v.reduce((a, b) => a + b.n, 0), max = Math.max(...v.map((x) => x.n));
+    return `<div class="sf-wrap sf-righe">${v.map((x) => `<div class="sf-riga" tabindex="0" data-tip="${esc('Versione ' + x.v + ': ' + fmt(x.n) + ' dispositivi (' + pct(x.n, tot) + ')')}"><span class="sf-rl"><span>${esc(x.v)}</span><b>${fmt(x.n)}</b></span>${barraPct(x.n, max)}</div>`).join('')}</div>`;
+  }
+  const listaComuni = (v, vuoto) => v && v.length ? `<ul class="st-list">${v.map((x) => `<li><span>${esc(x.c)}</span><b>${fmt(x.n)}</b></li>`).join('')}</ul>` : `<div class="sub">${vuoto}</div>`;
+
+  // ---- grafici a mano in SVG: tooltip al mouse, al tocco e da tastiera ----
+  const passo = (max) => { const g = Math.pow(10, Math.floor(Math.log10(Math.max(1, max) / 4))), m = Math.max(1, max) / 4 / g; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * g; };
+  function tip(wrap, html, x, y) { // un solo tooltip per grafico, tenuto dentro il riquadro
+    let el = wrap.querySelector('.sf-tip'); if (!el) { el = document.createElement('div'); el.className = 'sf-tip'; el.setAttribute('aria-hidden', 'true'); wrap.appendChild(el); }
+    if (html == null) { el.hidden = true; return; }
+    el.hidden = false; el.innerHTML = html; const w = el.offsetWidth, W = wrap.clientWidth; let l = x + 14; if (l + w > W - 4) l = x - w - 14; el.style.left = Math.max(4, l) + 'px'; el.style.top = Math.max(0, y - 10) + 'px';
+  }
+  function interattivo(wrap, svg, n, xDi, htmlDi, scegli, nome) {
+    // wrap: contenitore relativo; svg: elemento con un <rect class="hit">; n: punti; xDi(i): x del punto; htmlDi(i): contenuto del tooltip; scegli(i): clic/Invio
+    const live = wrap.querySelector('.sr-live'), hit = svg.querySelector('.hit'), cur = svg.querySelector('.cur');
+    let i0 = ST.hov >= 0 && nome === 'principale' ? Math.min(ST.hov, n - 1) : -1;
+    const mostra = (i, y) => { i0 = i; if (nome === 'principale') ST.hov = i; if (cur) { cur.setAttribute('x1', xDi(i)); cur.setAttribute('x2', xDi(i)); cur.style.display = ''; } svg.dispatchEvent(new CustomEvent('punto', { detail: i })); tip(wrap, htmlDi(i), xDi(i), y == null ? 20 : y); if (live) live.textContent = htmlDi(i).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '); };
+    const nascondi = () => { i0 = -1; if (nome === 'principale') ST.hov = -1; if (cur) cur.style.display = 'none'; svg.dispatchEvent(new CustomEvent('punto', { detail: -1 })); tip(wrap, null); };
+    const idx = (ev) => { const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) * (svg.viewBox.baseVal.width / r.width); let b = 0, bd = 1e9; for (let i = 0; i < n; i++) { const d = Math.abs(xDi(i) - x); if (d < bd) { bd = d; b = i; } } return b; };
+    hit.addEventListener('pointermove', (ev) => { if (ev.pointerType === 'touch') return; const r = svg.getBoundingClientRect(); mostra(idx(ev), ev.clientY - r.top); });
+    hit.addEventListener('pointerleave', (ev) => { if (ev.pointerType !== 'touch' && document.activeElement !== wrap.firstElementChild) nascondi(); });
+    hit.addEventListener('pointerup', (ev) => { const i = idx(ev), r = svg.getBoundingClientRect(); if (ev.pointerType === 'touch' && i0 !== i) { mostra(i, ev.clientY - r.top); return; } if (scegli) scegli(i); });
+    const foc = wrap.querySelector('.sf-foc');
+    foc.addEventListener('keydown', (e) => {
+      let i = i0 < 0 ? (e.key === 'ArrowLeft' || e.key === 'End' ? n - 1 : 0) : i0;
+      if (e.key === 'ArrowRight') i = Math.min(n - 1, i0 < 0 ? 0 : i + 1); else if (e.key === 'ArrowLeft') i = Math.max(0, i0 < 0 ? n - 1 : i - 1); else if (e.key === 'Home') i = 0; else if (e.key === 'End') i = n - 1;
+      else if ((e.key === 'Enter' || e.key === ' ') && i0 >= 0) { e.preventDefault(); if (scegli) scegli(i0); return; } else if (e.key === 'Escape') { nascondi(); return; } else return;
+      e.preventDefault(); mostra(i);
+    });
+    foc.addEventListener('focus', () => { if (i0 >= 0) mostra(i0); }); foc.addEventListener('blur', () => nascondi());
+    if (i0 >= 0) mostra(i0);
+  }
+  function tabellaDati(titolo, colonne, righe) {
+    return `<details class="sf-dati"><summary>Mostra i dati</summary><div class="sf-tw"><table><caption class="sr">${esc(titolo)}</caption><thead><tr>${colonne.map((c) => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${righe.map((r) => `<tr>${r.map((c, j) => (j ? `<td>${c}</td>` : `<th scope="row">${c}</th>`)).join('')}</tr>`).join('')}</tbody></table></div></details>`;
+  }
+  function disegnaTutto() { ST.L = ($('#stat') || {}).clientWidth; if (ST.D) { disegnaPrincipale(); disegnaOre(); agganciaRighe(); } }
+  function disegnaPrincipale() {
+    const el = $('#sf-main'); if (!el || !ST.D) return; const D = ST.D, S = D.graf.serie || [], n = S.length, att = SF.serie.filter((s) => SERIE[s]);
+    const W = Math.max(280, el.clientWidth || 600), H = W < 520 ? 230 : 290, L = 40, R = 12, T = 12, B = 26, pw = W - L - R, ph = H - T - B;
+    const val = (d, s) => (d[s] == null ? null : Number(d[s])), max = Math.max(1, ...S.flatMap((d) => att.map((s) => val(d, s) || 0))), st = passo(max), top = Math.ceil(max / st) * st;
+    const X = (i) => L + (n < 2 ? pw / 2 : (i * pw) / (n - 1)), Y = (v) => T + ph - (v / top) * ph;
+    let g = '';
+    for (let v = 0; v <= top; v += st) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e3e8f0"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#4a5668">${fmt(v)}</text>`;
+    const ne = Math.min(n, W < 520 ? 4 : 7); for (let j = 0; j < ne; j++) { const i = ne === 1 ? 0 : Math.round(j * (n - 1) / (ne - 1)); g += `<text x="${X(i)}" y="${H - 7}" text-anchor="${j === 0 && n > 1 ? 'start' : j === ne - 1 && n > 1 ? 'end' : 'middle'}" font-size="11" fill="#4a5668">${dm(S[i].g)}</text>`; }
+    const evid = SF.g || (unGiorno(D) ? D.kr[0] : ''), ie = S.findIndex((d) => d.g === evid);
+    if (ie >= 0) { const bw = n < 2 ? 40 : Math.max(8, pw / (n - 1)); g += `<rect x="${X(ie) - bw / 2}" y="${T}" width="${bw}" height="${ph}" fill="#ffcc00" opacity=".28"/>`; }
+    att.forEach((s) => { let d = '', aperto = false; S.forEach((r, i) => { const v = val(r, s); if (v == null) { aperto = false; return; } d += (aperto ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); aperto = true; });
+      g += `<path d="${d}" fill="none" stroke="${SERIE[s].c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${SERIE[s].d && att.length > 1 ? ` stroke-dasharray="${SERIE[s].d}"` : ''}/>`;
+      if (n <= 31) S.forEach((r, i) => { const v = val(r, s); if (v != null) g += `<circle cx="${X(i)}" cy="${Y(v)}" r="3" fill="${SERIE[s].c}" stroke="#fff" stroke-width="1.5"/>`; }); });
+    const sv = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" class="st-chart sf-svg">${g}<line class="cur" y1="${T}" y2="${T + ph}" stroke="#131a24" stroke-width="1" style="display:none"/><g class="pts"></g><rect class="hit" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent" style="cursor:pointer"/></svg>`;
+    const legenda = `<div class="st-leg sf-legb" role="group" aria-label="Serie del grafico (accendi o spegni)">${Object.keys(SERIE).map((s) => `<button type="button" class="sf-lg${att.indexOf(s) >= 0 ? ' on' : ''}" data-ser="${s}" aria-pressed="${att.indexOf(s) >= 0}"><svg width="26" height="10" aria-hidden="true"><line x1="1" x2="25" y1="5" y2="5" stroke="${SERIE[s].c}" stroke-width="2.5"${SERIE[s].d ? ` stroke-dasharray="${SERIE[s].d}"` : ''}/></svg>${SERIE[s].n}</button>`).join('')}</div>`;
+    const righe = S.map((d) => [dm(d.g) + (d.r ? ' (riassunto)' : ''), ...att.map((s) => (d[s] == null ? 'n.d.' : fmt(d[s])))]);
+    el.innerHTML = `${legenda}<div class="sf-wrap" id="sf-mainw"><div class="sf-foc" id="sf-focmain" tabindex="0" role="group" aria-roledescription="grafico interattivo" aria-label="Andamento giorno per giorno, ${n} giorni. Frecce sinistra e destra per scorrere i giorni, Invio per filtrare la pagina su quel giorno, Esc per chiudere.">${sv}</div><div class="sr sr-live" aria-live="polite"></div></div>`
+      + `<div class="sf-nota">Un giorno si può toccare o scegliere con Invio: tutta la pagina si riferisce a quel giorno${SF.g ? '. Tocca di nuovo il giorno selezionato per tornare al periodo' : ''}.</div>`
+      + tabellaDati('Dati giornalieri del grafico', ['Giorno', ...att.map((s) => SERIE[s].n)], righe);
+    const wrap = el.querySelector('#sf-mainw');
+    const svgEl = wrap.querySelector('svg'), pts = svgEl.querySelector('.pts');
+    svgEl.addEventListener('punto', (e) => { const i = e.detail; pts.innerHTML = i < 0 ? '' : att.map((s) => { const v = val(S[i], s); return v == null ? '' : `<circle cx="${X(i)}" cy="${Y(v)}" r="4.5" fill="${SERIE[s].c}" stroke="#fff" stroke-width="2"/>`; }).join(''); });
+    const htmlDi = (i) => { const d = S[i]; return `<b>${giornoLungo(d.g)}</b>${d.r ? '<div class="sf-t2">solo riassunto: attivi e nuovi non disponibili</div>' : ''}` + att.map((s) => `<div><i style="background:${SERIE[s].c}"></i>${SERIE[s].n}: <b>${d[s] == null ? 'n.d.' : fmt(d[s])}</b></div>`).join(''); };
+    interattivo(wrap, svgEl, n, X, htmlDi, (i) => cambiaFiltri(() => { SF.g = SF.g === S[i].g ? '' : S[i].g; }, 'sf-focmain'), 'principale');
+  }
+  function disegnaOre() {
+    const el = $('#sf-ore'); if (!el || !ST.D) return; const ore = ST.D.kpi.ore || [], n = ore.length; if (!n) { el.innerHTML = '<div class="sub">Nessun dato.</div>'; return; }
+    const W = Math.max(260, el.clientWidth || 400), H = 190, L = 30, R = 4, T = 10, B = 22, pw = W - L - R, ph = H - T - B, max = Math.max(1, ...ore), st = passo(max), top = Math.ceil(max / st) * st, bw = pw / n;
+    const X = (i) => L + bw * i + bw / 2, Y = (v) => T + ph - (v / top) * ph; let g = '';
+    for (let v = 0; v <= top; v += st) g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e3e8f0"/><text x="${L - 5}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#4a5668">${fmt(v)}</text>`;
+    g += ore.map((v, i) => `<rect class="bar" data-i="${i}" x="${L + bw * i + 1}" y="${Y(v)}" width="${Math.max(1, bw - 2)}" height="${T + ph - Y(v)}" rx="2" fill="#2a78d6"/>`).join('') + [0, 6, 12, 18, 23].map((h) => `<text x="${X(h)}" y="${H - 6}" text-anchor="middle" font-size="11" fill="#4a5668">${h}</text>`).join('');
+    el.innerHTML = `<div class="sf-foc" tabindex="0" role="group" aria-roledescription="grafico interattivo" aria-label="Dispositivi per ora del giorno. Frecce sinistra e destra per scorrere le ore.">${`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" class="st-chart sf-svg">${g}<line class="cur" y1="${T}" y2="${T + ph}" stroke="#131a24" style="display:none"/><rect class="hit" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent"/></svg>`}</div><div class="sr sr-live" aria-live="polite"></div>`
+      + tabellaDati('Dispositivi per ora del giorno', ['Ora', 'Dispositivi'], ore.map((v, i) => [i + ':00', fmt(v)]));
+    const svgEl = el.querySelector('svg'); svgEl.addEventListener('punto', (e) => { $$('.bar', svgEl).forEach((b) => b.setAttribute('fill', +b.dataset.i === e.detail ? '#0b2a5b' : '#2a78d6')); });
+    interattivo(el, svgEl, n, X, (i) => `<b>${i}:00–${i}:59</b><div>${fmt(ore[i])} dispositivi</div>`, null, 'ore');
+  }
+  function agganciaRighe() { // tooltip sulle barre orizzontali (piattaforme, versioni); le piattaforme filtrano con un clic
+    $$('.sf-righe').forEach((w) => {
+      const mostra = (r) => { const b = r.getBoundingClientRect(), a = w.getBoundingClientRect(); tip(w, esc(r.dataset.tip || ''), Math.min(b.width - 40, 160), b.top - a.top + b.height / 2); };
+      $$('.sf-riga', w).forEach((r) => { r.addEventListener('pointerenter', () => mostra(r)); r.addEventListener('pointerleave', () => tip(w, null)); r.addEventListener('focus', () => mostra(r)); r.addEventListener('blur', () => tip(w, null)); });
+    });
+  }
+  // ---- eventi della scheda (delegati: il contenuto si ridisegna) ----
+  (function () {
+    const box = $('#stat'); if (!box) return;
+    box.addEventListener('click', (e) => {
+      const t = e.target, b = t.closest && t.closest('button'); if (!b) return;
+      if (b.dataset.p) cambiaFiltri(() => { if (b.dataset.p === 'pers' && SF.p !== 'pers') { const [d, a] = [addG(oggiRoma(), -29), oggiRoma()]; SF.dal = SF.dal || d; SF.al = SF.al || a; } SF.p = b.dataset.p; SF.g = ''; }, 'p:' + b.dataset.p);
+      else if (b.id === 'sf-azzera') azzeraFiltri();
+      else if (b.id === 'sf-g') cambiaFiltri(() => { SF.g = ''; }, '');
+      else if (b.dataset.s) { const s = b.dataset.s; SF.serie = SF.serie.length === 1 && SF.serie[0] === s ? SERIE_BASE.slice() : [s]; disegnaPrincipale(); $$('.stk', box).forEach((k) => { const on = SF.serie.indexOf(k.dataset.s) >= 0; k.classList.toggle('on', on); k.setAttribute('aria-pressed', String(on)); }); const kb = box.querySelector(`.stk[data-s="${s}"]`); if (kb) kb.focus({ preventScroll: true }); }
+      else if (b.dataset.ser) { const s = b.dataset.ser, i = SF.serie.indexOf(s); if (i >= 0 && SF.serie.length > 1) SF.serie.splice(i, 1); else if (i < 0) SF.serie.push(s); disegnaPrincipale(); $$('.stk', box).forEach((k) => { const on = SF.serie.indexOf(k.dataset.s) >= 0; k.classList.toggle('on', on); k.setAttribute('aria-pressed', String(on)); }); const lb = box.querySelector(`.sf-lg[data-ser="${s}"]`); if (lb) lb.focus({ preventScroll: true }); }
+      else if (b.dataset.pf) cambiaFiltri(() => { SF.pl = SF.pl === b.dataset.pf ? '' : b.dataset.pf; }, '');
+    });
+    box.addEventListener('change', (e) => {
+      const t = e.target;
+      if (t.id === 'sf-pl') cambiaFiltri(() => { SF.pl = t.value; }, 'sf-pl');
+      else if (t.id === 'sf-reali') cambiaFiltri(() => { SF.reali = t.checked; }, 'sf-reali');
+      else if (t.id === 'sf-dal') cambiaFiltri(() => { SF.dal = t.value; SF.g = ''; }, 'sf-dal');
+      else if (t.id === 'sf-al') cambiaFiltri(() => { SF.al = t.value; SF.g = ''; }, 'sf-al');
+    });
+    let rt = null; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { const l = box.clientWidth; if (current === 'dashboard' && ST.D && l && l !== ST.L) disegnaTutto(); }, 150); }); // solo se cambia la larghezza (la barra del browser sul telefono non deve cancellare un tooltip)
+  })();
+  // ---------- vista fissa di riserva (rpc statistiche_admin): serve finché la 19 non è stata eseguita ----------
   function grafico(serie, chiavi, colori) { // barre affiancate per giorno, senza librerie
     const W = 600, Hh = 150, pad = 18, n = serie.length, max = Math.max(1, ...serie.flatMap((d) => chiavi.map((k) => d[k] || 0)));
     const bw = (W - pad) / n, sub = (bw - 2) / chiavi.length;
@@ -130,18 +393,13 @@
     [0, Math.floor(n / 2), n - 1].forEach((i) => { const d = serie[i]; if (d) out += `<text x="${pad + i * bw}" y="${Hh - 2}" font-size="10" fill="currentColor" opacity=".55">${d.g.slice(8, 10)}/${d.g.slice(5, 7)}</text>`; });
     return out + '</svg>';
   }
-  async function statistiche() {
-    const { data: d, error } = await sb.rpc('statistiche_admin');
-    if (error) { $('#stat').innerHTML = `<div class="sub" style="margin-top:8px">${/function|does not exist|schema cache/i.test(error.message) ? 'Manca il passo sul database: esegui <b>supabase/09_statistiche_suggerimenti.sql</b> nell\'editor SQL di Supabase.' : 'Errore: ' + esc(error.message)}</div>`; return; }
-    $('#st-agg').textContent = 'Statistiche aggiornate alle ' + new Date(d.agg).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    todo.errori = d.errori_24h; renderTodo();
+  function htmlVecchia(d) {
     const card = (l, v, x, cls) => `<div class="stc ${cls || ''}"><div class="l">${l}</div><b>${v}</b>${x ? `<div class="x">${x}</div>` : ''}</div>`;
     const sez = (t, h) => `<h3 class="sec-h">${t}</h3>${h}`;
     const pf = d.piattaforme_30g || {}, totPf = Object.values(pf).reduce((a, b) => a + b, 0), PF = { android: 'Android', ios: 'iPhone', web: 'Web da telefono', pc: 'Web da computer', '?': 'Sconosciuta' };
     const lista = (v, vuoto) => v && v.length ? `<ul class="st-list">${v.map((x) => `<li><span>${esc(x.c || x.v)}</span><b>${fmt(x.n)}</b></li>`).join('')}</ul>` : `<div class="sub">${vuoto}</div>`;
     const ore = d.ore_7g || [], maxO = Math.max(1, ...ore);
-    $('#stat').innerHTML =
-      sez('Utenti', `<div class="st-grid">
+    return sez('Utenti', `<div class="st-grid">
         ${card('Online adesso', fmt(d.online), 'app aperta negli ultimi 5 minuti', 'live')}
         ${card('Utenti nelle ultime 24 ore', fmt(d.attivi_24h), `7 giorni: ${fmt(d.attivi_7g)} · 30 giorni: ${fmt(d.attivi_30g)}`)}
         ${card('Registrati nelle ultime 24 ore', fmt(d.registrati_24h), `totale account: ${fmt(d.registrati_totali)} · <a href="#/utenti">vedi l'elenco</a>`)}
