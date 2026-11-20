@@ -324,7 +324,7 @@
   const icon = (s, on) => L.divIcon({ className: '', html: `<div class="pin ${pinClass(s)}${on ? ' sel' : ''}"><b>${s.posti > 1 ? s.posti : '♿'}</b></div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
 
   const LIM = 2000, ZMIN = 11;
-  let map, layer, mBase, rows = [], sel = null, nuovaPos = null, sposto = false, mFiltro = 'tutti', mFonte = '', mode = 'bbox', mReq = 0, markers = new Map();
+  let map, layer, mBase, rows = [], sel = null, nuovaPos = null, sposto = false, mFiltro = 'tutti', mFonte = '', mode = 'bbox', mReq = 0, markers = new Map(), trovati = [];
   const FILTRI = {
     tutti: (q) => q.in('stato', ['proposto', 'verificato', 'ufficiale']),
     utenti: (q) => q.eq('fonte', 'utente').eq('stato', 'proposto'),
@@ -353,14 +353,14 @@
       else if (isFinite(lat) && isFinite(lon)) { chiudiRicerca(); map.setView([lat, lon], +p.get('z') || 14); history.replaceState(null, '', '#/mappa'); }
     }
   };
+  // la mappa mostra SEMPRE tutti i posti della zona visibile; una ricerca aggiunge i suoi risultati (elenco a destra) senza nascondere gli altri
   async function caricaArea() {
-    if (mode !== 'bbox') return;
-    if (map.getZoom() < ZMIN) { rows = []; drawPins(); nota('Ingrandisci la mappa per vedere i posti.'); return; }
+    if (map.getZoom() < ZMIN) { rows = trovati.slice(); drawPins(); nota('Ingrandisci la mappa per vedere i posti.'); return; }
     const b = map.getBounds().pad(0.1), my = ++mReq; nota('Carico i posti di quest\'area…');
     const { data, error } = await filtra(sb.from('stalli_con_conferme').select('*').gte('lat', b.getSouth()).lte('lat', b.getNorth()).gte('lon', b.getWest()).lte('lon', b.getEast())).order('id').limit(LIM + 1);
-    if (my !== mReq || mode !== 'bbox') return;
+    if (my !== mReq) return;
     if (error) { nota('Errore: ' + error.message + ' (sei registrato come admin?)'); return; }
-    rows = data.slice(0, LIM); if (sel) sel = rows.find((r) => r.id === sel.id) || sel;
+    rows = data.slice(0, LIM); const ids = new Set(rows.map((r) => r.id)); trovati.forEach((r) => { if (!ids.has(r.id)) rows.push(r); }); if (sel) sel = rows.find((r) => r.id === sel.id) || sel;
     nota(data.length > LIM ? `Più di ${fmt(LIM)} posti in quest'area: ne vedi solo una parte. Ingrandisci la mappa.` : rows.length === 1 ? '1 posto in quest\'area' : fmt(rows.length) + ' posti in quest\'area');
     drawPins(); if (!sel) vuota();
   }
@@ -377,8 +377,8 @@
   // pannello a destra quando non c'è uno stallo aperto: l'elenco dei risultati di una ricerca, altrimenti un promemoria
   function vuota() {
     if (sel) return;
-    $('#edit').innerHTML = mode === 'search' ? (rows.length ? `<div class="sub"><b>${rows.length === 200 ? 'Almeno 200' : rows.length}</b> risultati${rows.length === 200 ? ' (mostro i primi 200: scrivi più parole)' : ''}. Tocca un posto per aprirlo.</div>`
-        + rows.map((r) => `<button class="row-item" data-id="${r.id}"><span><span class="n">${esc(r.nome || r.indirizzo || TIPO[r.tipo])} · ${r.posti} ${r.posti > 1 ? 'posti' : 'posto'}</span><br><span class="s">${TIPO[r.tipo]} · ${esc(r.comune || '—')} · ${esc(r.fonte)}</span></span><span class="s">${esc(r.stato)}</span></button>`).join('')
+    $('#edit').innerHTML = mode === 'search' ? (trovati.length ? `<div class="sub"><b>${trovati.length === 200 ? 'Almeno 200' : trovati.length}</b> risultati${trovati.length === 200 ? ' (mostro i primi 200: scrivi più parole)' : ''}. Tocca un posto per aprirlo. Sulla mappa vedi anche gli altri posti della zona.</div>`
+        + trovati.map((r) => `<button class="row-item" data-id="${r.id}"><span><span class="n">${esc(r.nome || r.indirizzo || TIPO[r.tipo])} · ${r.posti} ${r.posti > 1 ? 'posti' : 'posto'}</span><br><span class="s">${TIPO[r.tipo]} · ${esc(r.comune || '—')} · ${esc(r.fonte)}</span></span><span class="s">${esc(r.stato)}</span></button>`).join('')
       : `<div class="empty">Nessuno stallo trovato${mFiltro !== 'tutti' || mFonte ? ' con questi filtri: prova "Tutti gli attivi"' : ''}. Prova con meno parole.</div>`)
       : '<div class="sub">Seleziona uno stallo sulla mappa, oppure cerca un indirizzo.</div>';
   }
@@ -386,9 +386,52 @@
   $$('#m-stati [data-f]').forEach((b) => b.onclick = () => { $$('#m-stati [data-f]').forEach((x) => x.setAttribute('aria-pressed', x === b)); mFiltro = b.dataset.f; ricarica(); });
   $('#m-fonte').onchange = (e) => { mFonte = e.target.value; ricarica(); };
   function ricarica() { const t = $('#q-st').value.trim(); if (mode === 'search' && t) cerca(t); else caricaArea(); }
-  $('#q-form').onsubmit = (e) => { e.preventDefault(); const t = $('#q-st').value.trim(); if (t) cerca(t); else chiudiRicerca(); };
-  $('#q-x').onclick = () => { $('#q-st').value = ''; chiudiRicerca(); };
-  function chiudiRicerca() { $('#q-x').hidden = true; if (mode === 'search') { mode = 'bbox'; sel = null; caricaArea(); } }
+  $('#q-form').onsubmit = (e) => { e.preventDefault(); chiudiSugg(); const t = $('#q-st').value.trim(); if (t) cerca(t); else chiudiRicerca(); };
+  $('#q-x').onclick = () => { $('#q-st').value = ''; chiudiSugg(); chiudiRicerca(); };
+  // ---------- suggerimenti mentre scrivi: stalli dal nostro database + indirizzi (Photon, OpenStreetMap) ----------
+  // Scegliendo un indirizzo la mappa va lì e mostra TUTTI gli stalli attorno (non solo quelli che contengono le parole cercate).
+  let sgT = 0, sgCtl = null, sgVoci = [], sgI = -1;
+  const sgEl = $('#q-sugg'), sgIn = $('#q-st');
+  function chiudiSugg() { sgEl.hidden = true; sgEl.innerHTML = ''; sgVoci = []; sgI = -1; sgIn.setAttribute('aria-expanded', 'false'); sgIn.removeAttribute('aria-activedescendant'); }
+  function mostraSugg(stalli, indirizzi) {
+    sgVoci = []; let h = '';
+    const voce = (v, t, sub) => { const i = sgVoci.push(v) - 1; return `<li role="option" id="sg-${i}" data-i="${i}" aria-selected="false"><b>${esc(t)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}</li>`; };
+    if (stalli.length) h += '<li class="h" role="presentation">Stalli</li>' + stalli.map((s) => voce({ k: 's', id: s.id }, `${s.nome || s.indirizzo || TIPO[s.tipo]}`, `${s.comune || '—'} · ${s.stato} · ${s.posti} ${s.posti > 1 ? 'posti' : 'posto'}`)).join('');
+    if (indirizzi.length) h += '<li class="h" role="presentation">Indirizzi e luoghi</li>' + indirizzi.map((a) => voce({ k: 'a', lat: a.lat, lon: a.lon, strada: a.strada }, a.t, a.sub)).join('');
+    if (!h) { chiudiSugg(); return; }
+    sgEl.innerHTML = h; sgEl.hidden = false; sgI = -1; sgIn.setAttribute('aria-expanded', 'true');
+  }
+  async function suggerisci(t) {
+    if (sgCtl) sgCtl.abort(); sgCtl = new AbortController(); const mio = sgCtl;
+    const parole = t.replace(/[%,()*\\"]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 6);
+    let q = sb.from('stalli_con_conferme').select('id,nome,indirizzo,comune,stato,posti,tipo'); parole.forEach((w) => { q = q.or(`indirizzo.ilike.%${w}%,nome.ilike.%${w}%,comune.ilike.%${w}%`); });
+    const c = map ? map.getCenter() : { lat: 42.5, lng: 12.5 };
+    const [st, ind] = await Promise.all([
+      q.in('stato', ['proposto', 'verificato', 'ufficiale']).limit(5).then((r) => r.data || [], () => []),
+      fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(t)}&limit=6&lat=${c.lat}&lon=${c.lng}&location_bias_scale=0.3`, { signal: mio.signal }).then((r) => r.ok ? r.json() : { features: [] }).then((j) => (j.features || [])
+        .filter((f) => { const p = f.properties || {}; return !p.countrycode || p.countrycode === 'IT'; }).slice(0, 5)
+        .map((f) => { const p = f.properties || {}, via = [p.street, p.housenumber].filter(Boolean).join(' '), citta = p.city || p.town || p.village || p.county || '';
+          const tt = p.name || via || citta; return { lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0], strada: p.osm_key === 'highway', t: tt, sub: [p.name && via, citta !== tt && citta, p.state].filter(Boolean).join(', ') }; }), () => [])]);
+    if (mio !== sgCtl || sgIn.value.trim() !== t) return;
+    mostraSugg(st, ind);
+  }
+  function scegliSugg(i) {
+    const v = sgVoci[i]; if (!v) return; chiudiSugg();
+    if (v.k === 's') { apri(v.id); return; }
+    // indirizzo: si esce dalla ricerca testuale e si guarda la zona, con tutti gli stalli attorno
+    $('#q-x').hidden = false; mode = 'bbox'; trovati = []; sel = null; vuota(); map.setView([v.lat, v.lon], v.strada ? 17 : 18);
+  }
+  sgIn.addEventListener('input', () => { clearTimeout(sgT); const t = sgIn.value.trim(); if (t.length < 3) { chiudiSugg(); return; } sgT = setTimeout(() => suggerisci(t), 300); });
+  sgIn.addEventListener('keydown', (e) => {
+    if (sgEl.hidden || !sgVoci.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); sgI = (sgI + (e.key === 'ArrowDown' ? 1 : -1) + sgVoci.length) % sgVoci.length;
+      sgEl.querySelectorAll('[role=option]').forEach((o) => o.setAttribute('aria-selected', +o.dataset.i === sgI)); sgIn.setAttribute('aria-activedescendant', 'sg-' + sgI); $('#sg-' + sgI).scrollIntoView({ block: 'nearest' }); }
+    else if (e.key === 'Enter' && sgI >= 0) { e.preventDefault(); scegliSugg(sgI); }
+    else if (e.key === 'Escape') chiudiSugg();
+  });
+  sgEl.addEventListener('mousedown', (e) => { const o = e.target.closest('[role=option]'); if (o) { e.preventDefault(); scegliSugg(+o.dataset.i); } });
+  sgIn.addEventListener('blur', () => setTimeout(chiudiSugg, 150));
+  function chiudiRicerca() { $('#q-x').hidden = true; trovati = []; if (mode === 'search') { mode = 'bbox'; sel = null; caricaArea(); vuota(); } }
   // ricerca sul server: tutte le parole devono comparire in indirizzo, nome o comune (al massimo 200 risultati), poi la mappa si centra sui risultati
   async function cerca(testo) {
     const parole = testo.replace(/[%,()*\\"]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 6); if (!parole.length) return;
@@ -396,8 +439,8 @@
     let q = sb.from('stalli_con_conferme').select('*'); parole.forEach((w) => { q = q.or(`indirizzo.ilike.%${w}%,nome.ilike.%${w}%,comune.ilike.%${w}%`); });
     const { data, error } = await filtra(q).limit(200);
     if (error) { nota('Errore: ' + error.message); return; }
-    rows = data; drawPins(); vuota(); nota(rows.length ? '' : 'Nessun risultato');
-    if (rows.length) { map.fitBounds(rows.map((r) => [r.lat, r.lon]), { padding: [30, 30], maxZoom: 17 }); }
+    trovati = data; rows = data.slice(); drawPins(); vuota(); nota(rows.length ? '' : 'Nessun risultato');
+    if (rows.length) { map.fitBounds(rows.map((r) => [r.lat, r.lon]), { padding: [30, 30], maxZoom: 17 }); setTimeout(caricaArea, 450); } // poi carica anche gli altri posti della zona
   }
 
   // ---------- scheda dello stallo ----------
@@ -484,7 +527,7 @@
     if (error) { nota('Non riesco a creare lo stallo: ' + error.message); return; }
     nota('Stallo creato: trascinalo nel punto giusto e salva.');
     rows = rows.concat([Object.assign({ conferme_esiste: 0, conferme_non_esiste: 0, ultima_conferma: null }, data)]);
-    if (mode === 'search') { mode = 'bbox'; $('#q-x').hidden = true; }
+    if (mode === 'search') { mode = 'bbox'; trovati = []; $('#q-x').hidden = true; }
     select(data.id, { sposta: true }); aggiornaTodo();
   };
 

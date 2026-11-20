@@ -89,7 +89,13 @@ details.box>summary{margin:-4px 0 6px}
 /* mappa */
 .page-map{display:flex;flex-direction:column;height:calc(100vh - 44px);min-height:520px}
 .mbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-.msearch{display:flex;gap:6px;flex:1 1 320px;min-width:240px}.msearch input{flex:1;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);font-size:15px}
+.msearch{display:flex;gap:6px;flex:1 1 320px;min-width:240px}.sugg-wrap{position:relative;flex:1;min-width:0;display:flex}.sugg-wrap input{width:100%}
+#q-sugg{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1200;margin:0;padding:6px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(11,31,68,.18);max-height:60vh;overflow:auto}
+#q-sugg .h{padding:6px 10px 2px;font-size:12px;font-weight:700;color:var(--mut,#4a5668);text-transform:uppercase;letter-spacing:.04em}
+#q-sugg [role=option]{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:8px;cursor:pointer;min-height:24px}
+#q-sugg [role=option] b{font-size:15px;font-weight:600}#q-sugg [role=option] span{font-size:13px;color:var(--mut,#4a5668)}
+#q-sugg [role=option][aria-selected=true],#q-sugg [role=option]:hover{background:#eef2f8}
+.msearch input{flex:1;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);font-size:15px}
 .pills{display:flex;gap:6px;flex-wrap:wrap}
 .pills .btn{border-radius:999px;padding:6px 14px;font-size:14px}
 .mbar select{width:auto;min-width:130px;padding:8px 10px;font-size:14px;border-radius:12px}
@@ -216,7 +222,7 @@ details.box>summary{margin:-4px 0 6px}
     <section class="page page-map" id="p-mappa" hidden aria-labelledby="h-mappa">
       <div class="ph" style="margin-bottom:10px"><h2 id="h-mappa" tabindex="-1">Mappa</h2><span class="sp"></span></div>
       <div class="mbar">
-        <form class="msearch" id="q-form" role="search"><label class="sr" for="q-st">Cerca per indirizzo, nome o comune</label><input type="search" id="q-st" placeholder="Cerca per indirizzo, nome o comune (es. via Roma 12 Udine)" autocomplete="off"><button class="btn primary" type="submit">Cerca</button><button class="btn" type="button" id="q-x" hidden aria-label="Chiudi la ricerca">✕</button></form>
+        <form class="msearch" id="q-form" role="search"><label class="sr" for="q-st">Cerca per indirizzo, nome o comune</label><span class="sugg-wrap"><input type="search" id="q-st" placeholder="Cerca per indirizzo, nome o comune (es. via Roma 12 Udine)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="q-sugg"><ul id="q-sugg" role="listbox" hidden></ul></span><button class="btn primary" type="submit">Cerca</button><button class="btn" type="button" id="q-x" hidden aria-label="Chiudi la ricerca">✕</button></form>
         <button class="btn primary" id="m-new" type="button">+ Nuovo stallo</button>
       </div>
       <div class="mbar">
@@ -338,6 +344,6 @@ details.box>summary{margin:-4px 0 6px}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js?v=0.9.0"></script>
-<script src="admin.js?v=0.10.1"></script>
+<script src="admin.js?v=0.10.3"></script>
 </body>
 </html>
