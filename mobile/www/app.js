@@ -1485,8 +1485,16 @@
   if (sessione) allinea();
 
   // ---------- primo avvio ----------
-  if (!ls.get('dp.benvenuto', false)) $('#welcome').hidden = false; else attivaPosizione(false);
-  const entra = () => { ls.set('dp.benvenuto', true); $('#welcome').hidden = true; };
+  // condizioni d'uso: si accettano al primo avvio; se cambia CONDIZIONI_VER chi aveva già l'app le riaccetta una volta
+  const CONDIZIONI_VER = '2026-11-20';
+  document.querySelectorAll('.l-cond').forEach((a) => a.onclick = (e) => { e.preventDefault(); apri(CFG.SITO + 'condizioni.html'); });
+  document.querySelectorAll('.l-priv').forEach((a) => a.onclick = (e) => { e.preventDefault(); apri(CFG.SITO + 'privacy.html'); });
+  $('#w-acc').onchange = () => { $('#w-go').disabled = $('#w-skip').disabled = !$('#w-acc').checked; };
+  $('#cd-acc').onchange = () => { $('#cd-go').disabled = !$('#cd-acc').checked; };
+  $('#cd-go').onclick = () => { ls.set('dp.condizioni', CONDIZIONI_VER); $('#condizioni').hidden = true; };
+  if (!ls.get('dp.benvenuto', false)) $('#welcome').hidden = false;
+  else { attivaPosizione(false); if (ls.get('dp.condizioni', '') !== CONDIZIONI_VER) $('#condizioni').hidden = false; }
+  const entra = () => { ls.set('dp.benvenuto', true); ls.set('dp.condizioni', CONDIZIONI_VER); $('#welcome').hidden = true; };
   $('#w-go').onclick = async () => { entra(); const ok = await attivaPosizione(true); if (!ok) toast('Posizione non attiva: puoi muovere la mappa a mano.', 4000); };
   $('#w-skip').onclick = entra;
 

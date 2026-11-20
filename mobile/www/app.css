@@ -104,6 +104,16 @@ button:focus-visible{outline:3px solid var(--giallo);outline-offset:2px}
 #welcome .bul{width:44px;height:44px;flex:none;border-radius:14px;background:var(--blu2);color:var(--giallo);display:grid;place-items:center}
 #welcome .bottom,#aggiorna .bottom{margin-top:auto;display:flex;flex-direction:column;gap:12px}
 #aggiorna{z-index:60}
+#condizioni{position:fixed;inset:0;z-index:50;background:var(--blu);color:#fff;padding:calc(var(--sat) + 48px) 24px calc(24px + var(--sab));display:flex;flex-direction:column;gap:24px;overflow-y:auto}
+#condizioni .logo{width:88px;height:88px;flex:none;border-radius:26px;background:var(--giallo);color:var(--giallo-ink);display:grid;place-items:center}
+#condizioni .logo .ic{width:50px;height:50px}
+#condizioni h1{margin:0;font-size:30px;line-height:1.15;text-wrap:balance}
+#condizioni .lead{margin:-10px 0 0;font-size:18px;line-height:1.4;color:#d5e1f6}
+#condizioni .bottom{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.accetto{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:16px;background:var(--blu2);font-size:16px;line-height:1.4;cursor:pointer}
+.accetto input{width:26px;height:26px;flex:none;margin:0;accent-color:var(--giallo)}
+.accetto a{color:var(--giallo);font-weight:700}
+#welcome button:disabled,#condizioni button:disabled{opacity:.45;cursor:not-allowed}
 #welcome .small{margin:0;color:#d5e1f6;line-height:1.4}
 .ghost{height:52px;border-radius:18px;color:#fff;font-size:17px;font-weight:700}
 
@@ -312,6 +322,8 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
   .page,#search{right:auto;width:calc(var(--col) + 32px);box-shadow:10px 0 40px rgba(11,31,68,.22)}
   #welcome{padding-left:max(24px,calc(50% - 280px));padding-right:max(24px,calc(50% - 280px));padding-top:max(48px,10vh)}
   #welcome .bottom{margin-top:24px}
+  #condizioni{padding-left:max(24px,calc(50% - 280px));padding-right:max(24px,calc(50% - 280px));padding-top:max(48px,10vh)}
+  #condizioni .bottom{margin-top:24px}
   #toast{left:calc(50% + 216px);top:24px}
   .maplibregl-ctrl-bottom-right,#map:has(~ #arrivo:not([hidden])) .maplibregl-ctrl-bottom-right,#map:has(~ #card:not([hidden])) .maplibregl-ctrl-bottom-right{top:auto;bottom:0;right:0}
   .maplibregl-ctrl-top-right{top:8px;right:8px}

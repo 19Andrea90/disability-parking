@@ -296,6 +296,17 @@
   </div>
 </div>
 
+<!-- Condizioni d'uso aggiornate: chi aveva già aperto l'app le accetta una volta -->
+<div id="condizioni" role="dialog" aria-modal="true" aria-labelledby="cd-t" hidden>
+  <div class="logo"><svg class="ic"><use href="#i-wc"/></svg></div>
+  <h1 id="cd-t">Abbiamo aggiornato le condizioni d'uso</h1>
+  <p class="lead">SostAbile resta gratuita e senza pubblicità. Le condizioni spiegano come usare l'app e i suoi dati: per esempio, i posti in mappa non si possono copiare o scaricare in blocco.</p>
+  <div class="bottom">
+    <label class="accetto"><input type="checkbox" id="cd-acc"><span>Ho letto e accetto le <a class="l-cond" href="#">Condizioni d'uso</a> e l'<a class="l-priv" href="#">Informativa privacy</a></span></label>
+    <button id="cd-go" class="primary" disabled><span>Accetto e continuo</span></button>
+  </div>
+</div>
+
 <!-- Schermata 1 · Primo avvio -->
 <div id="welcome" hidden>
   <div class="logo"><svg class="ic"><use href="#i-wc"/></svg></div>
@@ -308,8 +319,9 @@
   </ul>
   <div class="bottom">
     <p class="small">La posizione serve solo a mostrarti i posti vicini. Non viene salvata.</p>
-    <button id="w-go" class="primary"><svg class="ic"><use href="#i-locate"/></svg><span>Attiva la posizione</span></button>
-    <button id="w-skip" class="ghost">Non ora, guardo la mappa</button>
+    <label class="accetto"><input type="checkbox" id="w-acc"><span>Ho letto e accetto le <a class="l-cond" href="#">Condizioni d'uso</a> e l'<a class="l-priv" href="#">Informativa privacy</a></span></label>
+    <button id="w-go" class="primary" disabled><svg class="ic"><use href="#i-locate"/></svg><span>Attiva la posizione</span></button>
+    <button id="w-skip" class="ghost" disabled>Non ora, guardo la mappa</button>
     <p class="small center">I dati arrivano da Comuni, OpenStreetMap e segnalazioni degli utenti e possono contenere errori.</p>
   </div>
 </div>
