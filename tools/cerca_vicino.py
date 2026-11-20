@@ -65,6 +65,14 @@ def scarica(lat, lon, half_m, retries=3):
 
 def _wms_rect(s, w, n, e, wpx, hpx):
     import urllib.request, urllib.parse
+    if os.environ.get('DP_ARCGIS'):  # servizio ArcGIS (MapServer/export o ImageServer/exportImage): DP_WMS = URL del servizio senza /export
+        ep = 'exportImage' if 'ImageServer' in SA.WMS_URL else 'export'
+        q = urllib.parse.urlencode({'bbox': f'{w},{s},{e},{n}', 'bboxSR': 4326, 'imageSR': 4326, 'size': f'{wpx},{hpx}', 'format': 'jpg', 'f': 'image'})
+        try:
+            d = urllib.request.urlopen(f'{SA.WMS_URL.rstrip("/")}/{ep}?{q}', timeout=90).read()
+            if d[:2] == b'\xff\xd8': return np.asarray(Image.open(io.BytesIO(d)).convert('RGB'), dtype=np.float32) / 255
+        except Exception: pass
+        return None
     p = {'SERVICE': 'WMS', 'REQUEST': 'GetMap', 'LAYERS': SA.WMS_LAYER, 'STYLES': '', 'BBOX': f'{w},{s},{e},{n}', 'WIDTH': wpx, 'HEIGHT': hpx, 'FORMAT': 'image/jpeg'}
     p.update({'VERSION': '1.3.0', 'CRS': 'CRS:84'} if SA.WMS_CRS == 'CRS:84' else {'VERSION': '1.1.1', 'SRS': SA.WMS_CRS})
     try:
@@ -171,11 +179,12 @@ def riepilogo(recs, outdir):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('model'); ap.add_argument('--stalli', required=True, help='export locale stalli.json'); ap.add_argument('--out', required=True)
-    ap.add_argument('--wms', default=''); ap.add_argument('--layer', default=''); ap.add_argument('--crs', default='')
+    ap.add_argument('--wms', default=''); ap.add_argument('--layer', default=''); ap.add_argument('--crs', default=''); ap.add_argument('--arcgis', action='store_true', help='--wms è un servizio ArcGIS (.../MapServer o .../ImageServer) invece di un WMS')
     ap.add_argument('--comuni', default='', help='elenco separato da virgole (default: tutti)'); ap.add_argument('--campione', type=int, default=0, help='solo N stalli (distribuiti in modo regolare)')
     ap.add_argument('--thr', type=float, default=0.05, help='soglia, come scan_area'); ap.add_argument('--raggio-civico', type=float, default=50); ap.add_argument('--raggio-via', type=float, default=150)
     ap.add_argument('--threads', type=int, default=3, help='scaricamenti in parallelo (max 4)'); ap.add_argument('--solo-report', action='store_true')
     a = ap.parse_args(); a.threads = max(1, min(4, a.threads))
+    if a.arcgis: os.environ['DP_ARCGIS'] = '1'
     if a.wms: SA.WMS_URL = a.wms
     if a.layer: SA.WMS_LAYER = a.layer
     if a.crs: SA.WMS_CRS = a.crs
