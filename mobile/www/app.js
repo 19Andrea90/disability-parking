@@ -1499,7 +1499,7 @@
         : '<button class="bw" data-a="accedi">Accedi o crea un account</button>';
     const acc = sessione
       ? `<button class="chi btn" data-a="account"><span class="av" aria-hidden="true">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>Contrassegno, segnalazioni e sicurezza</span></span>${icon('chev', 'chev')}</button>`
-      : `<div class="acc"><h2 class="b">Ritrova i tuoi posti su ogni telefono</h2><p>Con un account ritrovi Casa, Lavoro e i posti salvati su ogni telefono, ricevi per email l'avviso prima che scada il contrassegno e segui le tue segnalazioni. È facoltativo.</p>${login}</div>`;
+      : `<div class="acc"><h2 class="b">Ritrova i tuoi posti su ogni telefono</h2><p>Con un account ritrovi Casa, Lavoro e i posti salvati su ogni telefono, ricevi l'avviso prima che scada il contrassegno e segui le tue segnalazioni. È facoltativo.</p>${login}</div>`;
     const luogo = (k, nome, ic) => l[k]
       ? `<div class="luogo"><button class="vai" data-a="vai" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>${esc(l[k].t)}</span></span></button><div class="az"><button data-a="imposta" data-k="${k}" aria-label="Cambia ${nome}">Cambia</button><button data-a="rimuovi" data-k="${k}" aria-label="Rimuovi ${nome}">Rimuovi</button></div></div>`
       : `<div class="luogo vuoto"><button class="vai" data-a="imposta" data-k="${k}"><span class="mk">${icon(ic)}</span><span class="t"><b>${nome}</b><span>Imposta</span></span></button></div>`;
