@@ -46,6 +46,9 @@
   const arrivoRifiutato = () => Date.now() - ls.get('dp.evArrivoNo', 0) < 864e5;
   const comeConferma = (c) => Object.assign({}, c, { tipo: 'conferma', dettaglio: (c.tipo + ':' + (c.dettaglio || '')).slice(0, 80) });
   function traccia(tipo, x, sempre) {
+    // Niente statistiche da test automatici (Playwright/Selenium: navigator.webdriver) né da localhost e anteprime *.pages.dev: ogni origine
+    // nuova crea un device_id nuovo e gonfiava i "nuovi telefoni". L'app nativa Capacitor ha hostname 'localhost' ma è un'app vera: non si blocca.
+    if (!SITO_NATIVO() && (navigator.webdriver || /^(localhost|127\.0\.0\.1|\[::1\])$|\.pages\.dev$/i.test(location.hostname))) return;
     if (!sempre && !statAttive()) return;
     try {
       let corpo = Object.assign({ device_id: deviceId, tipo, piattaforma: PIATTAFORMA, versione: String(window.DP_VERSIONE || '').slice(0, 40) || null }, x || {});
