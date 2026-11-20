@@ -228,7 +228,7 @@
     return v.filter((r) => { const t = ' ' + norm([r.indirizzo, r.nome, r.comune].join(' ')) + ' '; return parole.every((w) => t.includes(w)); }); }
   function visibleTab() { return filter === 'utenti' ? rows.filter((r) => r.fonte === 'utente' && r.stato === 'proposto') : filter === 'segnalati' ? rows.filter((r) => r.conferme_non_esiste > 0 && r.stato !== 'rifiutato') : rows.filter((r) => r.stato === filter); }
   function render() {
-    const v = visible(); $('#q-n').textContent = cerca ? (v.length === 1 ? '1 trovato' : v.length + ' trovati') + ' in questa scheda' : '';
+    const v = visible(); $('#q-n').textContent = !cerca ? '' : !tutti ? 'sto ancora caricando tutti gli stalli…' : (v.length === 1 ? '1 trovato' : v.length + ' trovati') + ' in questa scheda';
     $('#rows').innerHTML = v.length ? v.slice(0, 300).map((r) => `<div class="row-item${sel && sel.id === r.id ? ' sel' : ''}" data-id="${r.id}">
       <div><div class="n">${esc(r.nome || r.indirizzo || TIPO[r.tipo])} · ${r.posti} ${r.posti > 1 ? 'posti' : 'posto'}</div>
       <div class="s">${TIPO[r.tipo]} · ${r.comune || '—'} · ${r.fonte} · ${new Date(r.created_at).toLocaleDateString('it-IT')}${r.conferme_esiste ? ` · ✓${r.conferme_esiste}` : ''}${r.conferme_non_esiste ? ` · ✗${r.conferme_non_esiste}` : ''}${r.foto_url ? ' · 📷' : ''}</div></div>
@@ -251,7 +251,7 @@
 
   // ---------- modifica ----------
   function select(id) {
-    sel = rows.find((r) => r.id === id); if (!sel) return; nuovaPos = null; sposto = false;
+    sel = rows.find((r) => r.id === id); if (!sel) return; nuovaPos = null; sposto = false; $('#e-sposta').hidden = true;
     render(); map.setView([sel.lat, sel.lon], Math.max(map.getZoom(), 17));
     const s = sel;
     $('#edit').innerHTML = `
@@ -282,7 +282,6 @@
         <button class="btn" id="e-save">Salva modifiche</button>
         <button class="btn" id="e-move">📍 Riposiziona sulla mappa</button>
       </div>
-      <div class="sposta" id="e-sposta" hidden><span id="e-sposta-t"></span><button class="btn primary" id="e-sposta-ok" disabled>Salva nuova posizione</button><button class="btn" id="e-sposta-no">Annulla</button></div>
       <div class="sub" id="e-msg"></div>`;
     $('#edit').querySelectorAll('[data-st]').forEach((b) => b.onclick = () => {
       const extra = { stato: b.dataset.st };
@@ -296,7 +295,7 @@
     $('#e-move').onclick = () => { // modalità sposta: la mappa va vicinissima al pin, il pin si può trascinare, poi Salva
       sposto = true; nuovaPos = null; $('#e-move').hidden = true; $('#e-sposta').hidden = false; $('#e-sposta-ok').disabled = true;
       $('#e-sposta-t').textContent = 'Trascina il pin nel punto giusto (puoi usare la vista satellite), poi premi Salva.';
-      map.setView([sel.lat, sel.lon], 19); drawPins(); $('#amap').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      map.setView([sel.lat, sel.lon], 19); drawPins(); $('#e-sposta').scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     $('#e-sposta-ok').onclick = async () => { if (!nuovaPos) return; const ok = await save({ lat: nuovaPos[0], lon: nuovaPos[1] }); if (ok) { nuovaPos = null; sposto = false; select(sel.id); $('#e-msg').textContent = 'Posizione salvata ' + new Date().toLocaleTimeString('it-IT'); } };
     $('#e-sposta-no').onclick = () => { nuovaPos = null; sposto = false; $('#e-sposta').hidden = true; $('#e-move').hidden = false; drawPins(); };
