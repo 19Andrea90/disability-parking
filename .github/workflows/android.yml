@@ -53,7 +53,7 @@ jobs:
         run: |
           sed -i '0,/<\/activity>/s##    <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="it.disabilityparking.app" android:host="login" />\n            </intent-filter>\n        </activity>#' android/app/src/main/AndroidManifest.xml
           grep -q 'android:scheme="it.disabilityparking.app"' android/app/src/main/AndroidManifest.xml
-      - name: Plugin locale TestLab (dispositivi di prova di Google Play / Firebase Test Lab: l'app non manda statistiche)
+      - name: Plugin locale TestLab (sui dispositivi di prova di Google Play l'app non manda statistiche)
         run: |
           d=android/app/src/main/java/it/disabilityparking/app
           test -f $d/MainActivity.java
