@@ -434,11 +434,4 @@ body.fg-on #home,body.fg-on #top,body.fg-on #arrivo,body.fg-on #destbar,body.fg-
 #b-sat:focus-visible{outline:3px solid var(--blu);outline-offset:2px}
 #b-sat[aria-pressed="true"]:focus-visible{outline-color:#fff;box-shadow:0 0 0 5px var(--blu)}
 #map.sat{background:#1b2a22}
-.esri-pw{background:rgba(255,255,255,.92);border-radius:6px;padding:2px 8px;font-size:12px;line-height:20px;margin:0 0 2px;max-width:260px;text-align:right;color:#1b2a40}
-.esri-riga{display:flex;gap:8px;justify-content:flex-end;align-items:center}
-.esri-pw a{color:#0b2a5b;font-weight:700;text-decoration:none}
-.esri-apri{min-height:28px;padding:0 6px;font-size:12px;font-weight:700;color:#0b2a5b;text-decoration:underline}
-.esri-testo{padding:0 0 3px}
-.esri-pw a:focus-visible,.esri-apri:focus-visible{outline:2px solid var(--blu);outline-offset:1px}
-@media (min-width:900px){body.sat .maplibregl-ctrl-bottom-right,body.sat #map:has(~ #arrivo:not([hidden])) .maplibregl-ctrl-bottom-right,body.sat #map:has(~ #card:not([hidden])) .maplibregl-ctrl-bottom-right{right:72px}}
 body.sat .me{background:rgba(255,255,255,.3)}

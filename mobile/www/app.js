@@ -244,14 +244,8 @@
   const configApp = fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
     .then((r) => r.ok ? r.json() : null).catch(() => null);
   const ESRI_STILI = 'https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/', ESRI_ERR = [401, 403, 429, 498, 499];
-  let sat = false, satKO = false, satIds = null, satOcc = false, satTesto = '';
+  let sat = false, satKO = false, satIds = null, satOcc = false;
   const btnSat = $('#b-sat');
-  const crediti = { el: null, onAdd() { // «Powered by Esri» sempre in vista; le fonti delle immagini si aprono con «Fonti» (già aperte sul computer)
-    const d = document.createElement('div'); d.className = 'maplibregl-ctrl esri-pw';
-    d.innerHTML = '<div class="esri-riga"><a href="https://www.esri.com" target="_blank" rel="noopener">Powered by Esri</a><button type="button" class="esri-apri" aria-expanded="false">Fonti</button></div><div class="esri-testo" hidden></div>';
-    const t = d.querySelector('.esri-testo'), bt = d.querySelector('.esri-apri'); t.textContent = satTesto;
-    const apri = (on) => { t.hidden = !on; bt.setAttribute('aria-expanded', String(on)); }; bt.onclick = () => apri(t.hidden); apri(LARGO());
-    this.el = d; return d; }, onRemove() { if (this.el) this.el.remove(); this.el = null; } };
   const fontEsri = (f) => { const t = JSON.stringify(f || ''); return [/bold/i.test(t) ? 'Noto Sans Bold' : /italic/i.test(t) ? 'Noto Sans Italic' : 'Noto Sans Regular']; }; // i caratteri dei nomi sono quelli già usati dalla mappa
   function adattaEsri(stile, pre) { // rinomina sorgenti e livelli per non incrociarsi con i nostri; niente icone (lo sprite è un altro)
     const src = {}, lay = [], testi = [];
@@ -269,7 +263,8 @@
     if (!a.ok || !b.ok) { const e = new Error('esri'); e.status = a.ok ? b.status : a.status; throw e; }
     const [ja, jb] = await Promise.all([a.json(), b.json()]), A = adattaEsri(ja, 'esri-i-'), B = adattaEsri(jb, 'esri-l-');
     const primo = Object.keys(A.src)[0]; if (!primo || !A.lay.length) throw new Error('esri: stile vuoto');
-    satTesto = 'Fonti: ' + [...new Set(A.testi.concat(B.testi).map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean))].join(' · ');
+    // crediti: «Powered by Esri» e le fonti delle immagini stanno nei crediti della mappa (la «i»), come quelli di OpenStreetMap
+    A.src[primo].attribution = '<a href="https://www.esri.com" target="_blank" rel="noopener">Powered by Esri</a> | ' + [...new Set(A.testi.concat(B.testi).map((t) => t.replace(/\s+/g, ' ').trim()).filter(Boolean))].join(' · ');
     for (const k of Object.keys(A.src)) map.addSource(k, A.src[k]); for (const k of Object.keys(B.src)) map.addSource(k, B.src[k]);
     for (const l of A.lay.concat(B.lay)) map.addLayer(l, 'zone');
     satIds = A.lay.concat(B.lay).map((l) => l.id);
@@ -282,7 +277,7 @@
     const imp = (id, v) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v); };
     baseVis.forEach(([id, v]) => imp(id, sat ? 'none' : v)); (satIds || []).forEach((id) => imp(id, sat ? 'visible' : 'none'));
     $('#map').classList.toggle('sat', sat); document.body.classList.toggle('sat', sat);
-    if (sat) { if (!crediti.el) map.addControl(crediti, 'bottom-right'); } else if (crediti.el) map.removeControl(crediti);
+    const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { const ap = sat && LARGO(); at.classList.toggle('maplibregl-compact-show', ap); if (ap) at.setAttribute('open', ''); else at.removeAttribute('open'); } // sul computer i crediti Esri partono aperti, sul telefono chiusi nella «i»
     btnSat.hidden = !chiaveEsri || satKO; btnSat.setAttribute('aria-pressed', String(sat)); btnSat.setAttribute('aria-label', 'Vista satellitare, ' + (sat ? 'attiva' : 'non attiva'));
   }
   function satErrore() { // chiave scaduta, quota finita o servizio giù: si torna da soli alla mappa stradale, senza riprovare fino al prossimo avvio
