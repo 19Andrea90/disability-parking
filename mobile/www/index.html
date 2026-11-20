@@ -224,6 +224,26 @@
   </div>
 </div>
 
+<!-- Elimina account -->
+<div id="elimina" class="page" hidden role="dialog" aria-labelledby="x-tit">
+  <div class="p-top"><button id="x-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="x-tit">Elimina account</h1></div>
+  <div class="testo sug">
+    <p><b>Stai per eliminare il tuo account SostAbile.</b> L'operazione è definitiva: non si può annullare e non possiamo recuperare nulla.</p>
+    <div class="xbox"><div class="b">Cosa viene cancellato</div><ul>
+      <li>il tuo account e il tuo indirizzo email;</li>
+      <li>i posti salvati e i luoghi come Casa e Lavoro;</li>
+      <li>la data di scadenza del contrassegno e le preferenze di avviso, anche su questo telefono.</li></ul></div>
+    <div class="xbox ok"><div class="b">Cosa resta</div><ul>
+      <li>Le segnalazioni e le conferme che hai già fatto restano sulla mappa, in forma anonima e senza alcun collegamento con te: servono agli altri utenti.</li>
+      <li>Potrai usare l'app anche senza account, o crearne uno nuovo quando vuoi.</li></ul></div>
+    <label for="x-conf" class="eyebrow">Per confermare scrivi ELIMINA</label>
+    <input id="x-conf" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ELIMINA" aria-describedby="x-msg">
+    <div class="msg small muted" id="x-msg" role="status"></div>
+    <button class="bp bd" id="x-go" disabled>Elimina definitivamente</button>
+    <button class="bp bn" id="x-no">Annulla, tieni il mio account</button>
+  </div>
+</div>
+
 <!-- Regole della sosta -->
 <div id="regole" class="page" hidden>
   <div class="p-top"><button id="r-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Regole della sosta</h1></div>

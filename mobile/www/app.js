@@ -1279,6 +1279,31 @@
   (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App; if (A) A.addListener('appUrlOpen', (e) => { if (e && e.url && e.url.indexOf('it.disabilityparking.app://login') === 0) daGoogle(e.url); }); })();
   function esci() { if (sessione) fetch(`${CFG.SB}/auth/v1/logout`, { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + sessione.token } }).catch(() => {}); sessione = null; ls.set('dp.sessione', null); }
 
+  // ---------- eliminazione dell'account ----------
+  // Cancella solo l'account Supabase (email, accesso, dati nei user_metadata) con la funzione elimina_mio_account (supabase/16_utenti.sql).
+  // Stalli, conferme ed eventi sono legati al codice del telefono, non all'account: restano, anonimi.
+  function pulisciAccount() {
+    clearTimeout(sincT); esci();
+    salvati.clear(); ls.set('dp.salvati', []); ls.set('dp.luoghi', {}); ls.set('dp.profilo', {}); ls.set('dp.contrassegno', ''); ls.set('dp.dispositivi', []); ls.set('dp.agg', 0);
+    programmaAvvisi();
+  }
+  function apriElimina() { $('#elimina').hidden = false; $('#x-conf').value = ''; $('#x-msg').textContent = ''; $('#x-go').disabled = true; setTimeout(() => $('#x-conf').focus(), 50); }
+  const chiudiElimina = () => { $('#elimina').hidden = true; };
+  $('#x-back').onclick = chiudiElimina; $('#x-no').onclick = chiudiElimina;
+  $('#x-conf').addEventListener('input', () => { $('#x-go').disabled = $('#x-conf').value.trim().toUpperCase() !== 'ELIMINA'; });
+  $('#x-go').onclick = async () => {
+    const btn = $('#x-go'); if (!sessione || btn.disabled) return;
+    btn.disabled = true; $('#x-msg').textContent = 'Elimino l\'account…';
+    try {
+      const r = await aut('/rest/v1/rpc/elimina_mio_account', { method: 'POST', body: '{}' });
+      if (!r.ok) throw new Error('http ' + r.status);
+      traccia('account_eliminato'); pulisciAccount(); chiudiElimina(); menu(); toast('Account eliminato', 4000);
+    } catch (err) {
+      $('#x-msg').textContent = /sessione scaduta/.test(String(err && err.message)) ? 'La sessione è scaduta: esci, accedi di nuovo e riprova.' : 'Non è stato possibile eliminare l\'account, scrivi a info@sostabile.it';
+      btn.disabled = $('#x-conf').value.trim().toUpperCase() !== 'ELIMINA';
+    }
+  };
+
   // ---------- schermata 7 · i tuoi posti ----------
   let formAperto = false;
   function apriMenu() { formAperto = false; $('#menu').hidden = false; menu(); }
@@ -1301,6 +1326,7 @@
       <button class="vaip" data-a="consiglia"><span class="mk">${icon('share')}</span><span class="t">Consiglia l'app a un amico</span>${icon('chev')}</button>
       <button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>
       <div><div class="eyebrow">Posti salvati</div>${v.length ? v.map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('') : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>'}</div>
+      ${sessione ? `<button class="vaip pericolo" data-a="elimina"><span class="mk">${icon('x')}</span><span class="t">Elimina account</span>${icon('chev')}</button>` : ''}
       <div class="piede"><button data-a="fonti">Fonti e avvertenze</button></div>
       <div class="vers">Versione ${esc(window.DP_VERSIONE || '')}</div>`;
   }
@@ -1324,6 +1350,7 @@
     else if (a === 'salvato') { $('#menu').hidden = true; apriSalvato(b.dataset.id); }
     else if (a === 'via') { salvati.delete(b.dataset.id); ls.set('dp.salvati', [...salvati.values()]); toccato(); menu(); }
     else if (a === 'profilo') { $('#profilo').hidden = false; scheda8(); }
+    else if (a === 'elimina') apriElimina();
     else if (a === 'segn') apriSegnalazioni();
     else if (a === 'sugg') apriSuggerimento();
     else if (a === 'regole') apriRegole(null);

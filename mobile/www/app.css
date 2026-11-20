@@ -339,6 +339,16 @@ button.handle::before{content:"";position:absolute;inset:-14px -60px}
 .sug input{height:52px}
 .sug .bp{height:56px;border-radius:16px;background:var(--blu);color:#fff;font-size:17px;font-weight:700}
 .sug .bp:disabled{opacity:.6}
+/* eliminazione dell'account */
+.xbox{border:1px solid var(--bordo);border-radius:16px;padding:12px 14px;background:var(--soft)}
+.xbox .b{font-size:17px;margin-bottom:4px}
+.xbox ul{margin:0;padding-left:20px;font-size:15px;line-height:1.4}.xbox li{margin:4px 0}
+.xbox.ok{background:#eaf6ee;border-color:#9fd1ae}
+.sug .bp.bd{background:#b3261e;color:#fff}
+.sug .bp.bn{background:var(--panel);color:var(--blu);border:2px solid var(--blu)}
+.vaip.pericolo{margin-top:6px;border-color:#b3261e;color:#b3261e}
+.vaip.pericolo .mk{background:#b3261e;color:#fff}
+#x-conf{text-transform:uppercase;letter-spacing:.08em}
 
 /* regole della sosta, recensione, interruttore statistiche, Google */
 .lnk{display:flex;align-items:center;gap:8px;text-align:left;color:var(--blu);font-size:15px;font-weight:600;min-height:44px;padding:2px 0}

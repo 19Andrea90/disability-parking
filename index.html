@@ -11,8 +11,8 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>SostAbile</title>
-<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=6dafaca3">
-<link rel="stylesheet" href="mobile/www/app.css?v=6dafaca3">
+<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=f0037b9d">
+<link rel="stylesheet" href="mobile/www/app.css?v=f0037b9d">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -230,6 +230,26 @@
   </div>
 </div>
 
+<!-- Elimina account -->
+<div id="elimina" class="page" hidden role="dialog" aria-labelledby="x-tit">
+  <div class="p-top"><button id="x-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="x-tit">Elimina account</h1></div>
+  <div class="testo sug">
+    <p><b>Stai per eliminare il tuo account SostAbile.</b> L'operazione è definitiva: non si può annullare e non possiamo recuperare nulla.</p>
+    <div class="xbox"><div class="b">Cosa viene cancellato</div><ul>
+      <li>il tuo account e il tuo indirizzo email;</li>
+      <li>i posti salvati e i luoghi come Casa e Lavoro;</li>
+      <li>la data di scadenza del contrassegno e le preferenze di avviso, anche su questo telefono.</li></ul></div>
+    <div class="xbox ok"><div class="b">Cosa resta</div><ul>
+      <li>Le segnalazioni e le conferme che hai già fatto restano sulla mappa, in forma anonima e senza alcun collegamento con te: servono agli altri utenti.</li>
+      <li>Potrai usare l'app anche senza account, o crearne uno nuovo quando vuoi.</li></ul></div>
+    <label for="x-conf" class="eyebrow">Per confermare scrivi ELIMINA</label>
+    <input id="x-conf" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ELIMINA" aria-describedby="x-msg">
+    <div class="msg small muted" id="x-msg" role="status"></div>
+    <button class="bp bd" id="x-go" disabled>Elimina definitivamente</button>
+    <button class="bp bn" id="x-no">Annulla, tieni il mio account</button>
+  </div>
+</div>
+
 <!-- Regole della sosta -->
 <div id="regole" class="page" hidden>
   <div class="p-top"><button id="r-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Regole della sosta</h1></div>
@@ -332,9 +352,9 @@
   </div>
 </div>
 
-<script src="mobile/www/vendor/maplibre-gl.js?v=6dafaca3"></script>
-<script src="mobile/www/chiavi.js?v=6dafaca3"></script>
-<script src="mobile/www/app.js?v=6dafaca3"></script>
-<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web 6dafaca3'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
+<script src="mobile/www/vendor/maplibre-gl.js?v=f0037b9d"></script>
+<script src="mobile/www/chiavi.js?v=f0037b9d"></script>
+<script src="mobile/www/app.js?v=f0037b9d"></script>
+<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web f0037b9d'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
 </body>
 </html>
