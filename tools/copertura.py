@@ -85,6 +85,9 @@ def main():
     req = urllib.request.Request(f'{SB}/storage/v1/object/foto/copertura/riepilogo.json', data=rie, method='POST',
                                  headers={'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'x-upsert': 'true', 'Cache-Control': 'max-age=3600'})
     urllib.request.urlopen(req, timeout=120).read(); print(f'Caricato riepilogo.json ({len(rie) / 1e3:.0f} KB)')
+    # L'app legge una COPIA STATICA di riepilogo.json, scaricata da tools/pubblica.py a ogni build del sito (per non pesare su Supabase):
+    # per aggiornarla serve una nuova pubblicazione del sito (nuovo deploy Cloudflare Pages). Nel frattempo l'app mostra la copia precedente.
+    print('Ricorda: per aggiornare la copia usata dall\'app serve un nuovo deploy del sito (Cloudflare Pages).')
     from shapely.ops import transform
     feats = [dict(type='Feature', properties=dict(c=o['cod'], n=o['nome'], s=o['stalli'], u=o['ufficiali']),
                   geometry=mapping(transform(wgs.transform, geoms[i].simplify(150)))) for i, o in enumerate(out)]

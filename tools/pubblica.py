@@ -10,9 +10,16 @@ Due disposizioni della cartella di uscita (i sorgenti nel deposito non cambiano 
   dominio  per https://sostabile.it/: radice = sito vetrina, app/ = web app, admin/ = pannello admin (admin/index.html).
            I collegamenti tra le parti si riscrivono con SOSTITUZIONI_DOMINIO (sotto); se una non trova riscontro, errore.
 
+File di copertura: a ogni build scarica UNA volta (URL pubblico, nessuna chiave) il riepilogo dei totali per regione/provincia/comune
+da Supabase Storage e lo pubblica come file statico accanto all'app (dominio: app/copertura.json; attuale: copertura.json), così l'app
+non lo scarica da Supabase a ogni avvio (vedi app.js, COPERTURA_STATICA). Se il download fallisce la build NON si rompe: il file manca
+e l'app usa la riserva su Supabase. Chi aggiorna il file su Supabase è tools/copertura.py (a mano, nessun workflow): dopo ogni
+aggiornamento della copertura serve una nuova pubblicazione del sito (nuovo deploy Cloudflare Pages) per aggiornare la copia.
+Per le prove si può cambiare l'indirizzo con la variabile d'ambiente COPERTURA_URL (anche file:///percorso), o disattivare il download con COPERTURA_URL=-.
+
 Uso: python3 tools/pubblica.py [cartella] [--disposizione attuale|dominio]      (default: dist; viene ricreata da zero)
 """
-import argparse, json, os, re, shutil, sys
+import argparse, json, os, re, shutil, sys, urllib.request
 from urllib.parse import urlsplit, unquote
 
 _ap = argparse.ArgumentParser(description='Prepara la cartella da pubblicare su Cloudflare Pages.')
@@ -165,6 +172,10 @@ HEADERS = """# Intestazioni per Cloudflare Pages (generato da tools/pubblica.py)
 /manifest.json
   Cache-Control: no-cache
 
+# Copia statica del riepilogo di copertura: cambia solo a ogni nuova pubblicazione
+/copertura.json
+  Cache-Control: public, max-age=3600
+
 # Pannello admin: non da indicizzare
 /admin.html
   X-Robots-Tag: noindex, nofollow
@@ -186,6 +197,10 @@ HEADERS_DOMINIO = """# Intestazioni per Cloudflare Pages, disposizione "dominio"
 /app/manifest.json
   Cache-Control: no-cache
 
+# Copia statica del riepilogo di copertura: cambia solo a ogni nuova pubblicazione
+/app/copertura.json
+  Cache-Control: public, max-age=3600
+
 # Pannello admin: non da indicizzare
 /admin/
   X-Robots-Tag: noindex, nofollow
@@ -200,6 +215,21 @@ REDIRECTS_DOMINIO = """# Generato da tools/pubblica.py (disposizione "dominio")
 /sito/* /:splat 301
 /admin.html /admin/ 301
 """
+
+def scarica_copertura():
+    """Scarica il riepilogo di copertura (file pubblico di Supabase Storage). Ritorna il testo, o None se non riesce (la build continua)."""
+    url = os.environ.get('COPERTURA_URL')
+    if url == '-': print('Copertura: download disattivato (COPERTURA_URL=-)'); return None
+    if not url:
+        m = re.search(r"SB: '(https://[^']+)'", open(os.path.join(R, 'mobile', 'www', 'app.js'), encoding='utf-8').read())
+        if not m: print('ATTENZIONE: indirizzo Supabase non trovato in app.js, copertura.json non incluso (l\'app usa la riserva)'); return None
+        url = m.group(1) + '/storage/v1/object/public/foto/copertura/riepilogo.json'
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'sostabile-build'}), timeout=30) as r: testo = r.read().decode('utf-8')
+        if not json.loads(testo).get('regioni'): raise ValueError('manca "regioni"')
+        return json.dumps(json.loads(testo), ensure_ascii=False, separators=(',', ':'))   # compatto
+    except Exception as e:
+        print('ATTENZIONE: copertura.json non scaricato (%s): la build continua, l\'app userà la riserva su Supabase' % e); return None
 
 def sostituzioni(rel, testo):
     """Applica a un file le voci di SOSTITUZIONI_DOMINIO che lo riguardano, verificando i conteggi."""
@@ -253,6 +283,8 @@ os.makedirs(USCITA)
 tot = 0
 print('Copio in %s:' % USCITA)
 altri = [('_headers', HEADERS_DOMINIO if DOMINIO else HEADERS), ('robots.txt', robots())] + ([('_redirects', REDIRECTS_DOMINIO)] if DOMINIO else [])
+_cop = scarica_copertura()
+if _cop: altri.append(('app/copertura.json' if DOMINIO else 'copertura.json', _cop))
 for rel in sorted(copiati):
     dst = os.path.join(USCITA, destinazione(rel)); os.makedirs(os.path.dirname(dst), exist_ok=True)
     if DOMINIO and rel.lower().endswith(('.html', '.js', '.json')):
@@ -265,6 +297,7 @@ if DOMINIO:
     for f in {f for f, _, _, _ in SOSTITUZIONI_DOMINIO}:
         if f not in copiati: errori.append('sostituzione "dominio": il file %s non è tra quelli pubblicati' % f)
 for nome, testo in altri:
+    os.makedirs(os.path.dirname(os.path.join(USCITA, nome)), exist_ok=True)
     with open(os.path.join(USCITA, nome), 'w', encoding='utf-8', newline='\n') as f: f.write(testo)
     n = os.path.getsize(os.path.join(USCITA, nome)); tot += n; print('  %8.1f KB  %s (generato)' % (n / 1024, nome))
 if DOMINIO:
