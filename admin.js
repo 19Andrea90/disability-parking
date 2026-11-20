@@ -216,10 +216,10 @@
       proj: schede == null ? null : { usato: schede, trascorsi: n('giorni_mese_trascorsi'), totali: n('giorni_mese_totali'), limite: 20000 },
       periodo: `Si azzera il ${meseFine} (mese di calendario).`, link: 'https://developer.tomtom.com/user/me/analytics', linkT: 'Pannello TomTom, Analytics (dato preciso, con un giorno di ritardo)',
       nota: 'Stima: aperture di un posto (evento «scheda») da Android nel mese; ogni apertura fa al massimo 1 richiesta (spesso meno: ci sono le risposte tenute in memoria).' });
-    L.push({ id: 'tt-search', nome: 'TomTom Search · categorie di luoghi (solo app Android)', tipo: cat == null ? 'non misurato' : 'stimato', limite: 2500, usato: cat, fmt: fmt, unita: 'richieste',
+    L.push({ id: 'tt-search', nome: 'TomTom Search · categorie di luoghi (solo riserva, app Android)', tipo: cat == null ? 'non misurato' : 'stimato', limite: 2500, usato: cat, fmt: fmt, unita: 'richieste',
       proj: cat == null ? null : { usato: cat, trascorsi: n('giorni_mese_trascorsi'), totali: n('giorni_mese_totali'), limite: 2500 },
       periodo: `Si azzera il ${meseFine} (mese di calendario).`, link: 'https://developer.tomtom.com/user/me/analytics', linkT: 'Pannello TomTom, Analytics (dato preciso, con un giorno di ritardo)',
-      nota: cat == null ? 'Non misurato: nessun evento per l\'apertura delle categorie. Il numero preciso si vede solo sul pannello TomTom.' : 'Stima: eventi «categoria» da Android nel mese (una richiesta a ogni apertura di una categoria non già tenuta in memoria). Conta solo dalle versioni dell\'app che inviano l\'evento, quindi all\'inizio è per difetto.' });
+      nota: cat == null ? 'Non misurato: nessun evento per l\'apertura delle categorie. Il numero preciso si vede solo sul pannello TomTom.' : 'Stima: eventi «categoria» da Android nel mese. Le categorie ora usano il nostro elenco OpenStreetMap: TomTom si chiama solo se l\'elenco della zona non si scarica, quindi questo numero dovrebbe restare vicino a zero.' });
     L.push({ id: 'esri', nome: 'Esri · vista satellitare', tipo: sat == null ? 'non misurato' : 'stimato', limite: 2000000, usato: sat == null ? null : sat * RIQUADRI_ESRI_PER_APERTURA, fmt: fmt, unita: 'riquadri',
       proj: sat == null ? null : { usato: sat * RIQUADRI_ESRI_PER_APERTURA, trascorsi: n('giorni_mese_trascorsi'), totali: n('giorni_mese_totali'), limite: 2000000 },
       periodo: `Si azzera il ${meseFine} (mese di calendario).`, link: 'https://location.arcgis.com/', linkT: 'Pannello Esri (dato preciso)',
