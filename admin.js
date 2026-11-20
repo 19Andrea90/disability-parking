@@ -95,7 +95,24 @@
   // ======================================================================
   // DASHBOARD
   // ======================================================================
-  PAGES.dashboard = { load() { renderTodo(); aggiornaTodo(); kpiFast(); statistiche(); } };
+  // La dashboard ha due schede: "Statistiche dell'app" e "Consumi e limiti gratuiti" (#/dashboard?s=consumi). L'ultima scelta resta in memoria nel browser.
+  let dashSez = null;
+  PAGES.dashboard = {
+    load(forza) { renderTodo(); aggiornaTodo(); kpiFast(); statistiche(); caricaConsumi(); },
+    show(params) {
+      const s = params.get('s') || lsGet('adm.dashSez', 'stat'); dashSez = s === 'consumi' ? 'consumi' : 'stat';
+      if (params.get('s')) lsSet('adm.dashSez', dashSez);
+      $$('.dtab').forEach((b) => { const on = b.dataset.s === dashSez; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
+      $('#dp-stat').hidden = dashSez !== 'stat'; $('#dp-consumi').hidden = dashSez !== 'consumi';
+    }
+  };
+  function vaiSezione(s, focus) { lsSet('adm.dashSez', s); location.hash = '#/dashboard' + (s === 'consumi' ? '?s=consumi' : '?s=stat'); if (focus) $('#dt-' + s).focus(); }
+  document.addEventListener('click', (e) => { const b = e.target.closest('.dtab'); if (b) vaiSezione(b.dataset.s); });
+  document.addEventListener('keydown', (e) => { // schede: frecce, Home e Fine, come in una tablist
+    const b = e.target.closest && e.target.closest('.dtab'); if (!b) return; const t = $$('.dtab'); let i = t.indexOf(b);
+    if (e.key === 'ArrowRight') i = (i + 1) % t.length; else if (e.key === 'ArrowLeft') i = (i - 1 + t.length) % t.length; else if (e.key === 'Home') i = 0; else if (e.key === 'End') i = t.length - 1; else return;
+    e.preventDefault(); vaiSezione(t[i].dataset.s, true);
+  });
   // conteggi subito dal server, senza scaricare gli stalli
   async function kpiFast() {
     const c = async (f) => { const { count } = await f(sb.from('stalli_con_conferme').select('id', { count: 'exact', head: true })); return count ?? '…'; };
@@ -159,6 +176,119 @@
         <div><div class="st-h">Da dove usano l'app (30 giorni)</div>${Object.keys(pf).length ? Object.entries(pf).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${PF[k] || esc(k)}</span><b>${fmt(n)} · ${pct(n, totPf)}</b></div><div class="st-bar"><i style="width:${(n / Math.max(1, totPf)) * 100}%"></i></div></div>`).join('') : '<div class="sub">Ancora nessun dato.</div>'}</div>
         <div><div class="st-h">Versioni in uso (7 giorni)</div>${lista(d.versioni_7g, 'Ancora nessun dato.')}</div>
       </div>`);
+  }
+  // ---------- consumi e limiti gratuiti (rpc consumi_admin, supabase/18_consumi.sql) ----------
+  // Traffico in uscita di Supabase per ogni apertura dell'app (KB). Non si può leggere dal database: è una STIMA, da riverificare ogni tanto.
+  // Misurato il 20/11/2026: ~250 KB per sessione quando il file di copertura dei comuni stava su Supabase; ~60 KB dopo averlo spostato su Cloudflare.
+  const KB_PER_SESSIONE = 60;
+  const RIQUADRI_ESRI_PER_APERTURA = 20; // stima del piano: riquadri satellitari scaricati ogni volta che si accende la vista satellitare
+  const LINK_SB = 'https://supabase.com/dashboard/org/ucmsslhnlapdjcdmsoms/usage';
+  const GB = 1024 ** 3, MB = 1024 ** 2;
+  const fmtByte = (b) => b >= GB ? (b / GB).toLocaleString('it-IT', { maximumFractionDigits: 2 }) + ' GB' : (b / MB).toLocaleString('it-IT', { maximumFractionDigits: b >= 100 * MB ? 0 : 1 }) + ' MB';
+  const fmtDataIt = (iso) => new Date(String(iso).slice(0, 10) + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+  const statoDa = (p) => p > 85 ? { k: 'crit', t: 'Critico', i: '✖' } : p >= 60 ? { k: 'att', t: 'Attenzione', i: '⚠' } : { k: 'ok', t: 'Ok', i: '✓' };
+  const ORDINE = { nd: 0, ok: 1, att: 2, crit: 3 };
+  function proiezione(usato, trascorsi, totali) { const g = Math.max(Number(trascorsi) || 0, 1); return usato / g * totali; }
+  // costruisce l'elenco dei servizi da mostrare; "d" è la risposta di consumi_admin() oppure null (funzione mancante: restano solo le informazioni fisse)
+  function servizi(d) {
+    const ok = !!d, n = (k) => (ok && d[k] != null ? Number(d[k]) : null);
+    const pFine = ok && d.periodo_fine ? fmtDataIt(d.periodo_fine) : 'il 24 del mese dopo';
+    const meseFine = (() => { const o = new Date(); return new Date(o.getFullYear(), o.getMonth() + 1, 1).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' }); })();
+    const sess = n('sessioni_periodo'), schede = n('schede_android_mese'), cat = n('categorie_android_mese'), sat = n('satellite_mese');
+    const L = [];
+    L.push({ id: 'sb-traffico', nome: 'Supabase · traffico in uscita', tipo: 'stimato', limite: 5 * GB, usato: sess == null ? null : sess * KB_PER_SESSIONE * 1024, fmt: fmtByte,
+      periodo: `Si azzera il ${pFine} (periodo dal 24 al 24).`, giorni: [n('giorni_periodo_trascorsi'), n('giorni_periodo_totali')], link: LINK_SB, linkT: 'Pannello Supabase (dato preciso)',
+      nota: ok ? `Stima: <b>${fmt(sess)} sessioni</b> nel periodo × ${KB_PER_SESSIONE} KB per sessione${n('sessioni_ieri') != null ? ` (ieri ${fmt(n('sessioni_ieri'))} sessioni)` : ''}. Il traffico vero non si legge dal database; chi ha spento le statistiche non è contato, quindi il dato reale può essere più alto.` : `Stima: sessioni del periodo × ${KB_PER_SESSIONE} KB per sessione.` });
+    L.push({ id: 'sb-db', nome: 'Supabase · spazio del database', tipo: 'misurato', limite: 500 * MB, usato: n('db_bytes'), fmt: fmtByte,
+      periodo: 'Non si azzera: è lo spazio occupato (scende solo cancellando dati; la pulizia notturna degli eventi aiuta).', link: LINK_SB, linkT: 'Pannello Supabase (dato preciso)',
+      nota: `Misurato con <code>pg_database_size</code>${ok && d.eventi_righe != null ? ` · righe nella tabella eventi: ${fmt(d.eventi_righe)}` : ''}.` });
+    L.push({ id: 'sb-storage', nome: 'Supabase · spazio file (storage)', tipo: 'misurato', limite: 1 * GB, usato: n('storage_bytes'), fmt: fmtByte,
+      periodo: 'Non si azzera: è lo spazio occupato dai file.', link: LINK_SB, linkT: 'Pannello Supabase (dato preciso)', nota: 'Misurato: somma delle dimensioni dei file in <code>storage.objects</code>.' });
+    L.push({ id: 'sb-mau', nome: 'Supabase · utenti attivi al mese (account)', tipo: 'misurato', limite: 50000, usato: n('mau_30g'), fmt: fmt, unita: 'account',
+      periodo: 'Mobile: finestra mobile degli ultimi 30 giorni, non si azzera di colpo.', link: LINK_SB, linkT: 'Pannello Supabase (dato preciso)', nota: 'Misurato: account con un accesso negli ultimi 30 giorni. Chi usa l\'app senza account non conta.' });
+    const am = n('account_mese'), ao = n('account_oggi');
+    L.push({ id: 'resend', nome: 'Email di iscrizione (Resend)', tipo: 'stimato', unita: 'email', fmt: fmt,
+      barre: [{ l: 'Oggi', usato: ao, limite: 100 }, { l: 'Questo mese', usato: am, limite: 3000 }],
+      proj: am == null ? null : { usato: am, trascorsi: n('giorni_mese_trascorsi'), totali: n('giorni_mese_totali'), limite: 3000 },
+      periodo: `Il limite giornaliero riparte a mezzanotte (UTC); quello mensile il ${meseFine} (qui si usa il mese di calendario).`, link: 'https://resend.com/emails', linkT: 'Pannello Resend (dato preciso)',
+      nota: 'Stima: account creati oggi e nel mese (una email di conferma per account). Non conta le email di recupero password o i reinvii.' });
+    L.push({ id: 'tt-routing', nome: 'TomTom Routing · tempi con traffico (solo app Android)', tipo: 'stimato', limite: 20000, usato: schede, fmt: fmt, unita: 'richieste',
+      proj: schede == null ? null : { usato: schede, trascorsi: n('giorni_mese_trascorsi'), totali: n('giorni_mese_totali'), limite: 20000 },
+      periodo: `Si azzera il ${meseFine} (mese di calendario).`, link: 'https://developer.tomtom.com/user/me/analytics', linkT: 'Pannello TomTom, Analytics (dato preciso, con un giorno di ritardo)',
+      nota: 'Stima: aperture di un posto (evento «scheda») da Android nel mese; ogni apertura fa al massimo 1 richiesta (spesso meno: ci sono le risposte tenute in memoria).' });
+    L.push({ id: 'tt-search', nome: 'TomTom Search · categorie di luoghi (solo app Android)', tipo: cat == null ? 'non misurato' : 'stimato', limite: 2500, usato: cat, fmt: fmt, unita: 'richieste',
+      proj: cat == null ? null : { usato: cat, trascorsi: n('giorni_mese_trascorsi'), totali: n('giorni_mese_totali'), limite: 2500 },
+      periodo: `Si azzera il ${meseFine} (mese di calendario).`, link: 'https://developer.tomtom.com/user/me/analytics', linkT: 'Pannello TomTom, Analytics (dato preciso, con un giorno di ritardo)',
+      nota: cat == null ? 'Non misurato: nessun evento per l\'apertura delle categorie. Il numero preciso si vede solo sul pannello TomTom.' : 'Stima: eventi «categoria» da Android nel mese (una richiesta a ogni apertura di una categoria non già tenuta in memoria). Conta solo dalle versioni dell\'app che inviano l\'evento, quindi all\'inizio è per difetto.' });
+    L.push({ id: 'esri', nome: 'Esri · vista satellitare', tipo: sat == null ? 'non misurato' : 'stimato', limite: 2000000, usato: sat == null ? null : sat * RIQUADRI_ESRI_PER_APERTURA, fmt: fmt, unita: 'riquadri',
+      proj: sat == null ? null : { usato: sat * RIQUADRI_ESRI_PER_APERTURA, trascorsi: n('giorni_mese_trascorsi'), totali: n('giorni_mese_totali'), limite: 2000000 },
+      periodo: `Si azzera il ${meseFine} (mese di calendario).`, link: 'https://location.arcgis.com/', linkT: 'Pannello Esri (dato preciso)',
+      nota: sat == null ? `Non misurato: l'app non registra la vista satellitare. Stima del piano: ~${RIQUADRI_ESRI_PER_APERTURA} riquadri per apertura; il dato vero è sul pannello Esri.` : `Stima: <b>${fmt(sat)} accensioni</b> della vista satellitare nel mese × ~${RIQUADRI_ESRI_PER_APERTURA} riquadri (stima del piano). Conta solo dalle versioni dell'app che inviano l'evento.` });
+    return L;
+  }
+  function percDi(s) { // [{l, usato, limite, p}] per ogni barra del servizio
+    const barre = s.barre || [{ l: '', usato: s.usato, limite: s.limite }];
+    return barre.map((b) => Object.assign({}, b, { p: b.usato == null ? null : b.usato / b.limite * 100 }));
+  }
+  function cardServizio(s) {
+    const barre = percDi(s), noti = barre.filter((b) => b.p != null);
+    const peggio = noti.length ? statoDa(Math.max(...noti.map((b) => b.p))) : { k: 'nd', t: 'Dato non disponibile', i: '–' };
+    const f = s.fmt;
+    const corpo = barre.map((b) => {
+      if (b.p == null) return `<div class="cs-num"><span>${b.l ? esc(b.l) + ': ' : ''}limite ${f(b.limite)}${s.unita && f === fmt ? ' ' + s.unita : ''}</span></div>`;
+      const st = statoDa(b.p), pc = Math.round(b.p * 10) / 10, w = Math.min(100, Math.max(b.p > 0 ? 1 : 0, b.p));
+      const nome = `${f(b.usato)} su ${f(b.limite)}${s.unita && f === fmt ? ' ' + s.unita : ''}`;
+      return `${b.l ? `<div class="cs-lbl"><span>${esc(b.l)}</span><span>${st.i} ${st.t}</span></div>` : ''}<div class="cs-num"><b>${pc.toLocaleString('it-IT', { maximumFractionDigits: 1 })}%</b><span>${nome}</span></div>
+        <div class="cs-bar" role="progressbar" aria-label="${esc(s.nome + (b.l ? ' · ' + b.l : ''))}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(100, b.p))}" aria-valuetext="${pc.toLocaleString('it-IT')}% del limite, ${st.t}"><i class="${st.k}" style="width:${w}%"></i></div>`;
+    }).join('');
+    const tipoT = s.tipo === 'misurato' ? 'misurato' : s.tipo === 'stimato' ? 'stimato' : 'non misurato';
+    return `<article class="cs st-${peggio.k}" aria-label="${esc(s.nome)}"><div class="cs-top"><h4>${esc(s.nome)}</h4><span class="cs-tag" title="${s.tipo === 'misurato' ? 'Letto direttamente dal database' : 'Ricavato dagli eventi dell\'app, non è il dato del fornitore'}">${tipoT}</span></div>
+      ${corpo}<div><span class="cs-st ${peggio.k}"><span aria-hidden="true">${peggio.i}</span>${peggio.t}</span></div>
+      <p class="cs-nota">${s.nota}</p><p class="cs-nota"><b>Quando si azzera:</b> ${s.periodo}</p>
+      <div class="cs-foot"><span>Limite gratuito: ${s.barre ? s.barre.map((b) => f(b.limite) + (b.l === 'Oggi' ? ' al giorno' : ' al mese')).join(' · ') : f(s.limite)}${s.unita && f === fmt && !s.barre ? ' ' + s.unita : ''}</span><a href="${s.link}" target="_blank" rel="noopener">${esc(s.linkT)} ↗</a></div></article>`;
+  }
+  // il servizio che si esaurisce per primo al ritmo attuale
+  function proiezioneBox(d, L) {
+    const cand = [];
+    L.forEach((s) => {
+      if (s.id === 'sb-traffico' && s.usato != null) cand.push({ nome: s.nome, usato: s.usato, trascorsi: s.giorni[0], totali: s.giorni[1], limite: s.limite, fmt: s.fmt, fine: d.periodo_fine, ini: d.periodo_inizio });
+      else if (s.proj) cand.push(Object.assign({ nome: s.nome, fmt: s.fmt, fine: null, ini: null }, s.proj));
+    });
+    cand.forEach((c) => { c.media = c.usato / Math.max(Number(c.trascorsi) || 0, 1); c.finale = c.media * c.totali; c.rapporto = c.finale / c.limite; });
+    cand.sort((a, b) => b.rapporto - a.rapporto);
+    const g = cand[0], tel = d.telefoni_30g;
+    let esito = '';
+    if (!g) esito = 'Non ci sono ancora dati per stimare quale servizio si esaurisce per primo.';
+    else {
+      const gg = g.limite / (g.media || 1), oggiG = Number(g.trascorsi) || 0;
+      const quando = (g.ini ? new Date(g.ini + 'T12:00:00') : new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12)); quando.setDate(quando.getDate() + Math.floor(gg));
+      const nomeB = `<b>${esc(g.nome)}</b>`;
+      if (g.rapporto >= 1) esito = `Al ritmo attuale si esaurisce per primo ${nomeB}: proiezione a fine periodo ${g.fmt(g.finale)} su ${g.fmt(g.limite)} (${Math.round(g.rapporto * 100)}%). Il limite verrebbe superato intorno al <b>${quando.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}</b>${gg < oggiG ? ' (già superato secondo la stima)' : ''}.`;
+      else esito = `Al ritmo attuale nessun servizio supera il limite entro la fine del periodo. Il più vicino è ${nomeB}: proiezione ${g.fmt(g.finale)} su ${g.fmt(g.limite)} (${Math.round(g.rapporto * 100)}%).`;
+    }
+    const fissi = L.filter((s) => !s.proj && s.id !== 'sb-traffico' && s.usato != null && s.usato / s.limite >= 0.6).map((s) => `${esc(s.nome)} (${Math.round(s.usato / s.limite * 100)}%)`);
+    return `<section class="box cs-proj" aria-labelledby="cs-proj-h"><h3 id="cs-proj-h">Proiezione</h3>
+      <p><b>${tel == null ? '–' : fmt(tel)}</b> telefoni distinti attivi negli ultimi 30 giorni.</p><p>${esito}</p>
+      ${fissi.length ? `<p>Da tenere d'occhio (spazio occupato, senza proiezione): ${fissi.join(', ')}.</p>` : ''}
+      <p class="cs-nota">Proiezione = consumo medio giornaliero finora × giorni del periodo. Serve a capire l'ordine di grandezza: con pochi giorni di dati è molto instabile.</p></section>`;
+  }
+  async function caricaConsumi() {
+    const box = $('#consumi'); if (!box.innerHTML.trim()) box.innerHTML = '<div class="sub">Carico i consumi…</div>';
+    const { data: d, error } = await sb.rpc('consumi_admin');
+    const info = `<div class="cs-info"><b>Cloudflare e OpenFreeMap:</b> senza limiti pratici sul piano gratuito, non servono controlli.</div>`;
+    const badge = $('#dt-consumi-b');
+    if (error) {
+      const manca = /function|does not exist|schema cache|could not find/i.test(error.message);
+      const L = servizi(null);
+      box.innerHTML = `<div class="cs-warn" role="alert">${manca ? 'Esegui <b>supabase/18_consumi.sql</b> nell\'editor SQL di Supabase per vedere i consumi.' : 'Errore: ' + esc(error.message)} Qui sotto restano i limiti e i link ai pannelli dei fornitori.</div>
+        <div class="cs-grid">${L.map(cardServizio).join('')}</div>${info}`;
+      badge.hidden = true; return;
+    }
+    const L = servizi(d), stati = L.flatMap((s) => percDi(s)).filter((b) => b.p != null).map((b) => statoDa(b.p).k);
+    const peggio = stati.sort((a, b) => ORDINE[b] - ORDINE[a])[0];
+    badge.hidden = !(peggio === 'att' || peggio === 'crit'); badge.className = 'dtab-b' + (peggio === 'crit' ? ' crit' : ''); badge.textContent = peggio === 'crit' ? 'Critico' : 'Attenzione';
+    box.innerHTML = `<p class="cs-nota" style="margin:0 0 12px">Aggiornato alle ${new Date(d.agg).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}. Soglie: Ok sotto il 60%, Attenzione dal 60% all'85%, Critico oltre l'85% del limite gratuito. «Misurato» = letto dal database; «stimato» = ricavato dagli eventi dell'app (il dato preciso è sul pannello del fornitore).</p>
+      <div class="cs-grid">${L.map(cardServizio).join('')}</div>${proiezioneBox(d, L)}${info}`;
   }
   // ======================================================================
   // SUGGERIMENTI ED ERRORI

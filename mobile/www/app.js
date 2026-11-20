@@ -41,6 +41,8 @@
   // rifiutato (400): in quel caso lo stesso evento si rimanda UNA volta nel formato vecchio (tipo 'conferma', dettaglio 'tipo:posto'), e per
   // le 24 ore successive si manda subito così, senza ritentare ogni volta.
   const TIPI_ARRIVO = ['parcheggiato', 'occupato'];
+  // 'categoria' (richiesta a TomTom Search) e 'satellite' (vista satellitare attivata) servono al pannello "Consumi e limiti gratuiti": sono tipi nuovi di supabase/18_consumi.sql.
+  // Finché il database non li ammette, l'inserimento viene rifiutato (400) e l'evento si perde in silenzio: l'app non ne risente.
   const arrivoRifiutato = () => Date.now() - ls.get('dp.evArrivoNo', 0) < 864e5;
   const comeConferma = (c) => Object.assign({}, c, { tipo: 'conferma', dettaglio: (c.tipo + ':' + (c.dettaglio || '')).slice(0, 80) });
   function traccia(tipo, x, sempre) {
@@ -293,7 +295,7 @@
     if (satOcc || satKO || !pronta) return;
     if (on && !chiaveEsri) return;
     if (on && !satIds) { satOcc = true; try { await caricaStiliEsri(); } catch (e) { satOcc = false; togliEsri(); satErrore(); return; } satOcc = false; }
-    sat = on; mostraVista(); if (salva) ls.set('dp.vista', on ? 'sat' : '');
+    sat = on; mostraVista(); if (on) traccia('satellite'); if (salva) ls.set('dp.vista', on ? 'sat' : '');
   }
   map.on('error', (e) => { if (sat && e && e.sourceId && String(e.sourceId).startsWith('esri-') && e.error && ESRI_ERR.includes(e.error.status)) satErrore(); });
   btnSat.onclick = () => passaVista(!sat, true);
@@ -1147,7 +1149,7 @@
       let v;
       const ck = `dp.cat.${k}.${centro.lat.toFixed(2)},${centro.lon.toFixed(2)}`, cc = ls.get(ck, null); // stessa zona (~1 km) nelle ultime 24 ore: niente nuova richiesta
       if (cc && Date.now() - cc.t < 864e5) v = cc.v.map((x) => Object.assign({}, x, { d: dist(centro.lat, centro.lon, x.lat, x.lon) }));
-      else { try { v = await cercaTomTom(c, centro, mio.signal); } catch (e) { if (e.name === 'AbortError' || sCtl !== mio) throw e; v = await cercaPhoton(c, centro, mio.signal); }
+      else { traccia('categoria'); try { v = await cercaTomTom(c, centro, mio.signal); } catch (e) { if (e.name === 'AbortError' || sCtl !== mio) throw e; v = await cercaPhoton(c, centro, mio.signal); }
         if (sCtl === mio && v && v.length) ls.set(ck, { t: Date.now(), v }); }
       if (sCtl !== mio) return;
       v.sort((a, b) => a.d - b.d);
