@@ -216,8 +216,13 @@ def latina():  # risposta del Comune a un accesso civico (novembre 2026): riliev
     return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'latina_accesso_civico_2026.json'), encoding='utf-8'))
 
 
+
+def trani():  # risposta del Comune a un accesso civico (novembre 2026): elenco dei cartelli fig. II 79/a con coordinate WGS84; elaborato in data/opendata/
+    return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'trani_accesso_civico_2026.json'), encoding='utf-8'))
+
+
 FONTI = {'bologna': bologna, 'firenze': firenze, 'trento': trento, 'cesena': cesena, 'ferrara': ferrara, 'siena': siena, 'livorno': livorno,
-         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena, 'latina': latina}
+         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena, 'latina': latina, 'trani': trani}
 
 
 def sb(method, path, key, body=None, prefer='return=minimal'):
