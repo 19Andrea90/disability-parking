@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icona della scorciatoia: cerchio giallo con il simbolo dell'app -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+    <path android:pathData="M18,18m-18,0a18,18 0 1,0 36,0a18,18 0 1,0 -36,0" android:fillColor="#ffcc00"/>
+    <group android:translateX="9" android:translateY="9" android:scaleX="0.75" android:scaleY="0.75">
+        <path android:pathData="M21,3L3,10.5l7.5,3L13.5,21z" android:strokeColor="#2b2300" android:strokeWidth="2.2" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+    </group>
+</vector>

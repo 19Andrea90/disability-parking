@@ -29,6 +29,23 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const icon = (id, cls) => `<svg class="ic ${cls || ''}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 
+  // ---------- dimensione del carattere ----------
+  // I testi sono in rem: la dimensione base della pagina segue «Dimensione carattere» del telefono. Sul web è il browser a deciderla (impostazioni e zoom
+  // del browser). Sull'app la WebView di Capacitor non la applica da sola: la legge il plugin nativo SostAbile (fontScale) e, per non avere un salto
+  // all'apertura, l'ultimo valore noto si applica subito. La WebView ha textZoom fisso a 100 (MainActivity.java), così non si scala due volte.
+  // Sull'app lo zoom a pinch della pagina resta spento (la mappa gestisce da sola il suo): il viewport sul web, invece, lo consente.
+  (function () {
+    const cap = window.Capacitor; if (!(cap && cap.isNativePlatform && cap.isNativePlatform())) return;
+    const mv = document.querySelector('meta[name=viewport]'); if (mv) mv.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no');
+    const metti = (k) => { k = Math.min(2, Math.max(0.85, +k || 1)); document.documentElement.style.fontSize = (Math.round(k * 1000) / 10) + '%'; return k; };
+    const noto = ls.get('dp.fs', 0); if (noto) metti(noto);
+    let pl = null; try { pl = (cap.Plugins && cap.Plugins.SostAbile) || (cap.registerPlugin && cap.registerPlugin('SostAbile')); } catch (e) { pl = null; }
+    if (pl && typeof pl.fontScale === 'function') {
+      const leggi = () => { try { Promise.resolve(pl.fontScale()).then((r) => { if (r && r.scala) { const k = metti(r.scala); if (k !== noto) ls.set('dp.fs', k); } }, () => {}); } catch (e) { /* si resta com'è */ } };
+      leggi(); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') leggi(); });
+    }
+  })();
+
   let deviceId = ls.get('dp.device', null);
   if (!deviceId) { deviceId = 'd-' + Math.random().toString(36).slice(2) + Date.now().toString(36); ls.set('dp.device', deviceId); }
 
@@ -134,12 +151,30 @@
   const LARGO = () => window.matchMedia('(min-width:900px)').matches, COL = 448;
   const padPC = (m) => ({ top: 30 + (m || 0), bottom: 30 + (m || 0), left: COL + (m || 0), right: 30 + (m || 0) });
   const padHome = () => LARGO() ? padPC() : (aggiungo ? { top: 90, bottom: $('#add .sheet').offsetHeight || 0, left: 0, right: 0 } : { top: dest ? 90 : 150 + ($('#b-auto').hidden ? 0 : 58), bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 });
-  function mostra() { const c = !!selId, d = !!dest, n = aggiungo; $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
+  function mostra() { setTimeout(posizionaOffline, 0); const c = !!selId, d = !!dest, n = aggiungo; $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
   window.addEventListener('resize', () => { if (!pronta) return; map.resize(); if (LARGO()) espandi(true); if (!selId) map.setPadding(padHome()); });
   function affidabilita(s) { return s.stato === 'ufficiale' ? ['uff', 'Ufficiale'] : s.stato === 'verificato' ? ['ver', 'Verificato'] : ['prop', 'Da verificare']; }
   function posti(n) { return n === 1 ? '1 posto' : n + ' posti'; }
   let toastT;
   function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), ms || 2600); }
+  // Avviso fisso «Sei offline»: compare quando il telefono dice di non avere rete (eventi offline/online) o quando una richiesta dati fallisce per la rete,
+  // e sparisce da solo al ritorno della rete. Sta sopra al pannello in basso (la sua altezza cambia: vedi posizionaOffline).
+  const offline = $('#offline'); let reteKO = false;
+  const TESTO_OFFLINE = 'Sei offline: vedi solo i posti già caricati';
+  function aggiornaOffline() {
+    const si = !navigator.onLine || reteKO; if (offline.hidden === !si) return;
+    offline.hidden = !si; if (si) { offline.textContent = TESTO_OFFLINE; posizionaOffline(); $('#fg-live').textContent = TESTO_OFFLINE; } else { offline.textContent = ''; $('#fg-live').textContent = 'Sei di nuovo online'; }
+  }
+  function segnalaRete(ko) { if (reteKO !== ko) { reteKO = ko; aggiornaOffline(); } }
+  function posizionaOffline() {
+    if (offline.hidden || LARGO()) { offline.style.bottom = ''; return; }
+    const vis = ['#fg-sheet', '#arrivo', '#card .sheet', '#add .sheet', '#home'].map((q) => document.querySelector(q)).find((el) => el && el.getClientRects().length);
+    offline.style.bottom = (vis ? Math.round(window.innerHeight - vis.getBoundingClientRect().top) + 8 : 16) + 'px';
+  }
+  window.addEventListener('offline', aggiornaOffline);
+  window.addEventListener('online', () => { reteKO = false; aggiornaOffline(); if (pronta) caricaVista(); });
+  window.addEventListener('resize', posizionaOffline);
+  if (window.ResizeObserver) { const ro = new ResizeObserver(posizionaOffline); ['#home', '#arrivo', '#card .sheet', '#add .sheet', '#fg-sheet'].forEach((q) => { const el = document.querySelector(q); if (el) ro.observe(el); }); }
   function apri(url) { window.open(url, '_blank'); }
   function passa(s) { return !(filtri.ver && s.stato === 'proposto') && !(filtri.cop && !s.coperto) && !(filtri.multi && !(s.posti >= 2)); }
 
@@ -151,13 +186,15 @@
   async function rpc(nome, args, signal) { // chiama una funzione del database; 429 = troppe richieste, non si ripete da soli
     const limite = () => Object.assign(new Error('429'), { status: 429 });
     if (Date.now() < pausa429) throw limite(); // già bloccati da poco: inutile insistere (si riprova da soli dopo 30 secondi, solo se l'utente muove la mappa)
-    const r = await fetch(`${CFG.SB}/rest/v1/rpc/${nome}`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(args), signal });
+    let r; try { r = await fetch(`${CFG.SB}/rest/v1/rpc/${nome}`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(args), signal }); }
+    catch (e) { if (e.name !== 'AbortError') segnalaRete(true); throw e; } // senza rete: avviso fisso «Sei offline»
+    segnalaRete(false);
     if (r.status === 429) { pausa429 = Date.now() + 30000; throw limite(); }
     if (!r.ok) throw Object.assign(new Error(r.status), { status: r.status });
     return r.json();
   }
   const troppe = () => toast('Troppe richieste in poco tempo. Riprova tra qualche minuto.', 4500);
-  const erroreDati = (err) => { if (err.name === 'AbortError') return; if (err.status === 429) troppe(); else toast('Non riesco a caricare i posti. Controlla la connessione.'); };
+  const erroreDati = (err) => { if (err.name === 'AbortError') return; if (err.status === 429) troppe(); else if (err instanceof TypeError && !offline.hidden) { /* senza rete c'è già l'avviso fisso */ } else toast('Non riesco a caricare i posti. Controlla la connessione.'); };
   async function carica(s, w, n, e, annullabile) {
     if (annullabile) { if (ctl) ctl.abort(); ctl = new AbortController(); }
     const ZH = 0.049, ZW = 0.074; // il riquadro non può superare 0,05° x 0,075: se è più grande si stringe attorno al centro
@@ -268,8 +305,14 @@
     map.on('mouseenter', 'conteggi', () => { map.getCanvas().style.cursor = 'pointer'; }); map.on('mouseleave', 'conteggi', () => { map.getCanvas().style.cursor = ''; });
     map.addLayer({ id: 'sel', type: 'circle', source: 'sel', paint: { 'circle-radius': 23, 'circle-color': '#ffcc00', 'circle-stroke-color': '#0b1f44', 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'sel-i', type: 'symbol', source: 'sel', layout: { 'icon-image': 'wc-d', 'icon-size': 1.15, 'icon-allow-overlap': true } });
-    map.on('click', 'pin', (e) => apriScheda(e.features[0].properties.id));
-    map.on('click', 'gruppi', (e) => { const f = e.features[0]; Promise.resolve(map.getSource('stalli').getClusterExpansionZoom(f.properties.cluster_id)).then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(z, 18) })); });
+    // Posti e gruppi si toccano con un'area di almeno 44 x 44 px attorno al dito, anche se il disegno è più piccolo (pin 36 px): vince il più vicino al tocco
+    map.on('click', (e) => {
+      if (!pronta || modo !== 'posti') return;
+      const R = 22, p = e.point, fs = map.queryRenderedFeatures([[p.x - R, p.y - R], [p.x + R, p.y + R]], { layers: ['pin', 'gruppi'] }); if (!fs.length) return;
+      let best = null, bd = 1e9; for (const f of fs) { const q = map.project(f.geometry.coordinates), d = Math.hypot(q.x - p.x, q.y - p.y); if (d < bd) { bd = d; best = f; } }
+      if (best.properties.cluster_id != null) Promise.resolve(map.getSource('stalli').getClusterExpansionZoom(best.properties.cluster_id)).then((z) => map.easeTo({ center: best.geometry.coordinates, zoom: Math.min(z, 18) }));
+      else apriScheda(best.properties.id);
+    });
     const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { at.classList.remove('maplibregl-compact-show'); at.removeAttribute('open'); } // i crediti della mappa partono chiusi (si aprono dalla i)
     pronta = true; vediPosti(false); if (LARGO()) { map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right'); espandi(true); }
     map.setPadding(padHome()); disegna(); zone(); caricaVista();
@@ -334,7 +377,18 @@
     const via = () => { btnSat.hidden = false; if (ls.get('dp.vista', '') === 'sat') passaVista(true, false); };
     if (pronta) via(); else map.once('load', via);
   });
-  map.on('error', (e) => { if (!pronta && e && e.error && /style|Failed to fetch|load/i.test(String(e.error.message))) toast('La mappa non si carica. Controlla la connessione.', 5000); });
+  // Stile della mappa che non si carica: al posto del pannello vuoto e di un toast, un messaggio fisso nel pannello in basso con «Riprova» (ricarica lo stile).
+  let stileOk = false;
+  map.on('style.load', () => { stileOk = true; });
+  map.on('error', (e) => { if (!pronta && !stileOk && e && !e.sourceId) erroreStile(); });
+  function erroreStile() {
+    $('#near-body').innerHTML = `<div class="eyebrow">Mappa non disponibile</div><div class="empty" role="alert">La mappa non si carica. Controlla la connessione e riprova.</div><button class="primary" data-riprova="1">${icon('locate')}<span>Riprova</span></button>`;
+    $('#fg-live').textContent = 'La mappa non si carica. Controlla la connessione e riprova.';
+  }
+  function riprovaStile() {
+    $('#near-body').innerHTML = '<div class="eyebrow">Mappa</div><div class="empty" role="status">Carico la mappa…</div>';
+    stileOk = false; try { map.setStyle(CFG.STYLE); } catch (err) { erroreStile(); }
+  }
   let pronta = false, moveT;
   map.on('dragstart', () => { seguo = false; });
   map.on('moveend', () => { clearTimeout(moveT); moveT = setTimeout(caricaVista, 300); if (aggiungo) qui(); });
@@ -460,33 +514,62 @@
       <button class="primary" data-nav="${esc(a.s.id)}">${icon('nav')}<span>Portami lì</span></button>
       <div class="others">${out.slice(1).map((x) => `<button class="other" data-id="${esc(x.s.id)}"><span class="t"><b>${esc(titolo(x.s))}</b><span>${affidabilita(x.s)[1]} · ${posti(x.s.posti)}</span></span><span class="d">${x.r ? `${fmtMin(x.r.sec)}<small>${fmtDist(x.r.m)}</small>` : fmtDist(x.d)}</span>${icon('chev')}</button>`).join('')}</div>`;
   }
+  // Dopo un trascinamento o un tocco sulla maniglia il pannello cambia altezza e sotto il dito finiscono le righe dell'elenco: il "click" che
+  // il browser genera dopo il tocco cadrebbe su una di loro e aprirebbe la scheda di un posto. Per 350 ms dopo ogni gesto o cambio di altezza i click
+  // sulle righe dei pannelli si ignorano (vedi cliccaDopoGesto).
+  let gestoT = 0;
+  const gestoRecente = () => Date.now() - gestoT < 350;
+  const interattivo = (t) => !!(t && t.closest && t.closest('button:not(.handle),a,select,input,label,textarea'));
+  // il tocco parte dalla maniglia o dalla fascia alta del pannello (44 px) dove non c'è un controllo
+  function sullaManiglia(e, pannello) {
+    const t = e.target, y = (e.touches && e.touches[0] ? e.touches[0].clientY : e.changedTouches[0].clientY), r = pannello.getBoundingClientRect();
+    return !!(t.closest && t.closest('.handle')) || (y >= r.top && y <= r.top + 44 && !interattivo(t));
+  }
+  function bloccaClickDopoGesto(pannello) { pannello.addEventListener('click', (e) => { if (gestoRecente() && !e.target.closest('.handle')) { e.stopPropagation(); e.preventDefault(); } }, true); }
   function espandi(si) {
     if (LARGO()) si = true; // sul computer l'elenco è sempre completo
-    if (espanso === si) return; espanso = si; $('#near').classList.toggle('exp', si); $('#near .handle').setAttribute('aria-expanded', si); vicini();
+    if (espanso === si) return; espanso = si; gestoT = Date.now(); $('#near').classList.toggle('exp', si); $('#near .handle').setAttribute('aria-expanded', si); vicini();
     const o = document.querySelector('#near .others'); if (o) o.scrollTop = 0;
     if (!selId && !dest) map.setPadding(padHome());
   }
   (function () { // trascina il pannello: su per vedere più posti, giù per richiuderlo; un tocco sulla maniglia fa lo stesso
-    const el = $('#near'); let y0 = null, daLista = false;
-    el.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; const o = e.target.closest('.others'); daLista = !!(o && espanso && o.scrollTop > 0); }, { passive: true });
+    const el = $('#near'); let y0 = null, daLista = false, daManiglia = false;
+    bloccaClickDopoGesto(el);
+    el.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; daManiglia = sullaManiglia(e, el); const o = e.target.closest('.others'); daLista = !!(o && espanso && o.scrollTop > 0); }, { passive: true });
     let tocco = 0;
     el.addEventListener('touchend', (e) => {
-      if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null;
-      if (dy < -40 && !espanso) espandi(true); else if (dy > 40 && espanso && !daLista) espandi(false);
-      else if (Math.abs(dy) < 10 && e.target.closest('.handle')) { tocco = Date.now(); espandi(!espanso); }
-    }, { passive: true });
+      if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; let fatto = false;
+      if (dy < -40 && !espanso) { espandi(true); fatto = true; } else if (dy > 40 && espanso && !daLista) { espandi(false); fatto = true; }
+      else if (Math.abs(dy) < 10 && daManiglia) { tocco = Date.now(); espandi(!espanso); fatto = true; }
+      if (fatto) { gestoT = Date.now(); if (e.cancelable) e.preventDefault(); } // niente click dopo il gesto
+    }, { passive: false });
     $('#near .handle').addEventListener('click', () => { if (Date.now() - tocco > 700) espandi(!espanso); }); // con il mouse o la tastiera
   })();
   $('#near-body').addEventListener('click', (e) => {
     const n = e.target.closest('[data-nav]'); if (n) { naviga(stalli.get(n.dataset.nav)); return; }
     if (e.target.closest('[data-me]')) { vaiAMe(); return; }
+    if (e.target.closest('[data-riprova]')) { riprovaStile(); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
   });
+  // Navigatore scelto in «I tuoi posti» > Impostazioni: 'google' (predefinito, come prima), 'waze' o 'chiedi' (si chiede a ogni «Portami lì»).
+  // Si salva con le altre preferenze del profilo (localStorage 'dp.profilo', campo nav): con un account viaggia con gli altri dati.
+  const navPref = () => { const n = profilo().nav; return n === 'waze' || n === 'chiedi' ? n : 'google'; };
+  const urlNav = (app, s) => app === 'waze' ? `https://waze.com/ul?ll=${s.lat},${s.lon}&navigate=yes` : `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`;
+  function chiediNavigatore() { // finestra «Con quale navigatore?»: risolve 'google', 'waze' o null (annulla)
+    return new Promise((ok) => {
+      const v = $('#velo-nav'), fuoco = document.activeElement; v.hidden = false; $('#vnv-h').focus({ preventScroll: true });
+      const fine = (a) => { v.hidden = true; v.onclick = null; if (fuoco && fuoco.isConnected && fuoco.focus) { try { fuoco.focus({ preventScroll: true }); } catch (e) { /* ignora */ } } ok(a); };
+      v.onclick = (e) => { const b = e.target.closest('[data-app]'); if (b) fine(b.dataset.app); else if (e.target === v || e.target.closest('#vnv-no')) fine(null); };
+    });
+  }
   function naviga(s, da, nPiano) {
     if (!s) return;
-    traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); navigazioneAvviata(s, da, nPiano);
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}&travelmode=driving`, vai = () => apri(url);
-    if (SITO_NATIVO()) { avviaAscolto(navPend()).then(vai, vai); } else vai(); // sull'app, prima i permessi e l'ascolto (con la frase di spiegazione), poi il navigatore
+    const parti = (app) => {
+      traccia('naviga', { comune: s.comune || null }); ls.set('dp.nav', ls.get('dp.nav', 0) + 1); ls.set('dp.navT', Date.now()); navigazioneAvviata(s, da, nPiano);
+      const url = urlNav(app, s), vai = () => apri(url);
+      if (SITO_NATIVO()) { avviaAscolto(navPend()).then(vai, vai); } else vai(); // sull'app, prima i permessi e l'ascolto (con la frase di spiegazione), poi il navigatore
+    };
+    const p = navPref(); if (p === 'chiedi') chiediNavigatore().then((a) => { if (a) parti(a); }); else parti(p);
   }
 
   // ---------- scheda del posto ----------
@@ -524,7 +607,7 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (fgStato) fgChiudi(); else if (!$('#nuova').hidden) $('#nuova').hidden = true; else if (!$('#elimina').hidden) $('#elimina').hidden = true; else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#account').hidden) chiudiAccount(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (!$('#velo-nav').hidden) $('#vnv-no').click(); else if (fgStato) fgChiudi(); else if (!$('#nuova').hidden) $('#nuova').hidden = true; else if (!$('#elimina').hidden) $('#elimina').hidden = true; else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#account').hidden) chiudiAccount(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
     else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (fgStato) fgChiudi(); else chiudiScheda(true); } });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
@@ -615,18 +698,20 @@
   // elenco dei posti attorno alla destinazione: si può ridurre al solo posto scelto per lasciare spazio alla mappa
   let ridotto = false;
   function riduci(si) {
-    if (ridotto === si) return; ridotto = si; $('#arrivo').classList.toggle('min', si); $('#a-handle').setAttribute('aria-expanded', !si);
+    if (ridotto === si) return; ridotto = si; gestoT = Date.now(); $('#arrivo').classList.toggle('min', si); $('#a-handle').setAttribute('aria-expanded', !si);
     if (!si) $('#a-list').scrollTop = 0;
     if (dest && !selId) arrivo(true);
   }
   (function () { // trascina giù per ridurre, su per riaprire; un tocco sulla maniglia fa lo stesso
-    const el = $('#arrivo'); let y0 = null, daLista = false, tocco = 0;
-    el.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; const o = e.target.closest('#a-list'); daLista = !!(o && !ridotto && o.scrollHeight > o.clientHeight + 2); }, { passive: true });
+    const el = $('#arrivo'); let y0 = null, daLista = false, tocco = 0, daManiglia = false;
+    bloccaClickDopoGesto(el);
+    el.addEventListener('touchstart', (e) => { y0 = e.touches[0].clientY; daManiglia = sullaManiglia(e, el.querySelector('.sheet')); const o = e.target.closest('#a-list'); daLista = !!(o && !ridotto && o.scrollHeight > o.clientHeight + 2); }, { passive: true });
     el.addEventListener('touchend', (e) => {
-      if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null;
-      if (dy > 40 && !ridotto && !daLista) riduci(true); else if (dy < -40 && ridotto) riduci(false);
-      else if (Math.abs(dy) < 10 && e.target.closest('.handle')) { tocco = Date.now(); riduci(!ridotto); }
-    }, { passive: true });
+      if (y0 == null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; let fatto = false;
+      if (dy > 40 && !ridotto && !daLista) { riduci(true); fatto = true; } else if (dy < -40 && ridotto) { riduci(false); fatto = true; }
+      else if (Math.abs(dy) < 10 && daManiglia) { tocco = Date.now(); riduci(!ridotto); fatto = true; }
+      if (fatto) { gestoT = Date.now(); if (e.cancelable) e.preventDefault(); }
+    }, { passive: false });
     $('#a-handle').addEventListener('click', () => { if (Date.now() - tocco > 700) riduci(!ridotto); });
   })();
   function chiudiDest() { dest = null; numMk.forEach((m) => m.remove()); numMk = []; if (destMk) destMk.remove(); destMk = null; mostra(); map.easeTo({ padding: padHome(), duration: 300 }); vicini(); }
@@ -716,27 +801,38 @@
       if (sCtl !== mio) return;
       risultati.forEach((x) => { x.q = q; });
       if (!risultati.length) { $('#s-body').innerHTML = '<div class="empty">Non trovo questo posto. Prova con la via e la città.</div>'; return; }
+      // I conteggi dei posti (e l'eventuale avviso «Nessun posto entro…», alto circa 76 px) si aspettano al massimo 1,2 secondi PRIMA di disegnare
+      // l'elenco: così le righe non scendono quando l'avviso arriva dopo. Quelli che tardano ancora si aggiungono dopo, come prima.
+      let tardi = false; const stati = new Array(risultati.length).fill(null), attese = scelgo ? [] : risultati.map((x, i) => datiConta(x, mio.signal).then((st) => { stati[i] = st; if (tardi) applicaConta(i, st); }, () => null));
+      await Promise.race([Promise.all(attese), new Promise((ok) => setTimeout(ok, 1200))]); tardi = true; if (sCtl !== mio) return;
       $('#s-body').innerHTML = '<div class="eyebrow">Risultati</div>' + risultati.map((x, i) => `<div data-box="${i}"><button class="res" data-res="${i}"><span class="mk">${icon('pin')}</span><span class="t"><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></span>${scelgo ? '' : '<span class="n wait">…</span>'}</button></div>`).join('');
-      if (!scelgo) risultati.forEach((x, i) => conta(x, i, mio.signal));
+      stati.forEach((st, i) => { if (st) applicaConta(i, st); });
     } catch (e) { if (e.name !== 'AbortError' && sCtl === mio) $('#s-body').innerHTML = `<div class="empty">La ricerca non risponde. Controlla la connessione e riprova.<br><span class="small">(${esc(e.message || e)})</span></div>`; }
   }
-  async function conta(x, i, signal) { // quanti posti ci sono attorno a un risultato; se nessuno, propone il più vicino
+  // quanti posti ci sono attorno a un risultato (solo i dati, senza toccare lo schermo); se nessuno, il più vicino
+  async function datiConta(x, signal) {
     if (x.citta && riepilogo) { // per una città conta tutto il comune, non solo il cerchio attorno al centro
-      const c = riepilogo.comuni.filter((v) => norma(v.n) === norma(x.t) && Math.abs(v.lat - x.lat) < 0.15 && Math.abs(v.lon - x.lon) < 0.2)[0], box = document.querySelector(`[data-box="${i}"]`);
-      if (c && c.t && box) { const b = box.querySelector('.n'); b.className = 'n'; b.textContent = num(c.t) + ' nel comune'; return; }
+      const c = riepilogo.comuni.filter((v) => norma(v.n) === norma(x.t) && Math.abs(v.lat - x.lat) < 0.15 && Math.abs(v.lon - x.lon) < 0.2)[0];
+      if (c && c.t) return { testo: num(c.t) + ' nel comune' };
     }
     await carica(x.lat - 0.012, x.lon - 0.017, x.lat + 0.012, x.lon + 0.017, false);
-    const box = document.querySelector(`[data-box="${i}"]`); if (signal.aborted || !box) return;
-    const tutti = attorno(x.lat, x.lon), dentro = tutti.filter((y) => y.d <= raggio), n = dentro.reduce((a, y) => a + (y.s.posti || 1), 0), b = box.querySelector('.n');
-    if (dentro.length) { b.className = 'n'; b.textContent = posti(n); return; }
-    b.remove(); const rg = raggio >= 1000 ? '1 km' : raggio + ' m';
-    const d = document.createElement('div'); d.className = 'lontano';
-    if (tutti.length) { const v = tutti[0]; d.innerHTML = `<div><b>Nessun posto entro ${rg}.</b> Il più vicino è a ${fmtDist(v.d)}${v.s.indirizzo ? ', in ' + esc(v.s.indirizzo) : ''}.</div><button data-nav="${esc(v.s.id)}">${icon('nav')}<span>Portami lì</span></button>`; }
+    if (signal.aborted) return null;
+    const tutti = attorno(x.lat, x.lon), dentro = tutti.filter((y) => y.d <= raggio), n = dentro.reduce((a, y) => a + (y.s.posti || 1), 0);
+    return dentro.length ? { testo: posti(n) } : { lontano: tutti[0] || null };
+  }
+  function applicaConta(i, st) {
+    const box = document.querySelector(`[data-box="${i}"]`); if (!box || !st) return; const b = box.querySelector('.n'); if (!b && !st.lontano) return;
+    if (st.testo) { b.className = 'n'; b.textContent = st.testo; return; }
+    if (box.querySelector('.lontano')) return;
+    if (b) b.remove(); const rg = raggio >= 1000 ? '1 km' : raggio + ' m';
+    const d = document.createElement('div'), v = st.lontano; d.className = 'lontano';
+    if (v) d.innerHTML = `<div><b>Nessun posto entro ${rg}.</b> Il più vicino è a ${fmtDist(v.d)}${v.s.indirizzo ? ', in ' + esc(v.s.indirizzo) : ''}.</div><button data-nav="${esc(v.s.id)}">${icon('nav')}<span>Portami lì</span></button>`;
     else d.innerHTML = '<div><b>Nessun posto entro 1 km.</b> Qui la mappa è ancora vuota.</div>';
     box.appendChild(d);
   }
   $('#s-q').addEventListener('input', () => { const q = $('#s-q').value.trim(); $('#s-x').hidden = !q; clearTimeout(sT); if (sCtl) sCtl.abort(); if (q.length < 3) { inizio(); return; } attesa(q); sT = setTimeout(() => cerca(q), 450); });
   $('#s-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#s-q').blur(); const q = $('#s-q').value.trim(); clearTimeout(sT); if (q.length >= 2) cerca(q); } });
+  $('.s-field').addEventListener('click', (e) => { if (!e.target.closest('#s-x')) $('#s-q').focus(); }); // tutta la barra apre la tastiera, non solo il testo
   $('#s-x').onclick = () => { $('#s-q').value = ''; $('#s-x').hidden = true; inizio(); $('#s-q').focus(); };
   $('#s-back').onclick = () => { if (catAperta) { inizio(); $('#s-q').focus(); } else chiudiRicerca(); };
   function scegli(x) {
@@ -1434,7 +1530,7 @@
     } catch (e) { msg.textContent = /sessione scaduta/.test(String(e && e.message)) ? 'La sessione è scaduta: esci, accedi di nuovo e riprova.' : 'Non riesco a cambiare la password. Controlla la connessione e riprova.'; btn.disabled = false; }
   };
   if (/access_token=|error_description=|error_code=/.test(location.hash)) { const h = location.hash; history.replaceState(null, '', location.pathname + location.search); setTimeout(() => { if (!daRecupero(h)) daGoogle(h); }, 300); }
-  (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App; if (A) A.addListener('appUrlOpen', (e) => { if (e && e.url && e.url.indexOf('it.disabilityparking.app://login') === 0) daGoogle(e.url); }); })();
+  (function () { const cap = window.Capacitor, A = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App; if (A) A.addListener('appUrlOpen', (e) => { if (!e || !e.url) return; if (e.url.indexOf('it.disabilityparking.app://login') === 0) daGoogle(e.url); else { const m = /^it\.disabilityparking\.app:\/\/azione\/(vicino|casa|lavoro|auto)\/?$/.exec(e.url); if (m) azione(m[1]); } }); })();
   setTimeout(controllaAdmin, 4000); // chi è già dentro con un account admin (accesso fatto prima di questa versione)
   function esci() { if (sessione) fetch(`${CFG.SB}/auth/v1/logout`, { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + sessione.token } }).catch(() => {}); sessione = null; ls.set('dp.sessione', null); }
 
@@ -1507,11 +1603,12 @@
     const salv = v.length
       ? `<div class="grp">${v.slice(0, PRIMI).map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('')}${v.length > PRIMI ? '<button class="rg tutti" data-a="tutti">Vedi tutti i salvati</button>' : ''}</div>`
       : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>';
+    const np = navPref();
     $('#m-body').innerHTML = `${acc}
       ${sez('h-posti', 'Dove vai spesso', `<div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>`)}
       ${sez('h-salvati', 'Posti salvati' + (v.length ? ' · ' + v.length : ''), salv)}
       ${sez('h-info', 'Aiuto e informazioni', `<div class="grp">${riga('regole', 'shield', 'Regole della sosta con il contrassegno')}${riga('sugg', 'idea', 'Suggerisci un miglioramento')}${riga('consiglia', 'share', 'Consiglia l\'app a un amico')}${riga('novita', 'bell', 'Novità dell\'app')}${riga('fonti', 'flag', 'Fonti, condizioni e privacy')}</div>`)}
-      ${sez('h-imp', 'Impostazioni', `<div class="grp"><button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>${eInterno() ? '<button class="rg int" data-a="interno-off">Dispositivo interno · tocca per togliere</button>' : ''}</div>`)}
+      ${sez('h-imp', 'Impostazioni', `<div class="grp"><label class="vaip stat nav"><span class="t">Navigatore<span>Si apre con «Portami lì»</span></span><select id="m-nav"><option value="google"${np === 'google' ? ' selected' : ''}>Google Maps</option><option value="waze"${np === 'waze' ? ' selected' : ''}>Waze</option><option value="chiedi"${np === 'chiedi' ? ' selected' : ''}>Chiedi ogni volta</option></select></label><button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>${eInterno() ? '<button class="rg int" data-a="interno-off">Dispositivo interno · tocca per togliere</button>' : ''}</div>`)}
       <div class="vers" data-a="versione">Versione ${esc(window.DP_VERSIONE || '')}</div>`;
   }
   // ---------- il mio account (solo con l'accesso fatto): contrassegno, segnalazioni, password, esci, elimina ----------
@@ -1571,6 +1668,10 @@
     else if (a === 'google') accediGoogle();
     else if (a === 'novita') apri('https://sostabile.it/novita.html'); // pagina sempre sul dominio, anche dall'app Android
     else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-cond').href = CFG.SITO + 'condizioni.html'; $('#f-priv').href = CFG.SITO + 'privacy.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
+  });
+  $('#m-body').addEventListener('change', (e) => {
+    if (e.target.id !== 'm-nav') return; const v = e.target.value === 'waze' || e.target.value === 'chiedi' ? e.target.value : 'google';
+    ls.set('dp.profilo', Object.assign(profilo(), { nav: v })); toccato(); toast(v === 'chiedi' ? 'Ti chiederò il navigatore a ogni «Portami lì».' : `Navigatore: ${v === 'waze' ? 'Waze' : 'Google Maps'}.`);
   });
   $('#f-back').onclick = () => { $('#fonti').hidden = true; };
 
@@ -1685,7 +1786,7 @@
         ${stato}
         <div class="azioni"><label>${icon('edit')}<span>${pr.scadenza ? 'Cambia data' : 'Imposta la data'}</span><input id="p-data" type="date" value="${esc(pr.scadenza)}" aria-label="Data di scadenza del contrassegno"></label><button data-p="foto">${icon('camera')}<span>${foto ? 'Rifai la foto' : 'Aggiungi foto'}</span></button></div>
       </div>
-      <div class="campo"><div class="b" style="font-size:17px">Avvisami prima della scadenza</div>
+      <div class="campo"><div class="b" style="font-size:1.0625rem">Avvisami prima della scadenza</div>
         <div class="giorni">${[30, 60, 90].map((n) => `<button data-g="${n}" aria-pressed="${std && pr.giorni === n}">${n} gg</button>`).join('')}<button data-g="altro" aria-pressed="${!std}">Altro</button></div>
         ${!std ? `<label class="altro"><input id="p-altro" type="number" inputmode="numeric" min="1" max="365" value="${pr.giorni}"> giorni prima</label>` : ''}
         <div><div class="sw"><span class="t">Notifica sul telefono<span>${pr.scadenza ? 'Un avviso alla data scelta e uno il giorno della scadenza' : 'Imposta prima la data di scadenza'}</span></span><button role="switch" data-p="notifica" aria-checked="${!!pr.notifica}" aria-label="Notifica sul telefono" ${pr.scadenza ? '' : 'disabled'}><i></i></button></div>
@@ -1745,4 +1846,85 @@
   function piuVecchia(a, min) { const x = numeri(a), y = numeri(min); if (!x.length || !y.length) return false; for (let i = 0; i < Math.max(x.length, y.length); i++) { const p = x[i] || 0, q = y[i] || 0; if (p !== q) return p < q; } return false; }
   $('#ag-go').onclick = () => apri(CFG.PLAY);
   if (NATIVO()) configApp.then((c) => { if (c && piuVecchia(window.DP_VERSIONE, c.versione_minima_android)) { $('#aggiorna').hidden = false; $('#ag-go').focus(); } });
+  // ---------- scorciatoie dall'icona (Android) e «Condividi» da Google Maps ----------
+  // Le scorciatoie (tenendo premuta l'icona: Posto più vicino, Casa, Lavoro, Auto) aprono l'app con it.disabilityparking.app://azione/<nome> (res/xml/shortcuts.xml in
+  // mobile/android-extra). Il testo condiviso da un'altra app (ACTION_SEND text/plain: Google Maps manda «Nome del luogo», a volte l'indirizzo, e un link) arriva dal plugin
+  // nativo SostAbile, come l'azione quando l'app parte da zero (leggiIntent) o è già aperta (evento «intent»). Sul web non c'è niente di tutto questo.
+  const pausa = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  const bloccata = () => !$('#welcome').hidden || !$('#condizioni').hidden || !$('#aggiorna').hidden; // primo avvio, condizioni o aggiornamento: l'azione non parte
+  function chiudiPannelli() { // porta l'app alla mappa, così l'azione si vede
+    ['#menu', '#account', '#profilo', '#segn', '#sugg', '#regole', '#fonti', '#elimina', '#recupero', '#nuova'].forEach((q) => { $(q).hidden = true; });
+    if (!$('#search').hidden) chiudiRicerca(); if (fgStato) fgChiudi(); if (selId) chiudiScheda(); if (aggiungo) chiudiAggiungi();
+  }
+  let ultimaAzione = { k: '', t: 0 };
+  function azione(nome) { // nome: vicino | casa | lavoro | auto
+    if (ultimaAzione.k === nome && Date.now() - ultimaAzione.t < 3000) return; ultimaAzione = { k: nome, t: Date.now() }; // lo stesso intent può arrivare da due strade
+    if (bloccata()) return;
+    fuoriPronta(async () => {
+      try {
+        chiudiPannelli();
+        if (nome === 'vicino') await azioneVicino();
+        else if (nome === 'auto') {
+          if (!autoSalvata()) { toast('Non hai ancora salvato la posizione dell\'auto: si salva quando dici di aver parcheggiato dopo «Portami lì».', 5000); return; }
+          if (dest) chiudiDest(); apriAuto();
+        } else {
+          const l = luoghi()[nome], n = nome === 'casa' ? 'Casa' : 'Lavoro';
+          if (!l) { toast(`${n} non è ancora impostato. Impostalo da «I tuoi posti».`, 5000); apriMenu(); return; }
+          vaiA(Object.assign({ k: nome }, l));
+        }
+      } catch (e) { /* l'azione non riesce: la mappa resta com'è */ }
+    });
+  }
+  async function azioneVicino() {
+    if (dest) chiudiDest();
+    if (!me) { toast('Cerco la tua posizione…', 3000); seguo = true; await attivaPosizione(true); for (let i = 0; i < 25 && !me; i++) await pausa(200); }
+    if (!me) { toast('Non trovo la tua posizione. Controlla che sia attiva nelle impostazioni del telefono.', 5000); return; }
+    seguo = true; map.jumpTo({ center: [me.lon, me.lat], zoom: Math.max(map.getZoom(), 16), padding: padHome() });
+    for (let i = 0; i < 20 && !elencoVicini().out.length; i++) await pausa(250); // i posti attorno arrivano un attimo dopo la posizione
+    const o = elencoVicini().out[0]; if (!o) { toast('Nessun posto riservato vicino a te.', 4000); return; }
+    apriScheda(o.s.id);
+  }
+  // coordinate in un testo o in un link di Google Maps: @lat,lon · !3dlat!4dlon · q= ll= query= destination= center= · geo:lat,lon · «lat, lon» scritte nel testo
+  function coordinateDa(t) {
+    let x = String(t || ''); for (let i = 0; i < 2; i++) { try { x = decodeURIComponent(x); } catch (e) { break; } }
+    const N = '(-?\\d{1,3}\\.\\d+)', modelli = [new RegExp('@' + N + ',' + N), new RegExp('!3d' + N + '!4d' + N), new RegExp('[?&](?:q|ll|query|destination|daddr|center|sll|viewpoint)=' + N + ',\\s*' + N, 'i'), new RegExp('geo:' + N + ',' + N), new RegExp('(?:^|[^\\d.])' + N + '\\s*,\\s*' + N + '(?![\\d.])')];
+    for (const re of modelli) { const m = re.exec(x); if (!m) continue; const lat = +m[1], lon = +m[2]; if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && !(lat === 0 && lon === 0)) return { lat, lon }; }
+    return null;
+  }
+  const URL_CORTO = /^https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs|app\.goo\.gl)\//i;
+  const nomeDaLink = (u) => { try { const m = /\/maps\/place\/([^/@?]+)/.exec(decodeURIComponent(u)); return m ? m[1].replace(/\+/g, ' ').trim() : ''; } catch (e) { return ''; } };
+  async function condividi(testo) {
+    testo = String(testo || '').trim(); if (!testo || bloccata()) return;
+    fuoriPronta(async () => {
+      try {
+        chiudiPannelli(); if (dest) chiudiDest();
+        const urls = testo.match(/https?:\/\/\S+/g) || [], righe = testo.replace(/https?:\/\/\S+/g, ' ').split(/\n+/).map((t) => t.trim()).filter(Boolean);
+        let nome = righe[0] || '', c = coordinateDa(testo), finale = '';
+        if (!c) for (const u of urls) { c = coordinateDa(u); if (c) break; }
+        if (!c) { // link corto: sul telefono lo segue il plugin nativo (la WebView non può leggere il reindirizzamento di Google)
+          const pl = plug('SostAbile'), corto = urls.find((u) => URL_CORTO.test(u));
+          if (pl && corto && typeof pl.risolviLink === 'function') { toast('Leggo il luogo condiviso…', 3000); try { const r = await Promise.race([pl.risolviLink({ url: corto }), pausa(6000).then(() => null)]); if (r && r.url) { finale = r.url; c = coordinateDa(r.url); } } catch (e) { /* si cerca per nome */ } }
+        }
+        if (!nome && finale) nome = nomeDaLink(finale);
+        if (c) { vaiA({ t: nome || 'Luogo condiviso', sub: righe[1] || '', lat: c.lat, lon: c.lon, q: nome }); return; }
+        // niente coordinate: nome e indirizzo diventano una ricerca (Photon, come la barra «Dove vai?»), si apre il primo risultato
+        const cand = [...new Set([righe.slice(0, 2).join(', '), righe[0], righe[1]].filter(Boolean))];
+        if (!cand.length) { toast('Non riesco a leggere il luogo condiviso. Cercalo per nome.', 5000); apriRicerca(''); return; }
+        toast(`Cerco «${cand[0]}»…`, 3000);
+        const ctl = new AbortController(), centro = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
+        for (const q of cand) {
+          let res = []; try { res = await geocodifica(q, centro, ctl.signal); } catch (e) { break; }
+          if (res.length) { const x = res[0]; x.q = q; vaiA(x); return; }
+        }
+        apriRicerca(cand[0]); // non trovato o senza rete: la ricerca aperta col testo mostra l'esito e lascia correggere
+      } catch (e) { toast('Non riesco ad aprire il luogo condiviso.', 4000); }
+    });
+  }
+  (function () {
+    const pl = plug('SostAbile'); if (!pl) return;
+    const gestisci = (r) => { if (!r) return; if (r.azione) azione(r.azione); if (r.testo) condividi(r.testo); };
+    try { pl.addListener('intent', gestisci); } catch (e) { /* senza ascolto restano solo gli intent all'avvio */ }
+    try { Promise.resolve(pl.leggiIntent()).then(gestisci, () => {}); } catch (e) { /* app avviata normalmente */ }
+  })();
+  window.DPAzioni = { azione, condividi, coordinateDa }; // anche per le prove
 })();
