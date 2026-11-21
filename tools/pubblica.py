@@ -46,6 +46,7 @@ SOSTITUZIONI_DOMINIO = [
     ('sito/privacy.html', '<link rel="icon" href="icona.png">', _canon('privacy.html'), 1),
     ('sito/fonti.html', '<link rel="icon" href="icona.png">', _canon('fonti.html'), 1),
     ('sito/condizioni.html', '<link rel="icon" href="icona.png">', _canon('condizioni.html'), 1),
+    ('sito/novita.html', '<link rel="icon" href="icona.png">', _canon('novita.html'), 1),
     # admin -> app: l'admin sta in admin/ e riusa foglio di stile e icona della web app in ../app/
     ('admin.html', 'href="index.html">← App', 'href="../app/">← App', 1),
     ('admin.html', '<link rel="stylesheet" href="app.css">', '<link rel="stylesheet" href="../app/app.css">', 1),
