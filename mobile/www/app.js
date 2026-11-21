@@ -258,6 +258,7 @@
     transformRequest: (url) => (chiaveEsri && ESRI_HOST.test(url) && !/[?&]token=/.test(url)) ? { url: url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(chiaveEsri) } : undefined, center: CFG.HOME, zoom: 14.5, attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false });
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+  { const at = document.querySelector('.maplibregl-ctrl-attrib'), slot = document.getElementById('slot-i'); if (at && slot) slot.appendChild(at); } // la «i» sta nella colonna dei pulsanti, subito sopra la vista satellitare
   (function () { // «Come leggere la mappa»: la legenda dei segnaposto sta nel pannello della «i» della mappa, sopra i crediti
     const at = document.querySelector('.maplibregl-ctrl-attrib'), inner = at && at.querySelector('.maplibregl-ctrl-attrib-inner'); if (!at || !inner) return;
     const riga = (cls, b, t) => `<div class="leg-r"><span class="leg-p ${cls}" aria-hidden="true">${icon('wc')}</span><span><b>${b}</b><span>${t}</span></span></div>`;
@@ -2048,7 +2049,12 @@
     return null;
   }
   const URL_CORTO = /^https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs|app\.goo\.gl)\//i;
-  const nomeDaLink = (u) => { try { const m = /\/maps\/place\/([^/@?]+)/.exec(decodeURIComponent(u)); return m ? m[1].replace(/\+/g, ' ').trim() : ''; } catch (e) { return ''; } };
+  const decodifica = (u) => { let x = String(u || ''); for (let i = 0; i < 4; i++) { let y; try { y = decodeURIComponent(x); } catch (e) { break; } if (y === x) break; x = y; } return x; }; // anche il «continue=» della pagina dei cookie di Google
+  const nomeDaLink = (u) => { // nome del luogo da un link lungo di Google Maps: /maps/place/<nome>/ oppure ?q= / query= con un testo (non coordinate)
+    const x = decodifica(u); let m = /\/maps\/place\/([^/@?&]+)/.exec(x);
+    if (!m) { m = /[?&](?:q|query|daddr|destination)=([^&]+)/i.exec(x); if (m && coordinateDa(m[1])) m = null; }
+    return m ? m[1].replace(/\+/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  };
   async function condividi(testo) {
     testo = String(testo || '').trim(); if (!testo || bloccata()) return;
     fuoriPronta(async () => {
@@ -2059,12 +2065,14 @@
         if (!c) for (const u of urls) { c = coordinateDa(u); if (c) break; }
         if (!c) { // link corto: sul telefono lo segue il plugin nativo (la WebView non può leggere il reindirizzamento di Google)
           const pl = plug('SostAbile'), corto = urls.find((u) => URL_CORTO.test(u));
-          if (pl && corto && typeof pl.risolviLink === 'function') { toast('Leggo il luogo condiviso…', 3000); try { const r = await Promise.race([pl.risolviLink({ url: corto }), pausa(6000).then(() => null)]); if (r && r.url) { finale = r.url; c = coordinateDa(r.url); } } catch (e) { /* si cerca per nome */ } }
+          if (pl && corto && typeof pl.risolviLink === 'function') { toast('Leggo il luogo condiviso…', 3000); try { const r = await Promise.race([pl.risolviLink({ url: corto }), pausa(9000).then(() => null)]); if (r && r.url) { finale = r.url; c = coordinateDa(r.url); } } catch (e) { /* si cerca per nome */ } }
         }
-        if (!nome && finale) nome = nomeDaLink(finale);
+        if (!c && finale) c = coordinateDa(decodifica(finale));
+        if (!nome) for (const u of [finale, ...urls]) { if (u) { nome = nomeDaLink(u); if (nome) break; } }
+        if (!c && !nome) traccia('errore', { dettaglio: ('condividi: ' + testo.slice(0, 120) + ' -> ' + (finale || 'nessun link risolto').slice(0, 160)).slice(0, 300) }); // per capire i formati che non leggiamo
         if (c) { vaiA({ t: nome || 'Luogo condiviso', sub: righe[1] || '', lat: c.lat, lon: c.lon, q: nome }); return; }
         // niente coordinate: nome e indirizzo diventano una ricerca (Photon, come la barra «Dove vai?»), si apre il primo risultato
-        const cand = [...new Set([righe.slice(0, 2).join(', '), righe[0], righe[1]].filter(Boolean))];
+        const cand = [...new Set([righe.slice(0, 2).join(', '), righe[0], righe[1], nome].filter(Boolean))];
         if (!cand.length) { toast('Non riesco a leggere il luogo condiviso. Cercalo per nome.', 5000); apriRicerca(''); return; }
         toast(`Cerco «${cand[0]}»…`, 3000);
         const ctl = new AbortController(), centro = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];

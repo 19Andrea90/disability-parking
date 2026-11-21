@@ -609,3 +609,7 @@ body.prob-pos #home,body.prob-pos #top,body.prob-pos #arrivo,body.prob-pos #dest
 .stv .v-az .v-2{background:var(--panel);color:var(--blu-t);border:1.5px solid var(--blu-t)}
 .stv .v-ombra{fill:var(--vuoto-bg)}.stv .v-tr{stroke:var(--blu-t)}.stv .v-fondo{fill:var(--panel)}.stv .v-gl{fill:var(--tinta)}.stv .v-bl{fill:var(--ver-bg)}
 .stv.compatto{padding:12px 12px}
+
+/* la «i» (legenda e crediti) nella colonna dei pulsanti a destra, subito sopra la vista satellitare: si apre verso sinistra e verso l'alto */
+.slot-i{position:relative;width:3rem;height:2rem;flex:none}
+.slot-i .maplibregl-ctrl-attrib{position:absolute;right:0.5rem;bottom:0;margin:0;z-index:3;max-width:min(320px,calc(100vw - 48px))}
