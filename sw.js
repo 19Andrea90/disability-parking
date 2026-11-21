@@ -1,5 +1,5 @@
 /* Service worker: app shell offline + cache delle tile già viste */
-const WEB = 'd9df34cf';
+const WEB = '2fdc0367';
 const VERSION = 'dp-v0.7.0-' + WEB;
 const W = './mobile/www/';
 const SHELL = ['./', './index.html', './admin.html', './app.css', './admin.js', './config.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png',
