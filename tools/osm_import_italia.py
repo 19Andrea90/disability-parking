@@ -8,9 +8,16 @@ converte gli elementi come fa l'admin (osmConvert in admin.js) e li carica con u
 
 Uso: SUPABASE_SERVICE_KEY=... python3 tools/osm_import_italia.py [--regioni veneto,lombardia] [--dry-run]
 Le regioni finite vengono segnate in /home/claude/osm_import_fatte.json.
+
+Traffico Supabase: questo script NON scarica l'elenco degli stalli. La deduplica la fa il database (upsert su osm_id con
+ignore-duplicates e risposta minima: dal database non torna nulla) e le righe OSM si contano con una HEAD (count=exact, nessun
+corpo) tramite sbleggero, che le somma nel resoconto finale. Per questo non serve nessuna funzione SQL (vedi 21_aggregazioni_servizio.sql).
 """
 import argparse, json, os, re, time, urllib.request
 import osmium
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+import sbleggero as L  # noqa: E402
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 BASE = 'https://download.openstreetmap.fr/extracts/europe/italy/'
@@ -78,10 +85,8 @@ def upsert(recs, key):
         urllib.request.urlopen(req, timeout=120).read()
 
 
-def count_osm(key):
-    req = urllib.request.Request(f'{SB}/rest/v1/stalli?select=id&fonte=eq.osm', method='HEAD',
-                                 headers={'apikey': key, 'Authorization': 'Bearer ' + key, 'Prefer': 'count=exact'})
-    return int(urllib.request.urlopen(req, timeout=60).headers['content-range'].split('/')[-1])
+def count_osm(key):  # HEAD con count=exact: nessuna riga scaricata
+    return L.conteggio('stalli?fonte=eq.osm', key)
 
 
 def main():
@@ -101,7 +106,7 @@ def main():
             if pts: recs.append(convert('way', wid, sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts), tags))
         before = count_osm(key)
         if not a.dry_run: upsert(recs, key)
-        after = count_osm(key)
+        after = count_osm(key) if not a.dry_run else before
         print(f'{NOMI.get(r, r.capitalize())}: {len(recs)} stalli su OSM · nuovi in mappa {after - before} · {mb:.0f} MB · {time.time() - t0:.0f} s', flush=True)
         if not a.dry_run:
             fatte.add(r); json.dump(sorted(fatte), open(FATTE, 'w'))

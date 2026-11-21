@@ -5,6 +5,7 @@ REGOLA: mai scaricare tutti gli stalli (né tutti i candidati). Gli script di se
   - get()        GET paginato con le sole colonne necessarie (select=...), cache su disco facoltativa;
   - conteggio()  numero di righe senza scaricarle (HEAD + Prefer: count=exact);
   - esistono()   controllo mirato (colonna=in.(...)) invece di scaricare l'elenco;
+  - rpc()        funzione SQL del database (supabase/21_aggregazioni_servizio.sql): il database aggrega e arriva solo il risultato;
   - pubblico() / lista_storage()  file e liste di Storage con cache su disco e ricerca lato server;
   - a fine esecuzione stampa "Traffico Supabase di questa esecuzione: X MB".
 
@@ -117,6 +118,31 @@ def conteggio(path, key):
     p += ('&' if '?' in p else '?') + 'select=id&limit=0'
     _, hd = richiedi('HEAD', p, key, extra={'Prefer': 'count=exact'})
     return int((hd.get('content-range') or '*/0').split('/')[-1])
+
+
+class FunzioneAssente(Exception):
+    """La funzione SQL non esiste (ancora) nel database: va eseguito il file .sql che la crea."""
+
+
+def rpc(nome, args, key, cache=False, eta_ore=None, timeout=180):
+    """Chiama public.<nome>(args) con POST /rest/v1/rpc/<nome> (chiave service per le funzioni 21_aggregazioni_servizio.sql).
+    I byte ricevuti entrano nel contatore. Argomenti None vengono omessi (valgono i default della funzione).
+    Se la funzione non esiste solleva FunzioneAssente: chi chiama ricade sul vecchio metodo con un avviso."""
+    corpo = json.dumps({k: v for k, v in args.items() if v is not None}, separators=(',', ':'), sort_keys=True)
+    nome_c = f'rpc-{nome}-' + hashlib.sha1(corpo.encode()).hexdigest()[:20]
+    if cache:
+        c = cache_leggi(nome_c, eta_ore)
+        if c is not None: return c
+    try: raw, _ = richiedi('POST', f'/rest/v1/rpc/{nome}', key, corpo.encode(), timeout=timeout)
+    except urllib.error.HTTPError as e:
+        raw = e.read()
+        if raw[:2] == b'\x1f\x8b': raw = gzip.decompress(raw)  # anche il corpo degli errori arriva compresso
+        det = raw.decode('utf-8', 'replace')
+        if e.code == 404 and ('PGRST202' in det or 'find the function' in det): raise FunzioneAssente(nome) from None
+        raise RuntimeError(f'rpc {nome}: HTTP {e.code} {det[:300]}') from None
+    d = json.loads(raw)
+    if cache: cache_scrivi(nome_c, d)
+    return d
 
 
 def esistono(tabella, colonna, valori, key, cols=None, extra_filtri='', blocco=80):
