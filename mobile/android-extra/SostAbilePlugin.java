@@ -9,6 +9,10 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Plugin Capacitor locale "SostAbile". Tre cose che il solo JavaScript non può fare:
@@ -127,14 +131,31 @@ public class SostAbilePlugin extends Plugin {
                         c.setInstanceFollowRedirects(false);
                         c.setConnectTimeout(4000);
                         c.setReadTimeout(4000);
-                        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36");
+                        c.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"); // con un browser da telefono maps.app.goo.gl risponde con una pagina (200) invece del reindirizzamento
+                        c.setRequestProperty("Accept-Language", "it-IT,it;q=0.9");
                         int code = c.getResponseCode();
                         String loc = c.getHeaderField("Location");
-                        c.disconnect();
                         if (code >= 300 && code < 400 && loc != null) {
+                            c.disconnect();
                             cur = new URL(u, loc).toString();
-                            if (cur.contains("@") || cur.contains("!3d")) break; // ci sono già le coordinate
+                            if (cur.contains("/maps/place/") || cur.contains("@") || cur.contains("!3d")) break; // nome o coordinate già nel link: basta così
                         } else {
+                            // pagina invece del reindirizzamento: cerca dentro il link lungo di Google Maps
+                            String trovato = null;
+                            try {
+                                InputStream in = code < 400 ? c.getInputStream() : c.getErrorStream();
+                                if (in != null) {
+                                    ByteArrayOutputStream buf = new ByteArrayOutputStream(); byte[] b = new byte[8192]; int n, tot = 0;
+                                    while ((n = in.read(b)) > 0 && tot < 400000) { buf.write(b, 0, n); tot += n; }
+                                    in.close();
+                                    String html = buf.toString("UTF-8").replace("\\u003d", "=").replace("\\u0026", "&").replace("\\/", "/").replace("&amp;", "&");
+                                    Matcher m = Pattern.compile("https://(?:www\\.)?google\\.[a-z.]+/maps/(?:place|search|dir)/[^\"'\\s<>]+").matcher(html);
+                                    if (m.find()) trovato = m.group();
+                                    else { m = Pattern.compile("https://maps\\.google\\.[a-z.]+/[^\"'\\s<>]*[?&](?:q|ll|cid)=[^\"'\\s<>]+").matcher(html); if (m.find()) trovato = m.group(); }
+                                }
+                            } catch (Throwable e2) { /* pagina illeggibile */ }
+                            c.disconnect();
+                            if (trovato != null) cur = trovato;
                             break;
                         }
                     }

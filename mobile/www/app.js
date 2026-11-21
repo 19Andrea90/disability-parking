@@ -2072,13 +2072,15 @@
         if (!c && !nome) traccia('errore', { dettaglio: ('condividi: ' + testo.slice(0, 120) + ' -> ' + (finale || 'nessun link risolto').slice(0, 160)).slice(0, 300) }); // per capire i formati che non leggiamo
         if (c) { vaiA({ t: nome || 'Luogo condiviso', sub: righe[1] || '', lat: c.lat, lon: c.lon, q: nome }); return; }
         // niente coordinate: nome e indirizzo diventano una ricerca (Photon, come la barra «Dove vai?»), si apre il primo risultato
-        const cand = [...new Set([righe.slice(0, 2).join(', '), righe[0], righe[1], nome].filter(Boolean))];
+        // dal link: «Zero81, Corso Italia, 110, 34170 Gorizia GO» → si cerca prima tutto, poi solo l'indirizzo (la ricerca indirizzi non conosce sempre i nomi dei locali)
+        const virg = !righe.length && nome.includes(',') ? nome.indexOf(',') : -1, breve = virg > 0 ? nome.slice(0, virg).trim() : '', indir = virg > 0 ? nome.slice(virg + 1).trim() : '';
+        const cand = [...new Set([righe.slice(0, 2).join(', '), righe[0], righe[1], nome, indir].filter(Boolean))];
         if (!cand.length) { toast('Non riesco a leggere il luogo condiviso. Cercalo per nome.', 5000); apriRicerca(''); return; }
         toast(`Cerco «${cand[0]}»…`, 3000);
         const ctl = new AbortController(), centro = me ? [me.lon, me.lat] : [map.getCenter().lng, map.getCenter().lat];
         for (const q of cand) {
           let res = []; try { res = await geocodifica(q, centro, ctl.signal); } catch (e) { break; }
-          if (res.length) { const x = res[0]; x.q = q; vaiA(x); return; }
+          if (res.length) { const x = res[0]; x.q = q; if (breve && q === indir) { x.sub = [x.t, x.sub].filter(Boolean).join(' · '); x.t = breve; } vaiA(x); return; }
         }
         apriRicerca(cand[0]); // non trovato o senza rete: la ricerca aperta col testo mostra l'esito e lascia correggere
       } catch (e) { toast('Non riesco ad aprire il luogo condiviso.', 4000); }
