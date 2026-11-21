@@ -1295,6 +1295,10 @@
   // vengono copiati nel profilo dell'utente (dati dell'account Supabase) e ritrovati su un altro telefono.
   let sessione = ls.get('dp.sessione', null), sincT;
   const profilo = () => Object.assign({ scadenza: '', giorni: 60, notifica: false }, ls.get('dp.profilo', {}));
+  // Avvisi via email (li manda tools/avvisi_utenti.py): le scelte stanno in user_metadata.avvisi, separate dal pacchetto dp.
+  // Il registro degli invii (user_metadata.avvisi_inviati) lo scrive solo lo script, per questo è una chiave a parte.
+  const avvisi = () => Object.assign({ email_scadenza: false, nuovi_vicino: false }, ls.get('dp.avvisi', {}));
+  function salvaAvvisi(pz) { const n = Object.assign(avvisi(), pz); ls.set('dp.avvisi', n); if (sessione) aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { avvisi: n } }) }).catch(() => {}); }
   async function aut(path, opt) {
     if (sessione && sessione.scade - 60 < Date.now() / 1000) {
       const r = await fetch(`${CFG.SB}/auth/v1/token?grant_type=refresh_token`, { method: 'POST', headers: { apikey: CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: sessione.refresh }) });
@@ -1325,7 +1329,7 @@
   function toccato() { ls.set('dp.agg', Date.now()); if (!sessione) return; clearTimeout(sincT); sincT = setTimeout(() => { aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }).catch(() => {}); }, 1200); }
   async function allinea() { // dopo l'accesso: vince la copia più recente tra telefono e account
     try {
-      const r = await aut('/auth/v1/user'); if (!r.ok) return; const u = await r.json(), remoto = (u.user_metadata || {}).dp; if (provDa(u) && sessione && sessione.prov !== provDa(u)) { sessione.prov = provDa(u); ls.set('dp.sessione', sessione); }
+      const r = await aut('/auth/v1/user'); if (!r.ok) return; const u = await r.json(), remoto = (u.user_metadata || {}).dp; ls.set('dp.avvisi', (u.user_metadata || {}).avvisi || {}); if (provDa(u) && sessione && sessione.prov !== provDa(u)) { sessione.prov = provDa(u); ls.set('dp.sessione', sessione); }
       const nuovoQui = !remoto || !(remoto.dispositivi || []).includes(deviceId); if (remoto) ls.set('dp.dispositivi', dispositivi(remoto.dispositivi));
       const locale = pacchetto(), vuoto = !locale.salvati.length && !Object.keys(locale.luoghi).length && !locale.profilo.scadenza;
       if (remoto && (vuoto || (remoto.agg || 0) > locale.agg)) { applica(remoto); if (nuovoQui) await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); } else if (!vuoto) { ls.set('dp.agg', locale.agg || Date.now()); await aut('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ data: { dp: pacchetto() } }) }); }
@@ -1522,7 +1526,7 @@
     const solo = sessione.prov === 'google';
     const riga = (a, ic, t, sub, mk) => `<button class="rg" data-a="${a}">${mk ? `<span class="mk">${icon(ic)}</span>` : icon(ic)}<span class="t"><b>${t}</b>${sub ? `<span>${sub}</span>` : ''}</span>${a === 'esci' ? '' : icon('chev', 'chev')}</button>`;
     $('#ac-body').innerHTML = `<div class="chi"><span class="av" aria-hidden="true">${esc((sessione.email || '?')[0])}</span><span class="t"><b>${esc(sessione.email)}</b><span>${solo ? 'Accedi con Google: la password la gestisce Google' : 'I tuoi posti sono al sicuro nel tuo account'}</span></span></div>
-      ${sez('h-per', 'Per te', `<div class="grp">${riga('profilo', 'wc', 'Il mio contrassegno', contr, 1)}${riga('segn', 'plus', 'Le mie segnalazioni', 'Quelle che hai inviato e a che punto sono', 1)}</div>`)}
+      ${sez('h-per', 'Per te', `<div class="grp">${riga('profilo', 'wc', 'Il mio contrassegno', contr, 1)}${riga('segn', 'plus', 'Le mie segnalazioni', 'Quelle che hai inviato e a che punto sono', 1)}<button class="vaip stat" data-a="nuovi" role="switch" aria-checked="${avvisi().nuovi_vicino}"><span class="t">Nuovi posti vicino a Casa e Lavoro<span>Ti scriviamo quando ne aggiungiamo uno entro 500 m</span></span><span class="tgl" aria-hidden="true"></span></button></div>`)}
       ${sez('h-sic', 'Accesso e sicurezza', `<div class="grp">${solo ? '' : riga('cambiapw', 'edit', 'Cambia password', '')}${riga('esci', 'user', 'Esci da questo dispositivo', 'I posti restano su questo telefono')}</div>`)}
       <div class="zona"><button class="dng" data-a="elimina">Elimina il mio account</button><p>Cancella email, posti salvati, Casa e Lavoro e dati del contrassegno, anche su questo telefono. Le segnalazioni già fatte restano in mappa, anonime. Non si può annullare.</p></div>`;
   }
@@ -1536,6 +1540,7 @@
     else if (a === 'cambiapw') { if (sessione && sessione.prov === 'google') toast('Accedi con Google: non serve una password.', 4000); else apriNuova(false, true); }
     else if (a === 'esci') { esci(); chiudiAccount(); formAperto = false; accessoAperto = false; menu(); toast('Sei uscito. I posti restano su questo telefono.'); }
     else if (a === 'elimina') apriElimina();
+    else if (a === 'nuovi') { const on = !avvisi().nuovi_vicino; salvaAvvisi({ nuovi_vicino: on }); account(); const n = $('#ac-body [data-a=nuovi]'); if (n) n.focus({ preventScroll: true }); toast(on ? 'Ti scriviamo quando c\'è un posto nuovo vicino a Casa o Lavoro.' : 'Avviso disattivato.', 3500); }
   });
   $('#m-back').onclick = () => { $('#menu').hidden = true; };
   $('#m-body').addEventListener('click', async (e) => {
@@ -1689,7 +1694,7 @@
         <div class="giorni">${[30, 60, 90].map((n) => `<button data-g="${n}" aria-pressed="${std && pr.giorni === n}">${n} gg</button>`).join('')}<button data-g="altro" aria-pressed="${!std}">Altro</button></div>
         ${!std ? `<label class="altro"><input id="p-altro" type="number" inputmode="numeric" min="1" max="365" value="${pr.giorni}"> giorni prima</label>` : ''}
         <div><div class="sw"><span class="t">Notifica sul telefono<span>${pr.scadenza ? 'Un avviso alla data scelta e uno il giorno della scadenza' : 'Imposta prima la data di scadenza'}</span></span><button role="switch" data-p="notifica" aria-checked="${!!pr.notifica}" aria-label="Notifica sul telefono" ${pr.scadenza ? '' : 'disabled'}><i></i></button></div>
-        <div class="sw"><span class="t">Email<span>Arriva con un prossimo aggiornamento</span></span><button role="switch" aria-checked="false" aria-label="Avviso via email" disabled><i></i></button></div></div>
+        <div class="sw"><span class="t">Email<span>${!sessione ? 'Disponibile con un account' : pr.scadenza ? 'Ti scriviamo all\'indirizzo dell\'account' : 'Imposta prima la data di scadenza'}</span></span><button role="switch" data-p="email" aria-checked="${!!sessione && avvisi().email_scadenza}" aria-label="Avviso via email" ${sessione && pr.scadenza ? '' : 'disabled'}><i></i></button></div></div>
       </div>
       <p class="small muted" style="margin:0">La foto del contrassegno resta solo su questo telefono. Nell'account viene salvata soltanto la data di scadenza.</p>`;
   }
@@ -1707,6 +1712,7 @@
       if (on && !(await permessoAvvisi())) { toast('Per ricevere l\'avviso serve il permesso alle notifiche. Lo trovi nelle impostazioni del telefono.', 4500); return; }
       salvaProfilo({ notifica: on }); if (on) toast('Avviso programmato.');
     }
+    if (b.dataset.p === 'email' && sessione) { const on = !avvisi().email_scadenza; salvaAvvisi({ email_scadenza: on }); scheda8(); if (on) toast('Ti scriviamo prima della scadenza.'); }
   });
   $('#p-foto').onchange = async () => { const f = $('#p-foto').files[0]; if (!f) return; try { const blob = await rimpicciolisci(f, 1000); const r = new FileReader(); r.onload = () => { ls.set('dp.contrassegno', r.result); scheda8(); }; r.readAsDataURL(blob); } catch (e) { toast('Non riesco a leggere la foto. Riprova.'); } };
   // avvisi sul telefono: programmati sul dispositivo, funzionano anche senza rete e senza account
@@ -1723,6 +1729,12 @@
     } catch (e) { /* senza permesso non si programma nulla */ }
   }
   if (sessione) allinea();
+  // link dalle email di SostAbile: https://sostabile.it/app/#posto=<id> apre la scheda di quel posto
+  (function () {
+    const m = /[#&]posto=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i.exec(location.hash); if (!m) return;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* resta nell'indirizzo */ }
+    const via = () => apriSalvato(m[1].toLowerCase()); if (pronta) via(); else map.once('load', via);
+  })();
 
   // ---------- primo avvio ----------
   // condizioni d'uso: si accettano al primo avvio; se cambia CONDIZIONI_VER chi aveva già l'app le riaccetta una volta

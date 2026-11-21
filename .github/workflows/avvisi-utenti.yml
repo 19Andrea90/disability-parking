@@ -1,0 +1,37 @@
+name: Avvisi agli utenti
+
+# Una volta al giorno manda le email scelte dagli utenti nell'app: scadenza del contrassegno e nuovi posti vicino a Casa e Lavoro
+# (tools/avvisi_utenti.py). Le ore del cron di GitHub Actions sono sempre in UTC e CRON_TZ non è supportato:
+# 6:20 UTC = 7:20 in Italia con l'ora solare (inverno) e 8:20 con l'ora legale (estate). Va bene così: l'invio è al mattino.
+# Se la funzione SQL manca (supabase/22_avvisi_utenti.sql non ancora eseguito) lo script finisce con un avviso e senza errore.
+# "Run workflow" a mano parte in prova (dry_run attivo): stampa destinatari mascherati e oggetti, non invia e non scrive nulla.
+
+on:
+  schedule:
+    - cron: '20 6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Solo prova, non invia email e non scrive nulla (true/false)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: avvisi-utenti
+  cancel-in-progress: false
+
+jobs:
+  avvisi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Manda gli avvisi
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          RESEND_KEY: ${{ secrets.RESEND_KEY }}
+          NOTIFICHE_DA: ${{ secrets.NOTIFICHE_DA }}
+        run: python3 -u tools/avvisi_utenti.py ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
