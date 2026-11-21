@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#0b2a5b">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0b2a5b" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b2230" media="(prefers-color-scheme: dark)">
 <title>SostAbile</title>
 <link rel="stylesheet" href="vendor/maplibre-gl.css">
 <link rel="stylesheet" href="app.css">
@@ -182,7 +184,39 @@
         </div>
       </div>
       <div id="c-conf-far" class="muted small"></div>
+      <button id="c-problema" class="lnk prob"><svg class="ic" aria-hidden="true"><use href="#i-flag"/></svg><span>C'è un problema con questo posto?</span></button>
     </div>
+  </section>
+</div>
+
+<!-- C'è un problema con questo posto? Foglio con le scelte, poi (solo per «È in un altro punto») la mappa per indicare il punto giusto -->
+<div id="prob" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="p-tit">
+    <div class="handle"></div>
+    <div class="p-testa"><h2 id="p-tit" tabindex="-1">C'è un problema?</h2><button id="p-x" class="p-x" aria-label="Chiudi"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <p class="p-sub" id="p-sub"></p>
+    <div class="p-scelte" role="radiogroup" aria-label="Tipo di problema" id="p-scelte">
+      <button class="p-sc" role="radio" aria-checked="false" data-t="non_esiste"><i aria-hidden="true"></i>Il posto non c'è più</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="spostato"><i aria-hidden="true"></i>È in un altro punto</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="targa"><i aria-hidden="true"></i>È riservato a una sola targa</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="dati_errati"><i aria-hidden="true"></i>Indirizzo o numero di posti sbagliato</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="altro"><i aria-hidden="true"></i>Altro</button>
+    </div>
+    <div class="p-dove" id="p-dove" hidden><b>Dov'è davvero?</b><span>Si apre la mappa: sposta il segnaposto nel punto giusto.</span></div>
+    <label class="p-note" for="p-testo">Note (facoltative)<textarea id="p-testo" rows="2" maxlength="500"></textarea></label>
+    <button id="p-invia" class="primary" disabled><span>Invia la segnalazione</span></button>
+  </section>
+</div>
+<div id="probpos" hidden>
+  <div class="add-top">
+    <button id="pp-close" class="round" aria-label="Annulla e torna alle scelte"><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="add-hint">Sposta la mappa finché il segnaposto è sopra lo stallo</div>
+  </div>
+  <div id="p-pin" aria-hidden="true"><i></i></div>
+  <section class="sheet" aria-label="Indica il punto giusto">
+    <div class="handle"></div>
+    <div><h1>Dov'è davvero il posto?</h1><div id="pp-dove" class="muted small" style="margin-top:4px"></div></div>
+    <button id="pp-invia" class="primary"><svg class="ic"><use href="#i-check"/></svg><span>Invia la segnalazione</span></button>
   </section>
 </div>
 

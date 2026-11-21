@@ -11,6 +11,7 @@
     // chiave "anon": è pubblica per natura, i permessi li decide il database
     KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3ZXJlcXJvamx3a3Rnd2xyc2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MjMzMjYsImV4cCI6MjEwODM5OTMyNn0.vOaCaVc8kaqsRT_o_TP01CbyX9SN-Af1fKjSZ3NxQys',
     STYLE: 'https://tiles.openfreemap.org/styles/positron',
+    STYLE_SCURO: 'https://tiles.openfreemap.org/styles/dark', // tema scuro del telefono: stessa sorgente OpenStreetMap, colori scuri
     HOME: [13.236, 46.063], // Udine, finché non c'è la posizione
     MIN_ZOOM_DATI: 12,      // sotto questo zoom si vedono i totali per regione, provincia e comune (file statico)
     MAX_H: 0.03,            // vista più alta di così (circa 3 km) o più larga di MAX_W: niente singoli posti, solo conteggi a griglia
@@ -28,6 +29,15 @@
   };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const icon = (id, cls) => `<svg class="ic ${cls || ''}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+  // Stati vuoti: disegno semplice (SVG in linea, nascosto agli screen reader), titolo, frase e un'azione utile. Colori dal tema (classi v-*, in app.css).
+  const DIS_VUOTO = {
+    pin: '<svg aria-hidden="true" width="88" height="72" viewBox="0 0 88 72" fill="none"><ellipse class="v-ombra" cx="44" cy="62" rx="30" ry="6"/><path class="v-fondo v-tr" d="M44 8c-11 0-19 8-19 18 0 13 19 32 19 32s19-19 19-32C63 16 55 8 44 8z" stroke-width="3" stroke-dasharray="6 5"/><circle class="v-tr" cx="44" cy="26" r="7" stroke-width="3"/></svg>',
+    segn: '<svg aria-hidden="true" width="88" height="64" viewBox="0 0 88 64" fill="none"><rect class="v-gl v-tr" x="20" y="10" width="48" height="44" rx="8" stroke-width="3"/><path class="v-tr" d="M44 22v20M34 32h20" stroke-width="3" stroke-linecap="round"/></svg>',
+    salv: '<svg aria-hidden="true" width="88" height="64" viewBox="0 0 88 64" fill="none"><path class="v-bl v-tr" d="M32 8h24v46l-12-9-12 9z" stroke-width="3" stroke-linejoin="round"/></svg>',
+    cerca: '<svg aria-hidden="true" width="88" height="64" viewBox="0 0 88 64" fill="none"><ellipse class="v-ombra" cx="44" cy="57" rx="28" ry="5"/><circle class="v-fondo v-tr" cx="40" cy="26" r="16" stroke-width="3"/><path class="v-tr" d="M52 38l14 14" stroke-width="3" stroke-linecap="round"/><path class="v-tr" d="M33 26h14" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 7"/></svg>',
+  };
+  // az: [[testo, data-v, 'v-1'|'v-2'], ...]
+  const vuoto = (dis, titolo, frase, az, compatto) => `<div class="stv${compatto ? ' compatto' : ''}" role="status">${DIS_VUOTO[dis] || ''}<b class="v-t">${titolo}</b>${frase ? `<p>${frase}</p>` : ''}${az && az.length ? `<div class="v-az">${az.map((x) => `<button class="${x[2] || 'v-1'}" data-v="${x[1]}">${x[0]}</button>`).join('')}</div>` : ''}</div>`;
 
   let deviceId = ls.get('dp.device', null);
   if (!deviceId) { deviceId = 'd-' + Math.random().toString(36).slice(2) + Date.now().toString(36); ls.set('dp.device', deviceId); }
@@ -207,10 +217,19 @@
   // ---------- mappa ----------
   let chiaveEsri = ''; // la dà il database (app_config.chiave_esri), mai scritta nel codice; vuota = niente vista satellitare
   const ESRI_HOST = /^https:\/\/[^/]*\.arcgis\.com\//;
-  const map = new maplibregl.Map({ container: 'map', style: CFG.STYLE,
+  const map = new maplibregl.Map({ container: 'map', style: window.matchMedia('(prefers-color-scheme: dark)').matches ? CFG.STYLE_SCURO : CFG.STYLE,
     transformRequest: (url) => (chiaveEsri && ESRI_HOST.test(url) && !/[?&]token=/.test(url)) ? { url: url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(chiaveEsri) } : undefined, center: CFG.HOME, zoom: 14.5, attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false });
   map.touchZoomRotate.disableRotation();
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+  (function () { // «Come leggere la mappa»: la legenda dei segnaposto sta nel pannello della «i» della mappa, sopra i crediti
+    const at = document.querySelector('.maplibregl-ctrl-attrib'), inner = at && at.querySelector('.maplibregl-ctrl-attrib-inner'); if (!at || !inner) return;
+    const riga = (cls, b, t) => `<div class="leg-r"><span class="leg-p ${cls}" aria-hidden="true">${icon('wc')}</span><span><b>${b}</b><span>${t}</span></span></div>`;
+    const d = document.createElement('div'); d.className = 'legenda';
+    d.innerHTML = `<h2>Come leggere la mappa</h2>${riga('pieno', 'Pieno: affidabile', 'Dato ufficiale del Comune o confermato da chi c\'è stato')}${riga('dav', 'Vuoto: da verificare', 'Probabile, ma nessuno l\'ha ancora confermato')}${riga('giallo', 'Giallo: il posto scelto', 'Quello che hai aperto o il più vicino')}<p class="leg-n">Il numero sui cerchi grandi è quanti posti ci sono in quel gruppo.</p>`;
+    at.insertBefore(d, inner);
+    const cont = at.closest('.maplibregl-ctrl-bottom-right'); if (cont) document.body.appendChild(cont); // fuori da #map: la legenda aperta sta sopra pulsanti e pannelli
+    const sm = at.querySelector('summary'); if (sm) { sm.setAttribute('aria-label', 'Come leggere la mappa e crediti'); sm.setAttribute('title', 'Come leggere la mappa e crediti'); }
+  })();
   window.__dp = { map, stalli }; // per le prove
 
   function glifo(colore) { // il simbolo disegnato su un quadratino trasparente, per i pin
@@ -230,9 +249,9 @@
   let riepilogo = null, livello = '';
   const LIVELLI = [['regioni', 7.2, 8.4], ['province', 9.6, 10.6], ['comuni', CFG.MIN_ZOOM_DATI, 14.2]]; // nome, fino a che zoom, zoom dopo il tocco (14,2: la vista è abbastanza stretta per i singoli posti)
   const num = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+$)/g, '.');
-  function fondoZona() { // fondo blu arrotondato che si allarga attorno al testo
+  function fondoZona(P) { // fondo blu arrotondato che si allarga attorno al testo
     const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
-    x.beginPath(); x.roundRect(3, 3, 58, 58, 22); x.fillStyle = '#0b2a5b'; x.fill(); x.lineWidth = 4; x.strokeStyle = '#ffffff'; x.stroke();
+    x.beginPath(); x.roundRect(3, 3, 58, 58, 22); x.fillStyle = P.zonaFondo; x.fill(); x.lineWidth = 4; x.strokeStyle = P.zonaBordo; x.stroke();
     return x.getImageData(0, 0, 64, 64);
   }
   function zone() {
@@ -250,30 +269,71 @@
   const copertura = (url) => fetch(url).then((r) => r.ok ? r.json() : null).then((j) => j && j.regioni ? j : null).catch(() => null);
   copertura(COPERTURA_STATICA).then((j) => j || copertura(CFG.SB + '/storage/v1/object/public/foto/copertura/riepilogo.json')).then((j) => { if (j) { riepilogo = j; zone(); vicini(); } });
   let baseVis = null; // i livelli della mappa stradale e come erano: servono per nasconderli in vista satellitare
-  map.on('load', () => {
-    baseVis = map.getStyle().layers.map((l) => [l.id, (l.layout && l.layout.visibility) || 'visible']);
-    map.addImage('wc-w', glifo('#ffffff'), { pixelRatio: 2 }); map.addImage('wc-b', glifo('#0b2a5b'), { pixelRatio: 2 }); map.addImage('wc-d', glifo('#2b2300'), { pixelRatio: 2 }); map.addImage('x-w', glifoX('#ffffff'), { pixelRatio: 2 });
+  // Tema: segue il telefono/browser (prefers-color-scheme), nessun interruttore. I colori dei pin e dei cerchi sulla mappa vengono da qui.
+  const TEMA_SCURO = window.matchMedia('(prefers-color-scheme: dark)');
+  const scuro = () => TEMA_SCURO.matches;
+  const PAL = () => scuro()
+    ? { pieno: '#8fb4ff', icPieno: '#0b1f44', dav: '#1b2230', davBordo: '#8fb4ff', icDav: '#8fb4ff', anello: '#1b2230', occ: '#6b7686', gruppo: '#8fb4ff', testoG: '#0b1f44', zonaFondo: '#8fb4ff', zonaBordo: '#1b2230', selBordo: '#1b2230' }
+    : { pieno: '#0b2a5b', icPieno: '#ffffff', dav: '#ffffff', davBordo: '#0b2a5b', icDav: '#0b2a5b', anello: '#ffffff', occ: '#6b7686', gruppo: '#0b2a5b', testoG: '#ffffff', zonaFondo: '#0b2a5b', zonaBordo: '#ffffff', selBordo: '#0b1f44' };
+  // Affidabilità sulla mappa: pieno = ufficiale o verificato; bianco con bordo spesso = da verificare (proposto); giallo = il posto scelto. La legenda sta nella «i» della mappa.
+  function aggiungiLivelli() { // immagini, sorgenti e livelli nostri: si rifanno da capo se la mappa cambia stile (tema chiaro/scuro)
+    const P = PAL(), img = (n, im, o) => { if (map.hasImage(n)) map.removeImage(n); map.addImage(n, im, Object.assign({ pixelRatio: 2 }, o)); };
+    img('wc-w', glifo(P.icPieno)); img('wc-b', glifo(P.icDav)); img('wc-d', glifo('#2b2300')); img('x-w', glifoX('#ffffff'));
     map.addSource('stalli', { type: 'geojson', data: VUOTO, cluster: true, clusterRadius: 42, clusterMaxZoom: 15 });
     map.addSource('sel', { type: 'geojson', data: VUOTO }); map.addSource('conteggi', { type: 'geojson', data: VUOTO });
-    map.addSource('zone', { type: 'geojson', data: VUOTO }); map.addImage('zona', fondoZona(), { pixelRatio: 2, stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
-    map.addLayer({ id: 'zone', type: 'symbol', source: 'zone', maxzoom: CFG.MIN_ZOOM_DATI, layout: { 'icon-image': 'zona', 'icon-text-fit': 'both', 'symbol-sort-key': ['-', ['get', 't']], 'text-field': ['format', ['get', 'n'], { 'font-scale': 0.8 }, '\n', {}, ['get', 'tl'], { 'text-font': ['literal', ['Noto Sans Bold']] }], 'text-font': ['Noto Sans Regular'], 'text-size': 15, 'text-line-height': 1.25, 'text-max-width': 9, 'text-padding': 6 }, paint: { 'text-color': '#ffffff' } });
+    map.addSource('zone', { type: 'geojson', data: VUOTO }); img('zona', fondoZona(P), { stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
+    map.addLayer({ id: 'zone', type: 'symbol', source: 'zone', maxzoom: CFG.MIN_ZOOM_DATI, layout: { 'icon-image': 'zona', 'icon-text-fit': 'both', 'symbol-sort-key': ['-', ['get', 't']], 'text-field': ['format', ['get', 'n'], { 'font-scale': 0.8 }, '\n', {}, ['get', 'tl'], { 'text-font': ['literal', ['Noto Sans Bold']] }], 'text-font': ['Noto Sans Regular'], 'text-size': 15, 'text-line-height': 1.25, 'text-max-width': 9, 'text-padding': 6 }, paint: { 'text-color': P.testoG } });
+    map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': P.gruppo, 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': P.anello, 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': P.testoG } });
+    const dav = ['==', ['get', 'stato'], 'proposto'];
+    map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], paint: {
+      'circle-radius': ['case', ['get', 'occ'], 16, dav, 14.5, 17], 'circle-color': ['case', ['get', 'occ'], P.occ, dav, P.dav, P.pieno],
+      'circle-stroke-color': ['case', ['get', 'occ'], P.anello, dav, P.davBordo, P.anello], 'circle-stroke-width': ['case', ['get', 'occ'], 3, dav, 3, 2] } });
+    map.addLayer({ id: 'pin-i', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], layout: { 'icon-image': ['case', ['get', 'occ'], 'x-w', dav, 'wc-b', 'wc-w'], 'icon-size': 0.8, 'icon-allow-overlap': true } });
+    map.addLayer({ id: 'conteggi', type: 'circle', source: 'conteggi', paint: { 'circle-color': P.gruppo, 'circle-radius': ['get', 'r'], 'circle-stroke-color': P.anello, 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'conteggi-n', type: 'symbol', source: 'conteggi', layout: { 'text-field': ['get', 't'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': P.testoG } });
+    map.addLayer({ id: 'sel', type: 'circle', source: 'sel', paint: { 'circle-radius': 23, 'circle-color': '#ffcc00', 'circle-stroke-color': P.selBordo, 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'sel-i', type: 'symbol', source: 'sel', layout: { 'icon-image': 'wc-d', 'icon-size': 1.15, 'icon-allow-overlap': true } });
+  }
+  // Mappa scura: stile «dark» di OpenFreeMap (stesse sorgenti e caratteri di «positron»), con qualche colore ritoccato perché strade e nomi restino leggibili
+  function ritoccaScuro() {
+    const c = (id, prop, v) => { try { if (map.getLayer(id)) map.setPaintProperty(id, prop, v); } catch (e) { /* livello assente in questo stile */ } };
+    c('background', 'background-color', '#1b2230'); c('water', 'fill-color', '#141a26'); c('waterway', 'line-color', '#141a26');
+    c('landuse_residential', 'fill-color', '#1d2534'); c('landcover_wood', 'fill-color', '#1f2c33'); c('landuse_park', 'fill-color', '#1f2c33'); c('building', 'fill-color', '#232c3b');
+    c('highway_path', 'line-color', '#3a4559'); c('highway_minor', 'line-color', '#313b4d'); c('highway_major_casing', 'line-color', '#3d4960'); c('highway_major_inner', 'line-color', '#3a4559'); c('highway_major_subtle', 'line-color', '#3a4559');
+    c('highway_motorway_casing', 'line-color', '#3d4960'); c('highway_motorway_inner', 'line-color', '#4a5873'); c('highway_motorway_subtle', 'line-color', '#313b4d');
+    c('railway', 'line-color', '#3f4a5f'); c('railway_minor', 'line-color', '#3f4a5f'); c('railway_transit', 'line-color', '#3f4a5f');
+    c('highway_name_other', 'text-color', '#b9c3d3'); c('highway_name_other', 'text-halo-color', '#1b2230'); c('highway_name_motorway', 'text-color', '#b9c3d3');
+    ['place_other', 'place_suburb', 'place_village', 'place_town', 'place_city', 'place_city_large', 'place_state', 'place_country_other', 'place_country_minor', 'place_country_major'].forEach((id) => { c(id, 'text-color', '#c9d2e0'); c(id, 'text-halo-color', 'rgba(27,34,48,.85)'); });
+    c('water_name', 'text-color', '#8d9bb0'); c('water_name', 'text-halo-color', '#141a26');
+  }
+  map.on('load', () => {
+    if (scuro()) ritoccaScuro();
+    baseVis = map.getStyle().layers.map((l) => [l.id, (l.layout && l.layout.visibility) || 'visible']);
+    aggiungiLivelli();
     map.on('click', 'zone', (e) => { const f = e.features[0], v = LIVELLI.find((x) => x[0] === livello); seguo = false; map.easeTo({ center: f.geometry.coordinates, zoom: v ? v[2] : 13 }); });
-    map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': '#0b2a5b', 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
-    map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], paint: { 'circle-radius': 15, 'circle-color': ['case', ['get', 'occ'], '#6b7686', ['==', ['get', 'stato'], 'proposto'], '#ffffff', '#0b2a5b'], 'circle-stroke-color': ['case', ['get', 'occ'], '#ffffff', ['==', ['get', 'stato'], 'proposto'], '#0b2a5b', '#ffffff'], 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'pin-i', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], layout: { 'icon-image': ['case', ['get', 'occ'], 'x-w', ['==', ['get', 'stato'], 'proposto'], 'wc-b', 'wc-w'], 'icon-size': 0.8, 'icon-allow-overlap': true } });
-    map.addLayer({ id: 'conteggi', type: 'circle', source: 'conteggi', paint: { 'circle-color': '#0b2a5b', 'circle-radius': ['get', 'r'], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'conteggi-n', type: 'symbol', source: 'conteggi', layout: { 'text-field': ['get', 't'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': '#ffffff' } });
     map.on('click', 'conteggi', (e) => avvicinaA(e.features[0].geometry.coordinates));
     map.on('mouseenter', 'conteggi', () => { map.getCanvas().style.cursor = 'pointer'; }); map.on('mouseleave', 'conteggi', () => { map.getCanvas().style.cursor = ''; });
-    map.addLayer({ id: 'sel', type: 'circle', source: 'sel', paint: { 'circle-radius': 23, 'circle-color': '#ffcc00', 'circle-stroke-color': '#0b1f44', 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'sel-i', type: 'symbol', source: 'sel', layout: { 'icon-image': 'wc-d', 'icon-size': 1.15, 'icon-allow-overlap': true } });
     map.on('click', 'pin', (e) => apriScheda(e.features[0].properties.id));
     map.on('click', 'gruppi', (e) => { const f = e.features[0]; Promise.resolve(map.getSource('stalli').getClusterExpansionZoom(f.properties.cluster_id)).then((z) => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(z, 18) })); });
     const at = document.querySelector('.maplibregl-ctrl-attrib'); if (at) { at.classList.remove('maplibregl-compact-show'); at.removeAttribute('open'); } // i crediti della mappa partono chiusi (si aprono dalla i)
     pronta = true; vediPosti(false); if (LARGO()) { map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right'); espandi(true); }
     map.setPadding(padHome()); disegna(); zone(); caricaVista();
   });
+  // Il telefono cambia tema mentre l'app è aperta: lo stile della mappa si cambia al volo (in vista satellitare si aspetta di tornare alla stradale)
+  let stileDa = scuro(), stilePendente = false;
+  function applicaTema() {
+    if (!pronta || stileDa === scuro()) { stilePendente = false; return; }
+    if (sat) { stilePendente = true; return; }
+    stilePendente = false; stileDa = scuro();
+    map.setStyle(scuro() ? CFG.STYLE_SCURO : CFG.STYLE, { diff: false }); // diff:false: niente confronto tra stili, scatta sempre style.load e i nostri livelli si ricreano
+    map.once('style.load', () => {
+      if (scuro()) ritoccaScuro();
+      baseVis = map.getStyle().layers.map((l) => [l.id, (l.layout && l.layout.visibility) || 'visible']); satIds = null; livello = '';
+      aggiungiLivelli(); vediPosti(modo === 'posti'); disegna(); zone(); caricaVista();
+    });
+  }
+  (TEMA_SCURO.addEventListener ? TEMA_SCURO.addEventListener('change', applicaTema) : TEMA_SCURO.addListener(applicaTema));
 
   // ---------- vista satellitare (immagini Esri) ----------
   // Il database dà la chiave (app_config, una sola chiamata per avvio, anche per l'aggiornamento obbligatorio). Senza chiave il pulsante non c'è.
@@ -325,7 +385,7 @@
     if (satOcc || satKO || !pronta) return;
     if (on && !chiaveEsri) return;
     if (on && !satIds) { satOcc = true; try { await caricaStiliEsri(); } catch (e) { satOcc = false; togliEsri(); satErrore(); return; } satOcc = false; }
-    sat = on; mostraVista(); if (on) traccia('satellite'); if (salva) ls.set('dp.vista', on ? 'sat' : '');
+    sat = on; mostraVista(); if (on) traccia('satellite'); if (salva) ls.set('dp.vista', on ? 'sat' : ''); if (!on && stilePendente) applicaTema();
   }
   map.on('error', (e) => { if (sat && e && e.sourceId && String(e.sourceId).startsWith('esri-') && e.error && ESRI_ERR.includes(e.error.status)) satErrore(); });
   btnSat.onclick = () => passaVista(!sat, true);
@@ -453,7 +513,7 @@
       return;
     }
     const { usoMe, out } = elencoVicini();
-    if (!out.length) { el.innerHTML = `<div class="eyebrow">${usoMe ? 'Vicino a te' : 'In questa zona'}</div><div class="empty">Nessun posto qui${filtri.ver || filtri.cop || filtri.multi ? ' con questi filtri' : ''}. Sposta la mappa${filtri.ver || filtri.cop || filtri.multi ? ' o togli un filtro' : ''}.</div>`; return; }
+    if (!out.length) { const fl = filtri.ver || filtri.cop || filtri.multi; el.innerHTML = `<div class="eyebrow">${usoMe ? 'Vicino a te' : 'In questa zona'}</div>` + vuoto('pin', fl ? 'Nessun posto con questi filtri' : 'Nessun posto riservato qui', fl ? 'Sposta la mappa o togli un filtro.' : 'Sposta la mappa o cerca un indirizzo. Ne conosci uno qui vicino? Segnalalo.', fl ? [['Togli i filtri', 'filtri', 'v-1']] : [['Segnala un posto', 'segnala', 'v-1']], true); return; }
     const a = out[0], [cls, lab] = affidabilita(a.s);
     el.innerHTML = `<div class="eyebrow">${usoMe ? 'Il più vicino a te' : 'Il più vicino in questa zona'}</div>
       <button class="first" data-id="${esc(a.s.id)}"><span class="tile">${icon('wc')}</span><span class="t"><b>${esc(titolo(a.s))}</b><span>${[quanto(a), posti(a.s.posti)].join(' · ')}</span></span><span class="badge ${cls}">${lab}</span></button>
@@ -478,6 +538,7 @@
     $('#near .handle').addEventListener('click', () => { if (Date.now() - tocco > 700) espandi(!espanso); }); // con il mouse o la tastiera
   })();
   $('#near-body').addEventListener('click', (e) => {
+    const v = e.target.closest('[data-v]'); if (v) { if (v.dataset.v === 'filtri') { Object.keys(filtri).forEach((k) => { filtri[k] = false; }); document.querySelectorAll('.chip').forEach((c) => c.setAttribute('aria-pressed', 'false')); disegna(); } else if (v.dataset.v === 'segnala') apriAggiungi(); return; }
     const n = e.target.closest('[data-nav]'); if (n) { naviga(stalli.get(n.dataset.nav)); return; }
     if (e.target.closest('[data-me]')) { vaiAMe(); return; }
     const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
@@ -524,8 +585,8 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (fgStato) fgChiudi(); else if (!$('#nuova').hidden) $('#nuova').hidden = true; else if (!$('#elimina').hidden) $('#elimina').hidden = true; else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#account').hidden) chiudiAccount(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
-    else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (fgStato) fgChiudi(); else chiudiScheda(true); } });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (probAperto()) probChiudi(); else if (fgStato) fgChiudi(); else if (!$('#nuova').hidden) $('#nuova').hidden = true; else if (!$('#elimina').hidden) $('#elimina').hidden = true; else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#account').hidden) chiudiAccount(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (probAperto()) probChiudi(); else if (fgStato) fgChiudi(); else chiudiScheda(true); } });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
   $('#c-nav').onclick = () => naviga(stalli.get(selId));
@@ -557,6 +618,83 @@
       toast('Grazie! La tua risposta aiuta chi arriva dopo.'); aggiornaConferma();
     } catch (err) { toast('Non sono riuscito a inviare la risposta. Riprova.'); }
   });
+
+  // ---------- «C'è un problema con questo posto?» ----------
+  // Link sempre in fondo alla scheda. Si invia con la funzione segnala_problema (supabase/23_problemi_posti.sql): funziona anche senza account
+  // (con il codice del telefono; se c'è l'accesso, la segnalazione porta anche l'utente), con un massimo di 10 al giorno e una per posto al giorno.
+  // «È in un altro punto» chiede anche dove: stessa mappa con il segnaposto di «Segnala un posto nuovo» e si invia la posizione proposta.
+  const prob = { tipo: null, s: null, lat: null, lon: null, occ: false };
+  const probAperto = () => !$('#prob').hidden || !$('#probpos').hidden;
+  const oggiIso = () => new Date().toISOString().slice(0, 10);
+  const probOggi = () => (ls.get('dp.problemi', {})[oggiIso()] || 0);
+  function probScelta(t) {
+    prob.tipo = t; document.querySelectorAll('#p-scelte .p-sc').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.t === t)));
+    $('#p-dove').hidden = t !== 'spostato'; $('#p-invia').disabled = !t;
+  }
+  function apriProblema() {
+    const s = stalli.get(selId); if (!s) return;
+    if (probOggi() >= 10) { toast('Per oggi hai già inviato 10 segnalazioni. Grazie! Riprova domani.', 4000); return; }
+    Object.assign(prob, { s, tipo: null, lat: null, lon: null, occ: false });
+    $('#p-sub').textContent = [titolo(s), s.comune].filter(Boolean).join(', ') + '. Scegli cosa non va: lo controlliamo prima di cambiare la mappa.';
+    $('#p-testo').value = ''; probScelta(null); $('#prob').hidden = false; $('#p-tit').focus({ preventScroll: true });
+  }
+  function probPadding() { return LARGO() ? padPC() : { top: 90, bottom: $('#probpos .sheet').offsetHeight || 0, left: 0, right: 0 }; }
+  function probPos() { // mappa per indicare il punto giusto: si sposta la mappa finché il segnaposto è sopra lo stallo
+    const s = prob.s; if (!s) return;
+    $('#prob').hidden = true; $('#probpos').hidden = false; document.body.classList.add('prob-pos'); seguo = false;
+    const pad = probPadding(); map.setPadding(pad); map.jumpTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 18) });
+    $('#p-pin').style.top = (pad.top + (window.innerHeight - pad.top - pad.bottom) / 2) + 'px'; $('#p-pin').style.left = (pad.left + (window.innerWidth - pad.left - pad.right) / 2) + 'px';
+    probQui();
+  }
+  function probQui() {
+    const s = prob.s; if (!s || $('#probpos').hidden) return; const c = map.getCenter(), d = dist(s.lat, s.lon, c.lat, c.lng);
+    $('#pp-dove').textContent = d < 5 ? 'Sposta la mappa: il segnaposto è ancora sul punto segnato ora.' : d > 500 ? 'Troppo lontano dal punto segnato (più di 500 m).' : `A ${fmtDist(d)} dal punto segnato ora sulla mappa.`;
+    $('#pp-invia').disabled = d < 5 || d > 500;
+  }
+  function probPosFine() { // torna alla scheda: la mappa riprende il suo margine
+    $('#probpos').hidden = true; document.body.classList.remove('prob-pos');
+    map.easeTo({ center: prob.s ? [prob.s.lon, prob.s.lat] : map.getCenter(), padding: LARGO() ? padPC() : { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }, duration: 300 });
+  }
+  function probChiudi() { // Indietro/Esc: dalla mappa si torna alle scelte, dal foglio si chiude tutto
+    if (!$('#probpos').hidden) { probPosFine(); $('#prob').hidden = false; return; }
+    $('#prob').hidden = true; const l = $('#c-problema'); if (l && !$('#card').hidden) l.focus({ preventScroll: true });
+  }
+  async function inviaProblema() {
+    const s = prob.s; if (!s || !prob.tipo) return false;
+    const corpo = JSON.stringify({ p_stallo: s.id, p_tipo: prob.tipo, p_note: $('#p-testo').value.trim().slice(0, 500) || null, p_lat: prob.lat, p_lon: prob.lon, p_device: deviceId });
+    const anonimo = () => fetch(`${CFG.SB}/rest/v1/rpc/segnala_problema`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: corpo });
+    try {
+      let r; try { r = await aut('/rest/v1/rpc/segnala_problema', { method: 'POST', body: corpo }); } catch (e) { r = await anonimo(); } // sessione scaduta: si invia come telefono senza account
+      if (r.status === 401) r = await anonimo();
+      if (r.status === 429) { troppe(); return false; }
+      if (!r.ok) throw new Error(r.status);
+      const j = await r.json();
+      if (j && j.ok) { const f = ls.get('dp.problemi', {}); ls.set('dp.problemi', { [oggiIso()]: (f[oggiIso()] || 0) + 1 }); toast('Grazie! Controlliamo il posto prima di cambiare la mappa.', 4000); return true; }
+      const e = j && j.errore;
+      if (e === 'limite') { ls.set('dp.problemi', { [oggiIso()]: 10 }); toast('Per oggi hai già inviato 10 segnalazioni. Grazie! Riprova domani.', 4000); return true; }
+      if (e === 'gia_segnalato') { toast('Hai già segnalato un problema per questo posto oggi. Grazie!', 4000); return true; }
+      if (e === 'lontano') { toast('Il punto scelto è troppo lontano dal posto. Avvicinalo e riprova.', 4000); return false; }
+      throw new Error(e || 'risposta');
+    } catch (err) { toast('Non riusciamo a inviare ora, riprova più tardi.', 4500); return false; }
+  }
+  async function probInvia(btn) {
+    if (btn.disabled) return; btn.disabled = true; const lab = btn.querySelector('span'), t0 = lab.textContent; lab.textContent = 'Invio…';
+    const dallaMappa = !$('#probpos').hidden, ok = await inviaProblema(); lab.textContent = t0; btn.disabled = false;
+    if (ok) { $('#prob').hidden = true; if (dallaMappa) probPosFine(); const l = $('#c-problema'); if (l && !$('#card').hidden) l.focus({ preventScroll: true }); }
+    else if (!$('#prob').hidden) $('#p-invia').disabled = !prob.tipo;
+  }
+  $('#c-problema').onclick = apriProblema;
+  $('#p-x').onclick = probChiudi; $('#prob').addEventListener('click', (e) => { if (e.target === $('#prob')) probChiudi(); });
+  $('#p-scelte').addEventListener('click', (e) => { const b = e.target.closest('[data-t]'); if (b) probScelta(b.dataset.t); });
+  $('#p-scelte').addEventListener('keydown', (e) => { // come in un gruppo di scelte: le frecce cambiano la scelta
+    const v = [...document.querySelectorAll('#p-scelte .p-sc')], i = v.indexOf(document.activeElement); if (i < 0) return;
+    const j = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? (i + 1) % v.length : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? (i - 1 + v.length) % v.length : -1;
+    if (j >= 0) { e.preventDefault(); v[j].focus(); probScelta(v[j].dataset.t); }
+  });
+  $('#p-invia').onclick = () => { if (prob.tipo === 'spostato') probPos(); else probInvia($('#p-invia')); };
+  $('#pp-close').onclick = probChiudi;
+  $('#pp-invia').onclick = () => { const c = map.getCenter(); prob.lat = +c.lat.toFixed(7); prob.lon = +c.lng.toFixed(7); probInvia($('#pp-invia')); };
+  map.on('moveend', probQui);
 
   // ---------- barra in alto, filtri, pulsanti ----------
   document.querySelectorAll('.chip').forEach((c) => c.onclick = () => { const k = c.dataset.f; filtri[k] = !filtri[k]; c.setAttribute('aria-pressed', filtri[k]); disegna(); });
@@ -599,7 +737,8 @@
     $('#a-sub').textContent = dentro.length ? 'In ordine di distanza a piedi dalla destinazione' : (tutti.length ? `Il più vicino è a ${fmtDist(tutti[0].d)}. Ecco i più vicini, anche se fuori raggio.` : 'Nessun posto nemmeno entro 1 km da qui.');
     const prox = prossimoElenco(inCorso), cur = inCorso >= 0 ? lista[inCorso] : null, curOcc = !!cur && occupati.has(cur.s.id), primo = inCorso < 0 ? Math.max(0, prossimoElenco(-1)) : 0;
     const att = inCorso < 0 ? primo : Math.max(0, Math.min(inCorso, lista.length - 1));
-    $('#a-list').innerHTML = lista.map((x, i) => `<button class="arow${i === att ? ' on' : ''}${occupati.has(x.s.id) ? ' occ' : ''}" data-id="${esc(x.s.id)}"><span class="num">${occupati.has(x.s.id) ? icon('x') : i + 1}</span><span class="t"><b>${esc(titolo(x.s))}</b><span>${[occupati.has(x.s.id) ? 'Occupato' : '', affidabilita(x.s)[1], posti(x.s.posti), x.s.coperto ? 'coperto' : ''].filter(Boolean).join(' · ')}</span></span><span class="d">${x.r ? `${fmtDist(x.r.m)}<small>${fmtMin(x.r.sec)} a piedi</small>` : fmtDist(x.d)}</span></button>`).join('');
+    const rgA = raggio >= 1000 ? '1 km' : raggio + ' m';
+    $('#a-list').innerHTML = (dentro.length ? '' : vuoto('pin', 'Nessun posto riservato qui', `Entro ${rgA} dalla destinazione non ne conosciamo.${raggio < 1000 ? ' Prova ad allargare la ricerca.' : ''}`, (raggio < 1000 ? [['Cerca entro 1 km', 'km', 'v-1']] : []).concat([['Ne conosci uno? Segnalalo', 'segnala', 'v-2']]))) + lista.map((x, i) => `<button class="arow${i === att ? ' on' : ''}${occupati.has(x.s.id) ? ' occ' : ''}" data-id="${esc(x.s.id)}"><span class="num">${occupati.has(x.s.id) ? icon('x') : i + 1}</span><span class="t"><b>${esc(titolo(x.s))}</b><span>${[occupati.has(x.s.id) ? 'Occupato' : '', affidabilita(x.s)[1], posti(x.s.posti), x.s.coperto ? 'coperto' : ''].filter(Boolean).join(' · ')}</span></span><span class="d">${x.r ? `${fmtDist(x.r.m)}<small>${fmtMin(x.r.sec)} a piedi</small>` : fmtDist(x.d)}</span></button>`).join('');
     $('#a-nav').hidden = !lista.length;
     $('#a-nav span').textContent = inCorso < 0 ? `Portami al numero ${primo + 1}` : prox < 0 ? 'Riapri il navigatore' : curOcc ? `Portami al numero ${prox + 1}` : `Occupato? Portami al numero ${prox + 1}`;
     $('#a-hint').textContent = inCorso < 0 && lista.length > 1 && prossimoElenco(primo) >= 0 ? `Se è occupato, con un tocco passi al numero ${prossimoElenco(primo) + 1}.` : '';
@@ -633,7 +772,11 @@
   $('#d-back').onclick = chiudiDest;
   $('#d-name').onclick = () => { if (dest) apriRicerca(dest.q || dest.t); };
   $('#a-r').onchange = () => { raggio = +$('#a-r').value; ls.set('dp.raggio', raggio); inCorso = -1; arrivo(true); };
-  $('#a-list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id); });
+  $('#a-list').addEventListener('click', (e) => {
+    const v = e.target.closest('[data-v]');
+    if (v) { if (v.dataset.v === 'km') { raggio = 1000; $('#a-r').value = '1000'; ls.set('dp.raggio', raggio); inCorso = -1; arrivo(true); } else if (v.dataset.v === 'segnala') apriAggiungi(); return; }
+    const b = e.target.closest('[data-id]'); if (b) apriScheda(b.dataset.id);
+  });
   // primo posto dell'elenco dopo "da" che non sia stato segnato occupato (-1 se non ce n'è)
   function prossimoElenco(da) { for (let i = da + 1; i < lista.length; i++) if (!occupati.has(lista[i].s.id)) return i; return -1; }
   // "Occupato? Portami al numero N": il posto di prima risulta occupato (come per il piano B) e si va al successivo dell'elenco
@@ -715,7 +858,7 @@
       if (civ) risultati.forEach((x) => { if (x.strada && !/\d/.test(x.t)) { x.t += ' ' + civ.trim(); x.sub = [x.sub, 'civico non in mappa: punto a metà via'].filter(Boolean).join(' · '); } });
       if (sCtl !== mio) return;
       risultati.forEach((x) => { x.q = q; });
-      if (!risultati.length) { $('#s-body').innerHTML = '<div class="empty">Non trovo questo posto. Prova con la via e la città.</div>'; return; }
+      if (!risultati.length) { $('#s-body').innerHTML = vuoto('cerca', 'Non trovo questo posto', 'Prova con la via e la città, per esempio «Via Roma, Udine».', null, true); return; }
       $('#s-body').innerHTML = '<div class="eyebrow">Risultati</div>' + risultati.map((x, i) => `<div data-box="${i}"><button class="res" data-res="${i}"><span class="mk">${icon('pin')}</span><span class="t"><b>${esc(x.t)}</b><span>${esc(x.sub)}</span></span>${scelgo ? '' : '<span class="n wait">…</span>'}</button></div>`).join('');
       if (!scelgo) risultati.forEach((x, i) => conta(x, i, mio.signal));
     } catch (e) { if (e.name !== 'AbortError' && sCtl === mio) $('#s-body').innerHTML = `<div class="empty">La ricerca non risponde. Controlla la connessione e riprova.<br><span class="small">(${esc(e.message || e)})</span></div>`; }
@@ -764,7 +907,7 @@
     const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k;
     if (k === 'salvati') {
       scelgo = null; catAperta = null; chipStato(); const v = [...salvati.values()];
-      $('#s-body').innerHTML = '<div class="eyebrow">I tuoi posti salvati</div>' + (v.length ? v.map((x) => `<button class="res" data-sal="${esc(x.id)}"><span class="mk">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button>`).join('') : '<div class="empty">Non hai ancora salvato nessun posto. Apri un posto e tocca "Salva".</div>');
+      $('#s-body').innerHTML = '<div class="eyebrow">I tuoi posti salvati</div>' + (v.length ? v.map((x) => `<button class="res" data-sal="${esc(x.id)}"><span class="mk">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button>`).join('') : vuoto('salv', 'Nessun posto salvato', 'Apri un posto sulla mappa e tocca «Salva»: lo ritrovi qui con un tocco.', null, true));
       return;
     }
     const l = luoghi()[k];
@@ -1129,7 +1272,7 @@
   let luoghiCat = [];
   const htmlCategorie = () => `<div class="eyebrow">Cerca un luogo vicino a te</div><div class="muted small" style="padding-bottom:8px">Scegli il tipo di luogo: ti mostro i posti riservati più vicini all'ingresso.</div>
     <div class="catgrid">${CATEGORIE.map((c) => `<button data-cat="${c.k}"><span class="mk">${icon(c.ic)}</span><span>${c.n}</span></button>`).join('')}</div>`;
-  const messaggioCat = (testo) => { $('#s-body').innerHTML = `<div class="s-msg" role="status"><div class="empty">${testo}</div><button class="bsm" data-cat-fine="1">Torna alla ricerca</button></div>`; };
+  const messaggioCat = (testo, vuotoCat) => { $('#s-body').innerHTML = vuotoCat ? `<div class="s-msg">${vuoto('cerca', vuotoCat, testo, null, true)}<button class="bsm" data-cat-fine="1">Torna alla ricerca</button></div>` : `<div class="s-msg" role="status"><div class="empty">${testo}</div><button class="bsm" data-cat-fine="1">Torna alla ricerca</button></div>`; };
 
   // Elenco OSM a tasselli. Sul web sta accanto all'app (poi/); su Android l'app è un guscio locale e li scarica dal sito pubblicato.
   // Ogni tassello (circa 0,25 gradi) si scarica una volta sola: resta in memoria e, con la versione nell'indirizzo, nella cache del browser (anche offline).
@@ -1188,7 +1331,7 @@
       catch (e) { if (TT) { osm = false; traccia('categoria'); v = await cercaTomTom(c, centro, mio.signal); } else throw e; } // il contatore TomTom Search conta solo le richieste vere
       if (sCtl !== mio) return;
       luoghiCat = v;
-      if (!luoghiCat.length) { messaggioCat(`Non trovo ${c.n.toLowerCase()} nei dintorni. Prova a cercare per nome o indirizzo.`); return; }
+      if (!luoghiCat.length) { messaggioCat('Prova a cercare per nome o indirizzo.', `Non trovo ${c.n.toLowerCase()} nei dintorni`); return; }
       $('#s-body').innerHTML = `<div class="cat-testa"><h2 id="cat-h" tabindex="-1">${c.n}</h2><div class="muted">${usoMe ? 'Vicino a te' : 'Vicino al centro della mappa'}</div></div>` +
         luoghiCat.map((x, i) => `<button class="res luogoc" data-luogo="${i}"><span class="mk">${icon(c.ic)}</span><span class="t"><b>${esc(x.t)}</b><span>${esc([x.via, x.comune].filter(Boolean).join(', '))}</span><span class="cnt" data-cnt="${i}"></span></span><span class="d">${fmtDist(x.d)}</span></button>`).join('') +
         `<div class="cat-piede"><p>Tocca un luogo per vedere i posti numerati attorno, come con un indirizzo.</p><button class="lnk" data-cat-fine="1"><span>Non lo trovi? Cerca per nome o indirizzo</span></button>${osm ? '<p class="muted small">Luoghi: © OpenStreetMap contributors</p>' : ''}</div>`;
@@ -1506,7 +1649,7 @@
     const riga = (a, ic, t) => `<button class="rg" data-a="${a}">${icon(ic)}<span class="t">${t}</span>${icon('chev', 'chev')}</button>`;
     const salv = v.length
       ? `<div class="grp">${v.slice(0, PRIMI).map((x) => `<div class="riga"><button class="apri" data-a="salvato" data-id="${esc(x.id)}"><span class="st">${icon('save')}</span><span class="t"><b>${esc(x.t || 'Posto riservato')}</b><span>${esc(x.c || '')}</span></span></button><button class="via" data-a="via" data-id="${esc(x.id)}" aria-label="Togli ${esc(x.t || 'questo posto')} dai salvati">${icon('x')}</button></div>`).join('')}${v.length > PRIMI ? '<button class="rg tutti" data-a="tutti">Vedi tutti i salvati</button>' : ''}</div>`
-      : '<div class="empty">Ancora nessuno. Apri un posto sulla mappa e tocca "Salva".</div>';
+      : vuoto('salv', 'Nessun posto salvato', 'Apri un posto sulla mappa e tocca «Salva»: lo ritrovi qui con un tocco.', null, true);
     $('#m-body').innerHTML = `${acc}
       ${sez('h-posti', 'Dove vai spesso', `<div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>`)}
       ${sez('h-salvati', 'Posti salvati' + (v.length ? ' · ' + v.length : ''), salv)}
@@ -1581,7 +1724,7 @@
       const r = await fetch(CFG.SB + '/rest/v1/rpc/mie_segnalazioni', { method: 'POST', headers: { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_device: dispositivi() }) });
       if (!r.ok) throw new Error(r.status);
       const v = await r.json();
-      if (!v.length) { el.innerHTML = '<div class="empty">Non hai ancora segnalato posti. Se ne vedi uno che manca, tocca «Segnala un posto» sulla mappa.</div>'; return; }
+      if (!v.length) { el.innerHTML = vuoto('segn', 'Nessuna segnalazione per ora', 'Hai visto un posto riservato che non è sulla mappa? Aggiungilo: aiuti chi arriva dopo di te.', [['Segnala un posto', 'segnala', 'v-1']]); return; }
       const STATO = { proposto: ['att', 'In attesa di verifica'], verificato: ['ok', 'Approvata'], ufficiale: ['ok', 'Approvata'], rifiutato: ['no', 'Non approvata'], rimosso: ['no', 'Posto rimosso'] };
       el.innerHTML = `<p class="muted">${sessione ? 'Le segnalazioni fatte con il tuo account.' : 'Le segnalazioni fatte da questo telefono. Accedi per ritrovarle anche su un altro.'}</p>` + v.map((x) => {
         const [c, t] = STATO[x.stato] || ['att', x.stato], g = new Date(x.created_at), vivo = x.stato !== 'rifiutato' && x.stato !== 'rimosso';
@@ -1590,6 +1733,7 @@
     } catch (e) { el.innerHTML = '<div class="empty">Non riesco a caricare le segnalazioni. Controlla la connessione e riprova.</div>'; }
   }
   $('#g-back').onclick = () => { $('#segn').hidden = true; };
+  $('#g-body').addEventListener('click', (e) => { if (e.target.closest('[data-v=segnala]')) { $('#segn').hidden = true; $('#menu').hidden = true; apriAggiungi(); } });
 
   // ---------- consiglia l'app e invito a lasciare una recensione su Play ----------
   async function consiglia() {
