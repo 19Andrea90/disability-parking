@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import finetune as Fm, train_torch as T
 from scan_area import wms
 key = os.environ['SUPABASE_SERVICE_KEY']
-st = T.sb_all('stalli?select=lat,lon,comune&stato=in.(verificato,ufficiale)', key)
+st = T.sb_all('stalli?select=lat,lon,comune&stato=in.(verificato,ufficiale)&lat=gte.46.0&lat=lte.46.12&lon=gte.13.18&lon=lte.13.30', key)  # solo Udine, lato server
 st = [s for s in st if 46.0 < s['lat'] < 46.12 and 13.18 < s['lon'] < 13.30]
 random.seed(1); smp = random.sample(st, 12)
 nets = []

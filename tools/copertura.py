@@ -18,6 +18,8 @@ from pyproj import Transformer
 
 sys.path.insert(0, os.path.dirname(__file__))
 from scan_area import sb_all  # noqa: E402
+import sbleggero as L  # noqa: E402  (regola: mai scaricare tutti gli stalli senza cache: qui serve l'elenco intero, quindi una volta ogni 6 h)
+if '--no-cache' in sys.argv: L.NOCACHE = True
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 DIR = '/home/claude/istat'
@@ -49,7 +51,7 @@ def main():
         d = sr.record.as_dict(); geoms.append(shape(sr.shape.__geo_interface__)); i0 = info.get(d['PRO_COM_T']) or per_nome.get(d['COMUNE'].lower()) or dict(regione=regioni.get(int(d['COD_REG']), '?'), provincia='', capoluogo=False, prov_nome=regioni.get(int(d['COD_REG']), '?'))
         meta.append(dict(cod=d['PRO_COM_T'], nome=d['COMUNE'], **i0))
     tree = STRtree(geoms); utm = Transformer.from_crs('EPSG:4326', 'EPSG:32632', always_xy=True)
-    st = sb_all('/rest/v1/stalli?select=lat,lon,fonte,stato,tipo&stato=in.(proposto,verificato,ufficiale)&order=id', key)
+    st = sb_all('/rest/v1/stalli?select=lat,lon,fonte,stato,tipo&stato=in.(proposto,verificato,ufficiale)&order=id', key, cache=True)
     cnt = defaultdict(Counter)
     for s in st:
         x, y = utm.transform(s['lon'], s['lat']); p = Point(x, y)

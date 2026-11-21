@@ -9,12 +9,15 @@ Più macchine possono lavorare insieme (questo ambiente e GitHub Actions) senza 
   - un comune il cui avanzamento su Supabase è stato aggiornato da poco da un'altra macchina viene saltato;
   - --rovescio parte dalla fine dell'alfabeto, --parte k/n prende un comune ogni n (per i lavori in parallelo).
 
+REGOLA (traffico Supabase Free 5 GB/mese): mai scaricare tutti gli stalli, leggere con tools/sbleggero.py (vedi tools/README.md); --no-cache forza la rilettura.
 Uso: SUPABASE_SERVICE_KEY=... python3 tools/scan_fvg.py [--primi Trieste,Pordenone] [--auto 0] [--scarta 0] [--solo Trieste]
                                                         [--rovescio] [--parte 0/8] [--minuti 300] [--elenco]
 Cartella dei file di avanzamento: variabile DP_STATE (di default /home/claude).
 """
 import re
 import argparse, datetime, json, os, subprocess, sys, time, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sbleggero as L  # regola: mai scaricare tutti gli stalli; elenchi di Storage mirati e in cache, contatore dei byte
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 MODELS = 'models/stalli_mobilenetv3_ft_v5.pt,models/stalli_mobilenetv3_ft_v2.pt,models/stalli_mobilenetv3_ft_v4.pt'  # votano
@@ -32,8 +35,9 @@ ap.add_argument('--scarta', type=int, default=0, help='scarto automatico sotto q
 ap.add_argument('--rovescio', action='store_true', help="parti dalla fine dell'alfabeto")
 ap.add_argument('--parte', default='', help='k/n: prendi solo un comune ogni n, a partire dal k-esimo (lavori in parallelo)')
 ap.add_argument('--minuti', type=int, default=0, help='non iniziare nuovi comuni dopo questi minuti (0 = senza limite)')
+L.aggiungi_arg(ap)
 ap.add_argument('--elenco', action='store_true', help='stampa solo cosa farebbe ed esci')
-a = ap.parse_args()
+a = ap.parse_args(); L.usa_arg(a)
 KEY = os.environ['SUPABASE_SERVICE_KEY']; T0 = time.time()
 
 
@@ -43,17 +47,28 @@ def stor(method, path, body=None):
     return urllib.request.urlopen(req, timeout=60).read()
 
 
+def _eta_min(o, ora):
+    return (ora - datetime.datetime.fromisoformat(o['updated_at'].replace('Z', '+00:00'))).total_seconds() / 60
+
+
 def remoto():
-    """(comuni finiti segnati su Supabase, {slug: minuti dall'ultimo avanzamento salvato})"""
-    fin, eta, ora = set(), {}, datetime.datetime.now(datetime.timezone.utc)
+    """Solo all'avvio: comuni finiti segnati su Supabase (un elenco, ~300 byte per comune)."""
+    fin = set()
     try:
-        for o in json.loads(stor('POST', 'list/modelli', json.dumps({'prefix': 'scan/fatti/', 'limit': 2000}).encode())):
+        for o in L.lista_storage('modelli', 'scan/fatti/', KEY, limite=2000):
             if o['name'].endswith('.json'): fin.add(o['name'][:-5])
-        for o in json.loads(stor('POST', 'list/modelli', json.dumps({'prefix': 'scan/', 'limit': 2000}).encode())):
-            m = re.match(r'scan_progress_(.+)\.json$', o['name'])
-            if m and o.get('updated_at'): eta[m.group(1)] = (ora - datetime.datetime.fromisoformat(o['updated_at'].replace('Z', '+00:00'))).total_seconds() / 60
     except Exception as ex: print('  stato condiviso non leggibile:', ex, flush=True)
-    return fin, eta
+    return fin, {}
+
+
+def remoto_uno(slug):
+    """(finito?, minuti dall'ultimo avanzamento salvato o None) per UN comune: HEAD + ricerca lato server, niente elenchi da 2000 oggetti."""
+    try:
+        fin = L.esiste_oggetto(f'modelli/scan/fatti/{slug}.json', KEY); eta = None
+        for o in L.lista_storage('modelli', 'scan/', KEY, cerca=f'scan_progress_{slug}', limite=10):
+            if o['name'] == f'scan_progress_{slug}.json' and o.get('updated_at'): eta = _eta_min(o, datetime.datetime.now(datetime.timezone.utc))
+        return fin, eta
+    except Exception as ex: print('  stato condiviso non leggibile:', ex, flush=True); return False, None
 
 
 def segna(slug):
@@ -61,11 +76,9 @@ def segna(slug):
     except Exception as ex: print(f'  segno di fine non salvato per {slug}:', ex, flush=True)
 
 
-lst = json.loads(urllib.request.urlopen(f'{SB}/storage/v1/object/public/foto/contesto/_elenco_fvg.json', timeout=60).read())
+lst = L.pubblico('foto/contesto/_elenco_fvg.json', nome_cache='elenco_fvg', eta_ore=1, timeout=60)
 # un comune è pronto se esiste il suo file di contesto (il flag "pronto" dell'elenco può essere vecchio)
-req = urllib.request.Request(f'{SB}/storage/v1/object/list/foto', method='POST', data=json.dumps({'prefix': 'contesto/', 'limit': 2000}).encode(),
-                             headers={'apikey': KEY, 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json'})
-files = {re.sub(r'-\d{12}\.json$', '', o['name']) for o in json.loads(urllib.request.urlopen(req, timeout=60).read()) if re.search(r'-\d{12}\.json$', o['name'])}
+files = {re.sub(r'-\d{12}\.json$', '', o['name']) for o in L.lista_storage('foto', 'contesto/', KEY, limite=2000, nome_cache='contesto_tutti', eta_ore=3) if re.search(r'-\d{12}\.json$', o['name'])}
 lst = [c for c in lst if c['slug'] in files]
 fatti = set(json.load(open(FATTI))) if os.path.exists(FATTI) else set()
 fin_remoti, _ = remoto()
@@ -87,14 +100,15 @@ if a.elenco:
 for c in todo:
     if a.minuti and time.time() - T0 > a.minuti * 60:
         print(f'Tempo a disposizione finito ({a.minuti} min): mi fermo qui, il resto al prossimo lancio.', flush=True); break
-    fin_remoti, eta = remoto()
-    if c['slug'] in fin_remoti:
+    fin_c, eta_c = remoto_uno(c['slug'])
+    if fin_c:
         print(f'  {c["nome"]}: già finito da un\'altra macchina, salto', flush=True); fatti.add(c['slug']); continue
-    if not os.path.exists(f'{STATE}/scan_progress_{c["slug"]}.json') and eta.get(c['slug'], 1e9) < FRESCO_MIN:
-        print(f'  {c["nome"]}: in lavorazione su un\'altra macchina ({eta[c["slug"]]:.0f} min fa), salto', flush=True); continue
+    if not os.path.exists(f'{STATE}/scan_progress_{c["slug"]}.json') and (eta_c if eta_c is not None else 1e9) < FRESCO_MIN:
+        print(f'  {c["nome"]}: in lavorazione su un\'altra macchina ({eta_c:.0f} min fa), salto', flush=True); continue
     print(f'=== {c["nome"]} ({c["slug"]}) ===', flush=True)
     cmd = [sys.executable, '-I', '-u', 'tools/scan_area.py', MODELS, '--detector', DETECTOR, '--bbox', c['bbox'], '--thr', '0.2', '--context', c['slug'],
            '--label', c['nome'], '--batch', '150', '--progress', f'{STATE}/scan_progress_{c["slug"]}.json']
+    if L.NOCACHE: cmd += ['--no-cache']
     if a.auto: cmd += ['--auto', str(a.auto)]
     if a.scarta: cmd += ['--scarta', str(a.scarta)]
     for prova in range(4):  # un errore di rete non deve fermare la macchina: riprovo, il comune riparte dal blocco salvato

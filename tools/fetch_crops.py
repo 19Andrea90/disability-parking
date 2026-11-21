@@ -6,14 +6,15 @@ Crea OUT_DIR/<stallo_id>.jpg (400 px, 40 m oppure 60 m per i "parcheggi con post
 """
 import json, math, os, sys, time, urllib.request, urllib.parse
 from concurrent.futures import ThreadPoolExecutor
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sbleggero as L  # regola: mai scaricare tutti gli stalli
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 WMS = 'https://irdat-ortofoto.regione.fvg.it/geoserver/ortofoto/ows'
 
 
 def sb_get(path, key):
-    req = urllib.request.Request(f'{SB}/rest/v1/{path}', headers={'apikey': key, 'Authorization': f'Bearer {key}'})
-    return json.load(urllib.request.urlopen(req, timeout=60))
+    return L.get(path, key, cache=True)  # paginato (il limite di 1000 righe del server valeva anche prima) e in cache 6 h
 
 
 def bbox(lat, lon, side):
@@ -39,7 +40,7 @@ def fetch(lat, lon, side, px, path):
 
 def main():
     out = sys.argv[1]; os.makedirs(out, exist_ok=True); key = os.environ['SUPABASE_SERVICE_KEY']
-    rows = sb_get('stalli?select=id,lat,lon,nome,comune,fonte,stato,tipo,posti&stato=in.(verificato,ufficiale)&limit=10000', key)
+    rows = sb_get('stalli?select=id,lat,lon,nome,comune,fonte,stato,tipo,posti&stato=in.(verificato,ufficiale)', key)
     json.dump(rows, open(os.path.join(out, 'stalli.json'), 'w'))
     jobs = []
     for r in rows:

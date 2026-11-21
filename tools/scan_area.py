@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Scansiona un'area con la rete addestrata e carica i candidati in Supabase (tabella candidati, con ritaglio di prova).
 
+REGOLA (traffico Supabase Free 5 GB/mese): mai scaricare tutti gli stalli, leggere con tools/sbleggero.py (vedi tools/README.md); --no-cache forza la rilettura.
 Uso: SUPABASE_SERVICE_KEY=... python3 scan_area.py MODEL.pt --bbox S,W,N,E [--thr 0.05] [--tta] [--label "Udine centro"] [--dry-run]
 """
 import argparse, io, json, math, os, re, sys, time, urllib.request, urllib.parse
@@ -9,6 +10,7 @@ from PIL import Image, ImageDraw
 import torch
 sys.path.insert(0, os.path.dirname(__file__))
 import finetune as Fm, train_torch as T
+import sbleggero as L  # letture leggere + contatore dei byte (regola: mai scaricare tutti gli stalli)
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 TILE = 120.0   # m
@@ -19,21 +21,13 @@ EXCL = 12.0    # m: niente candidati vicino a stalli o candidati già presenti
 
 
 def sb(method, path, key, body=None, ctype='application/json', extra=None):
-    h = {'apikey': key, 'Authorization': f'Bearer {key}'}
-    if body is not None: h['Content-Type'] = ctype
-    if extra: h.update(extra)
-    data = body if isinstance(body, (bytes, type(None))) else json.dumps(body).encode()
-    req = urllib.request.Request(f'{SB}{path}', data=data, method=method, headers=h)
-    with urllib.request.urlopen(req, timeout=60) as r:
-        t = r.read(); return json.loads(t) if t and r.headers.get('content-type', '').startswith('application/json') else t
+    t, hd = L.richiedi(method, path, key, body, ctype, extra)
+    return json.loads(t) if t and hd.get('content-type', '').startswith('application/json') else t
 
 
-def sb_all(path, key, page=1000):
-    """GET paginato: il server restituisce al massimo 1000 righe per richiesta."""
-    out = []; sep = '&' if '?' in path else '?'
-    while True:
-        b = sb('GET', f'{path}{sep}limit={page}&offset={len(out)}', key); out += b
-        if len(b) < page: return out
+def sb_all(path, key, page=1000, cache=False):
+    """GET paginato (max 1000 righe per richiesta). Mettere sempre select=colonne e filtri lato server; cache=True per riusare una lettura recente."""
+    return L.get(path, key, page=page, cache=cache, ordine=None)
 
 
 # fonte delle foto: di default la TrueOrtofoto FVG (10 cm); per altre regioni DP_WMS / DP_LAYER / DP_CRS
@@ -62,8 +56,8 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument('model', help='uno o più file .pt separati da virgola (media dei punteggi)'); ap.add_argument('--bbox', required=True); ap.add_argument('--thr', type=float, default=0.05)
     ap.add_argument('--save-dir', default='', help='con --dry-run salva qui i ritagli dei candidati'); ap.add_argument('--cell', type=int, default=400, help='lato delle celle in px (0 = riquadro intero)'); ap.add_argument('--auto', type=int, default=0, help='conferma in automatico i candidati con punteggio >= N%% (0 = no)'); ap.add_argument('--scarta', type=int, default=0, help='scarta in automatico i candidati con punteggio < N%% (0 = no)')
     ap.add_argument('--tta', action='store_true'); ap.add_argument('--label', default=''); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--context', default='', help='comune (es. udine): usa edifici/strade salvati dall\'admin')
-    ap.add_argument('--batch', type=int, default=150); ap.add_argument('--exclude', default='', help='S,W,N,E;S,W,N,E aree già scansionate'); ap.add_argument('--progress', default=''); ap.add_argument('--detector', default='', help='rete che scorre l\'immagine; le reti in elenco votano soltanto (senza: scorre la prima e vota anche lei)')
-    a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']; t0 = time.time()
+    L.aggiungi_arg(ap); ap.add_argument('--batch', type=int, default=150); ap.add_argument('--exclude', default='', help='S,W,N,E;S,W,N,E aree già scansionate'); ap.add_argument('--progress', default=''); ap.add_argument('--detector', default='', help='rete che scorre l\'immagine; le reti in elenco votano soltanto (senza: scorre la prima e vota anche lei)')
+    a = ap.parse_args(); L.usa_arg(a); key = os.environ['SUPABASE_SERVICE_KEY']; t0 = time.time()
     S0, W0, N0, E0 = map(float, a.bbox.split(','))
     class Ensemble:  # media dei punteggi di più reti (stessa griglia)
         def __init__(self, paths, detector=''):
@@ -105,10 +99,10 @@ def main():
     if a.context:
         from shapely.geometry import Polygon, LineString, Point, box
         from shapely.strtree import STRtree
-        objs = sb('POST', '/storage/v1/object/list/foto', key, {'prefix': 'contesto/', 'limit': 1000, 'sortBy': {'column': 'name', 'order': 'asc'}})
+        objs = L.lista_storage('foto', 'contesto/', key, cerca=a.context.lower(), nome_cache='ctx-' + a.context.lower(), eta_ore=1)  # ricerca lato server, non l'elenco di tutti i comuni
         names = sorted(o['name'] for o in objs if re.fullmatch(re.escape(a.context.lower()) + r'-\d{12}\.json', o['name']))  # esatto: 'san-vito' non deve prendere 'san-vito-al-tagliamento'
         if not names: raise SystemExit(f'Nessun contesto per "{a.context}": usa il pulsante nell\'admin')
-        data = json.loads(urllib.request.urlopen(f'{SB}/storage/v1/object/public/foto/contesto/{names[-1]}', timeout=120).read())
+        data = L.pubblico(f'foto/contesto/{names[-1]}', nome_cache='ctx-' + names[-1], eta_ore=1e6)  # il nome contiene la data: una volta scaricato resta valido
         P = lambda pts: [(lo, la) for la, lo in pts]
         bld = [Polygon(P(p)) for p in data['edifici'] if len(p) >= 4]; bld = [g if g.is_valid else g.buffer(0) for g in bld]
         lines = [LineString(P(p)) for p in data['strade'] if len(p) >= 2] + [Polygon(P(p)) for p in data['parcheggi'] if len(p) >= 4]
@@ -138,6 +132,15 @@ def main():
     from concurrent.futures import ThreadPoolExecutor
     pool = ThreadPoolExecutor(6); fetch = lambda t_: wms(t_[0], t_[1], t_[0] + TILE * dlat, t_[1] + TILE * dlon, px)
     tag = f"rete neurale{' (media di ' + str(len(net.nets)) + ')' if len(net.nets) > 1 else ''}"
+    # stalli e candidati già noti nella zona (con margine): UNA lettura per esecuzione (e per 6 h in cache), poi aggiorno in memoria ciò che carico io
+    QZ = f'&lat=gte.{S0 - .01}&lat=lte.{N0 + .01}&lon=gte.{W0 - .015}&lon=lte.{E0 + .015}'
+    nome_noti = f'noti-{S0:.5f}-{W0:.5f}-{N0:.5f}-{E0:.5f}'; noti = L.cache_leggi(nome_noti)
+    if noti is None:
+        noti = dict(ks=[(r['lat'], r['lon']) for r in sb_all(f'/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&order=id{QZ}', key)],
+                    kc=[(r['lat'], r['lon']) for r in sb_all(f'/rest/v1/candidati?select=lat,lon&order=id{QZ}', key)])
+    ks = np.array(noti['ks'], dtype=float).reshape(-1, 2); kc = np.array(noti['kc'], dtype=float).reshape(-1, 2)
+    L.cache_scrivi(nome_noti, dict(ks=ks.tolist(), kc=kc.tolist()))
+    print(f'Già noti nella zona: {len(ks)} stalli, {len(kc)} candidati', flush=True)
     total_up = 0; in_bld = 0; n_dark = 0; n_anom = 0; n_cells_skip = 0; tm = dict(foto=0., rileva=0., voto=0.)  # dove va il tempo
     for bi in range(0, len(todo), a.batch):
         batch = todo[bi:bi + a.batch]; futs = [pool.submit(fetch, t_) for t_ in batch[:6]]; found = []
@@ -173,10 +176,7 @@ def main():
         # fine blocco: confronto con ciò che è già in database (anche quanto caricato nei blocchi precedenti) e carico
         # un pin per zona: niente candidati entro ZONA m da uno stallo (anche accorpato/rimosso) o da un altro candidato nuovo,
         # né entro EXCL m da un candidato già in database
-        # solo la zona in esame (con margine): scaricare ogni volta tutta Italia consumava il traffico di Supabase
-        QZ = f'&lat=gte.{S0 - .01}&lat=lte.{N0 + .01}&lon=gte.{W0 - .015}&lon=lte.{E0 + .015}'
-        ks = np.array([(r['lat'], r['lon']) for r in sb_all(f'/rest/v1/stalli?select=lat,lon&stato=neq.rifiutato&order=id{QZ}', key)] or np.zeros((0, 2)))
-        kc = np.array([(r['lat'], r['lon']) for r in sb_all(f'/rest/v1/candidati?select=lat,lon&order=id{QZ}', key)] or np.zeros((0, 2)))
+        # ks/kc: già letti una volta per tutta l'esecuzione (prima il codice li riscaricava a ogni blocco di 150 riquadri)
         def mind(arr, la, lo): return np.hypot((arr[:, 0] - la) * 111320, (arr[:, 1] - lo) * 111320 * math.cos(math.radians(la))).min() if len(arr) else 1e9
         found.sort(key=lambda f: -f['score']); keep = []
         for f in found:
@@ -202,6 +202,11 @@ def main():
                 try:
                     import auto_accept; auto_accept.reject_low(key, a.scarta, comune=a.label or None)
                 except Exception as ex: print('  scarto automatico non riuscito:', ex)
+            if keep:  # i candidati appena caricati diventano "noti"; quelli confermati in automatico sono anche stalli (come prima: li rileggeva dal database)
+                kc = np.vstack([kc, np.array([(f['lat'], f['lon']) for f in keep])])
+                aut = [(f['lat'], f['lon']) for f in keep if a.auto and round(f['score'] * 100) >= a.auto]
+                if aut: ks = np.vstack([ks, np.array(aut)])
+                L.cache_scrivi(nome_noti, dict(ks=ks.tolist(), kc=kc.tolist()))
             done_set.update(batch); json.dump(sorted(done_set), open(prog, 'w'))
             try: sb('POST', remote, key, open(prog, 'rb').read(), 'application/json', {'x-upsert': 'true'})
             except Exception as ex: print('  avanzamento non salvato su Supabase:', ex)

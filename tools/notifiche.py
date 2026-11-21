@@ -8,6 +8,8 @@ Variabili: SUPABASE_SERVICE_KEY, RESEND_KEY, NOTIFICHE_A (destinatario), NOTIFIC
 Con --prova manda comunque un'email di prova.
 """
 import datetime as dt, html, json, os, sys, urllib.parse, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sbleggero as L  # contatore dei byte + gzip (gira ogni 15 minuti: le letture sono solo righe nuove, con colonne scelte)
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 # Da cambiare in https://sostabile.it/admin/ quando il dominio è attivo (vedi docs/passaggio-dominio.md)
@@ -18,11 +20,9 @@ H = {'apikey': KEY, 'Authorization': 'Bearer ' + KEY}
 
 
 def sb(path, method='GET', body=None, headers=None):
-    req = urllib.request.Request(SB + path, method=method, data=None if body is None else (body if isinstance(body, bytes) else json.dumps(body).encode()),
-                                 headers=dict(H, **(headers or {})))
-    with urllib.request.urlopen(req, timeout=60) as r:
-        d = r.read()
-        return json.loads(d) if d else None
+    h = dict(headers or {}); ct = h.pop('Content-Type', 'application/json')
+    d = L.richiedi(method, path, KEY, body, ct, h)[0]
+    return json.loads(d) if d else None
 
 
 def leggi_stato():

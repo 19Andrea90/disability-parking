@@ -9,14 +9,21 @@ Uso: SUPABASE_SERVICE_KEY=... python3 auto_accept.py [--min 98] [--dry-run]
 """
 import argparse, os, re, sys
 sys.path.insert(0, os.path.dirname(__file__))
+import urllib.parse
 from scan_area import sb, sb_all
+import sbleggero as L  # regola: mai scaricare tutti gli stalli/candidati, filtri lato server
 
 AUTO = 'Confermato in automatico dalla rete'
 SCARTO = 'scartato in automatico'  # marcatore aggiunto alla classe dei candidati scartati sotto soglia (non usati per l'addestramento)
 
 
+def _fc(comune):
+    """Filtro lato server sul comune (prima si scaricavano i candidati di tutta Italia a ogni blocco di scansione)."""
+    return f"&comune=eq.{urllib.parse.quote(comune, safe='')}" if comune else ''
+
+
 def run(key, min_score=98, dry=False, log=print, comune=None):
-    rows = sb_all('/rest/v1/candidati?select=id,classe,lat,lon,comune&fonte=eq.satellite&stato=eq.nuovo&order=id', key)
+    rows = sb_all('/rest/v1/candidati?select=id,classe,lat,lon,comune&fonte=eq.satellite&stato=eq.nuovo&classe=like.*media%20di*' + _fc(comune) + '&order=id', key)
     if comune: rows = [c for c in rows if c.get('comune') == comune]  # solo il comune appena scansionato
     todo = []
     for c in rows:
@@ -25,7 +32,10 @@ def run(key, min_score=98, dry=False, log=print, comune=None):
     n = linked = 0
     import math
     near_r = 30.0  # entro 30 m da uno stallo attivo non ne creo un altro: collego il candidato a quello (un pin per zona)
-    act = sb_all('/rest/v1/stalli?select=id,lat,lon,tipo&stato=in.(proposto,verificato,ufficiale)&tipo=neq.personalizzato&order=id', key) if todo else []
+    act = []
+    if todo:  # solo gli stalli attivi attorno ai candidati da confermare (bbox + margine di 0,001° ≈ 100 m), non tutta Italia
+        la_, lo_ = [c['lat'] for _, c in todo], [c['lon'] for _, c in todo]
+        act = sb_all(f'/rest/v1/stalli?select=id,lat,lon,tipo&stato=in.(proposto,verificato,ufficiale)&tipo=neq.personalizzato&lat=gte.{min(la_) - .001}&lat=lte.{max(la_) + .001}&lon=gte.{min(lo_) - .001}&lon=lte.{max(lo_) + .001}&order=id', key)
     def nearest(la, lo):
         best = None
         for x in act:
@@ -49,7 +59,7 @@ def run(key, min_score=98, dry=False, log=print, comune=None):
 
 def reject_low(key, max_score=30, dry=False, log=print, comune=None):
     """Scarta (in modo reversibile) i candidati 'nuovo' della rete con punteggio sotto max_score."""
-    rows = sb_all('/rest/v1/candidati?select=id,classe,comune&fonte=eq.satellite&stato=eq.nuovo&order=id', key)
+    rows = sb_all('/rest/v1/candidati?select=id,classe,comune&fonte=eq.satellite&stato=eq.nuovo&classe=like.*media%20di*' + _fc(comune) + '&order=id', key)
     if comune: rows = [c for c in rows if c.get('comune') == comune]
     n = 0
     for c in rows:

@@ -12,7 +12,7 @@ from collections import defaultdict
 import osmium
 
 sys.path.insert(0, os.path.dirname(__file__))
-from scan_area import sb_all  # noqa: E402
+from scan_area import sb_all  # noqa: E402  (legge solo gli stalli senza comune/indirizzo, filtrati lato server, colonne id,lat,lon)
 from osm_import_italia import REGIONI, BASE, NOMI  # noqa: E402
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
