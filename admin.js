@@ -68,7 +68,7 @@
   function qNonce(q) { q = q.gt('conferme_non_esiste', 0).in('stato', ['proposto', 'verificato', 'ufficiale']); const ig = ignorati(); return ig.length ? q.not('id', 'in', '(' + ig.join(',') + ')') : q; }
   const giorniFa = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
   async function aggiornaTodo() {
-    const [utenti, proposti, nonce, precisare, cand, pecAtt, pecScad, sugg] = await Promise.all([
+    const [utenti, proposti, nonce, precisare, cand, pecAtt, pecScad, sugg, problemi] = await Promise.all([
       cnt('stalli_con_conferme', (q) => q.eq('fonte', 'utente').eq('stato', 'proposto')),
       cnt('stalli_con_conferme', (q) => nonApprox(q.eq('stato', 'proposto').neq('fonte', 'utente'))),
       cnt('stalli_con_conferme', qNonce),
@@ -76,9 +76,10 @@
       cnt('candidati', (q) => q.eq('stato', 'nuovo')),
       cnt('pec_comuni', (q) => q.in('stato', ['Inviata', 'Risposta ricevuta'])),
       cnt('pec_comuni', (q) => q.in('stato', ['Inviata', 'Risposta ricevuta']).lte('inviata', giorniFa(23))), // scadenza = invio + 30 giorni: entro 7 giorni (o già scaduta)
-      cnt('suggerimenti', (q) => q.eq('stato', 'nuovo'))]);
-    Object.assign(todo, { utenti, proposti, nonce, precisare, cand, pecAtt, pecScad, sugg });
-    const tot = [utenti, proposti, nonce, cand].reduce((a, n) => a + (n || 0), 0), b = $('#badge');
+      cnt('suggerimenti', (q) => q.eq('stato', 'nuovo')),
+      cnt('problemi_posti', (q) => q.eq('stato', 'aperto'))]); // null se la tabella non c'è ancora (supabase/23_problemi_posti.sql): l'app admin non si rompe
+    Object.assign(todo, { utenti, proposti, nonce, precisare, cand, pecAtt, pecScad, sugg, problemi });
+    const tot = [utenti, proposti, nonce, cand, problemi].reduce((a, n) => a + (n || 0), 0), b = $('#badge');
     b.textContent = tot > 99 ? '99+' : tot; b.hidden = !tot; b.setAttribute('aria-label', tot + ' da controllare');
     renderTodo(); if (typeof renderQTabs === 'function') renderQTabs();
   }
@@ -88,6 +89,7 @@
     const sErr = (t.sugg == null && t.errori == null) ? null : (t.sugg || 0) + (t.errori || 0);
     $('#todo').innerHTML = tile('#/controllare?t=utenti', t.utenti, 'Segnalazioni degli utenti', 'posti proposti da approvare')
       + tile('#/controllare?t=proposti', t.proposti, 'Posti da approvare', 'proposti da altre fonti')
+      + tile('#/controllare?t=problemi', t.problemi, 'Problemi segnalati', 'dalla scheda di un posto: non c\'è più, spostato, targa…')
       + tile('#/controllare?t=precisare', t.precisare, 'Posizione da precisare', 'dagli elenchi dei Comuni, pin solo sulla via')
       + tile('#/controllare?t=nonce', t.nonce, 'Segnalati "non c\'è più"', 'qualcuno dice che il posto non esiste')
       + tile('#/comuni?f=scad7', t.pecAtt, 'PEC in attesa di risposta', `${v(t.pecScad)} in scadenza entro 7 giorni (o già scadute)`)
@@ -965,6 +967,7 @@
     proposti: 'Posti proposti da altre fonti, in attesa di approvazione.',
     precisare: 'Posti degli elenchi ufficiali dei Comuni che danno solo l\'indirizzo: il pin è messo sulla via in modo approssimato. Cerca lo stallo sul satellite, poi "Riposiziona e approva"; se non lo trovi, "Salta" e restano qui.',
     nonce: 'Posti per cui qualcuno ha toccato "non c\'è più". "Esiste ancora" lo toglie da questo elenco (solo su questo browser); "Rimuovi" lo toglie dalla mappa.',
+    problemi: 'Problemi segnalati dagli utenti sulla scheda di un posto già in mappa. Guarda mappa e satellite: "Sposta qui" mette il posto nel punto proposto, "Rimuovi il posto" lo toglie dalla strada, "Correggi dati" apre la modifica; poi il problema esce dall\'elenco. Servono le tabelle di supabase/23_problemi_posti.sql.',
     cand: 'La scansione dell\'ortofoto propone i possibili stalli: sopra l\'85% li conferma da sola, sotto il 30% li scarta da sola. Qui controlli quelli in mezzo e, se vuoi, verifichi quelli confermati in automatico.'
   };
   let qTab = 'utenti', cf = 'nuovo', qPag = 0, qItems = [], qTot = 0, qSel = null, qReq = 0, qRip = false, qFlash = '', qBusy = false, cmap = null, cmarker = null, cBase = null, cBaseUser = false;
@@ -975,12 +978,12 @@
 
   PAGES.controllare = {
     load(force) {
-      const t = parseHash().params.get('t'); if (!force && ['utenti', 'proposti', 'precisare', 'nonce', 'cand'].includes(t)) qTab = t;
+      const t = parseHash().params.get('t'); if (!force && ['utenti', 'proposti', 'precisare', 'nonce', 'problemi', 'cand'].includes(t)) qTab = t;
       renderQTabs(); qCarica(force ? qPag : 0);
     },
     show(p) {
       const t = p.get('t');
-      if (t && ['utenti', 'proposti', 'precisare', 'nonce', 'cand'].includes(t)) { if (t !== qTab) { qTab = t; renderQTabs(); qCarica(0); } history.replaceState(null, '', '#/controllare'); }
+      if (t && ['utenti', 'proposti', 'precisare', 'nonce', 'problemi', 'cand'].includes(t)) { if (t !== qTab) { qTab = t; renderQTabs(); qCarica(0); } history.replaceState(null, '', '#/controllare'); }
       if (cmap) setTimeout(() => cmap.invalidateSize(), 30);
     }
   };
@@ -993,7 +996,10 @@
   $('#q-tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-q]'); if (!b || b.dataset.q === qTab) return; qTab = b.dataset.q; renderQTabs(); qCarica(0); });
   $('#cand-sub').addEventListener('click', (e) => { const b = e.target.closest('[data-cf]'); if (!b || b.dataset.cf === cf) return; cf = b.dataset.cf; renderQTabs(); qCarica(0); });
 
+  const PROB = { non_esiste: 'Non c\'è più', spostato: 'È in un altro punto', targa: 'Riservato a una sola targa', dati_errati: 'Indirizzo o posti sbagliati', altro: 'Altro' };
+  const STALLO_PROB = 'id,lat,lon,nome,indirizzo,comune,posti,tipo,stato,fonte,note';
   function qQuery() {
+    if (qTab === 'problemi') return sb.from('problemi_posti').select('*, stalli(' + STALLO_PROB + ')', { count: 'exact' }).eq('stato', 'aperto').order('creato', { ascending: false }).order('id');
     if (kind() === 'cand') return sb.from('candidati').select('*', { count: 'exact' }).eq('stato', cf).order('created_at', { ascending: false }).order('id');
     let q = sb.from('stalli_con_conferme').select('*', { count: 'exact' });
     if (qTab === 'utenti') q = q.eq('fonte', 'utente').eq('stato', 'proposto').order('created_at', { ascending: false });
@@ -1008,15 +1014,17 @@
     $('#q-list').innerHTML = '<div class="empty">Carico…</div>'; $('#q-pg').innerHTML = '';
     const { data, error, count } = await qQuery().range(qPag * PAGINA, qPag * PAGINA + PAGINA - 1);
     if (my !== qReq) return;
-    if (error) { $('#q-list').innerHTML = `<div class="empty">Errore: ${esc(error.message)}${kind() === 'cand' ? ' — hai eseguito supabase/03_candidati.sql?' : ' (sei registrato come admin? controlla la tabella admins)'}</div>`; qVuota(); return; }
+    if (error) { $('#q-list').innerHTML = `<div class="empty">Errore: ${esc(error.message)}${qTab === 'problemi' ? ' — hai eseguito supabase/23_problemi_posti.sql?' : kind() === 'cand' ? ' — hai eseguito supabase/03_candidati.sql?' : ' (sei registrato come admin? controlla la tabella admins)'}</div>`; qVuota(); return; }
     qTot = count ?? data.length; if (!data.length && qTot > 0 && qPag > 0) { qCarica(Math.ceil(qTot / PAGINA) - 1); return; }
     qItems = data; if (kind() === 'cand' && cf === 'nuovo') qItems.sort((a, b) => score(b) - score(a)); // i più sicuri per primi (dentro la pagina)
     renderQList(); if (qItems.length) qSelect(qItems[0].id); else qVuota();
   }
   function qTitolo(x) { return kind() === 'cand' ? (CLASSE_LABEL[x.classe] || x.classe) : `${x.nome || x.indirizzo || TIPO[x.tipo]} · ${x.posti} ${x.posti > 1 ? 'posti' : 'posto'}`; }
+  const stalloProb = (x) => x.stalli || { id: x.stallo_id, lat: 0, lon: 0, posti: 1, tipo: 'sconosciuto', stato: 'rifiutato' };
+  const rigaProb = (x) => { const s = stalloProb(x); return `<button class="row-item${qSel && qSel.id === x.id ? ' sel' : ''}" data-id="${x.id}"><span><span class="n">${esc(PROB[x.tipo] || x.tipo)} · ${esc(s.nome || s.indirizzo || TIPO[s.tipo] || 'Posto')}</span><br><span class="s">${esc(s.comune || '—')} · ${new Date(x.creato).toLocaleDateString('it-IT')}${x.lat != null ? ' · 📍 posizione proposta' : ''}${x.note ? ' · 💬' : ''}${x.user_id ? ' · con account' : ''}</span></span><span class="s">${esc(x.stato)}</span></button>`; };
   function renderQList() {
     const tot = Math.max(1, Math.ceil(qTot / PAGINA));
-    $('#q-list').innerHTML = qItems.length ? qItems.map((x) => kind() === 'cand'
+    $('#q-list').innerHTML = qItems.length ? qItems.map((x) => qTab === 'problemi' ? rigaProb(x) : kind() === 'cand'
       ? `<button class="row-item${qSel && qSel.id === x.id ? ' sel' : ''}" data-id="${x.id}"><span><span class="n">${esc(qTitolo(x))}</span><br><span class="s">${esc(x.comune || '—')} · visto ${x.last_seen ? new Date(x.last_seen).toLocaleDateString('it-IT') : '—'} · ${esc(x.fonte)}${score(x) >= 0 ? ' · ' + score(x) + '%' : ''}</span></span><span class="s">${esc(x.stato)}</span></button>`
       : `<button class="row-item${qSel && qSel.id === x.id ? ' sel' : ''}" data-id="${x.id}"><span><span class="n">${esc(qTitolo(x))}</span><br><span class="s">${TIPO[x.tipo]} · ${esc(x.comune || '—')} · ${esc(x.fonte)} · ${new Date(x.created_at).toLocaleDateString('it-IT')}${x.conferme_esiste ? ` · ✓${x.conferme_esiste}` : ''}${x.conferme_non_esiste ? ` · ✗${x.conferme_non_esiste}` : ''}${x.foto_url ? ' · 📷' : ''}</span></span><span class="s">${esc(x.stato)}</span></button>`).join('')
       : '<div class="empty">Niente da controllare qui. 🎉</div>';
@@ -1034,7 +1042,7 @@
     qSel = null; $('#q-info').innerHTML = `<div class="empty">${esc(msg || '')} ${qTot ? '' : 'Finito: non c\'è altro in questo elenco. 🎉'}</div>`; $('#q-mapbox').hidden = true; $('#q-acts').innerHTML = ''; $('#q-msg').textContent = '';
   }
   function qSelect(id) {
-    const it = qItems.find((x) => x.id === id); if (!it) return; qSel = it; qRip = false; const cand = kind() === 'cand';
+    const it = qItems.find((x) => x.id === id); if (!it) return; if (pmarker) { cmap.removeLayer(pmarker); pmarker = null; } if (qTab === 'problemi') { qSelectProb(it); return; } qSel = it; qRip = false; const cand = kind() === 'cand';
     $$('#q-list .row-item').forEach((b) => { const on = b.dataset.id === id; b.classList.toggle('sel', on); if (on) b.scrollIntoView({ block: 'nearest' }); });
     $('#q-mapbox').hidden = false; ensureCmap(); setTimeout(() => cmap.invalidateSize(), 0);
     if (cmarker) cmap.removeLayer(cmarker);
@@ -1066,7 +1074,39 @@
     }
     qActs(); $('#q-msg').textContent = qFlash; qFlash = '';
   }
+  // Problemi segnalati: dettaglio con la posizione attuale (pin pieno) e quella proposta (pin giallo con «?»)
+  let pmarker = null;
+  function qSelectProb(it) {
+    qSel = it; qRip = false; const s = stalloProb(it), prop = it.lat != null && it.lon != null;
+    $$('#q-list .row-item').forEach((b) => { const on = b.dataset.id === it.id; b.classList.toggle('sel', on); if (on) b.scrollIntoView({ block: 'nearest' }); });
+    $('#q-mapbox').hidden = false; ensureCmap(); setTimeout(() => cmap.invalidateSize(), 0);
+    if (cmarker) cmap.removeLayer(cmarker);
+    cmarker = L.marker([s.lat, s.lon], { zIndexOffset: 2000, icon: icon(s, true) }).addTo(cmap); cmarker.dragging && cmarker.dragging.disable();
+    if (prop) { pmarker = L.marker([it.lat, it.lon], { zIndexOffset: 3000, icon: L.divIcon({ className: '', html: '<div class="pin proposto sel" style="background:#ffcc00;color:#2b2300"><b>?</b></div>', iconSize: [30, 30], iconAnchor: [15, 30] }) }).addTo(cmap); cmap.fitBounds([[s.lat, s.lon], [it.lat, it.lon]], { maxZoom: 20, padding: [50, 50] }); }
+    else cmap.setView([s.lat, s.lon], 20);
+    if (!cBaseUser) cBase.set(inFvg(s.lat, s.lon) ? 'fvg' : 'esri'); else if (cBase.get() === 'fvg' && !inFvg(s.lat, s.lon)) cBase.set('esri');
+    const d = prop ? Math.round(L.latLng(s.lat, s.lon).distanceTo([it.lat, it.lon])) : null;
+    $('#q-info').innerHTML = `<div class="badges"><span class="badge proposto" style="background:#7c3aed">${esc(PROB[it.tipo] || it.tipo)}</span><span class="badge ${s.stato}">${esc(s.stato)}</span><span class="badge osm">${esc(s.fonte || '')}</span></div>
+      ${prop ? `<div class="warn">Posizione proposta a ${fmt(d)} m dal punto in mappa (pin giallo con «?»; il pin blu è dove sta ora).</div>` : ''}
+      <dl class="dl"><dt>Posto</dt><dd>${esc(s.nome || s.indirizzo || '–')}</dd><dt>Comune</dt><dd>${esc(s.comune || '–')}</dd><dt>Posti</dt><dd>${s.posti}</dd><dt>Note del posto</dt><dd>${esc(s.note || '–')}</dd>
+      <dt>Cosa non va</dt><dd>${esc(PROB[it.tipo] || it.tipo)}</dd><dt>Note dell'utente</dt><dd>${esc(it.note || '–')}</dd><dt>Segnalato il</dt><dd>${dataOra(it.creato)} · ${it.user_id ? 'con account' : 'senza account'}</dd></dl>
+      <div class="sub">${s.lat.toFixed(6)}, ${s.lon.toFixed(6)} · <a target="_blank" rel="noopener" href="https://www.google.com/maps?q=${s.lat},${s.lon}&layer=c&cbll=${s.lat},${s.lon}">Street View</a></div>`;
+    qActs(); $('#q-msg').textContent = qFlash; qFlash = '';
+  }
+  async function qProb(az) { // azioni sul problema: sposta, rimuovi, risolto, scarta (Correggi dati è un link alla modifica nella mappa)
+    const it = qSel; let nota = null;
+    if (await qLavora('Salvo…', async () => {
+      if (az === 'sposta') { chk(await sb.from('stalli').update({ lat: it.lat, lon: it.lon }).eq('id', it.stallo_id)); nota = 'Posto spostato nel punto proposto'; }
+      else if (az === 'rimuovi') { chk(await sb.from('stalli').update({ stato: 'rimosso' }).eq('id', it.stallo_id)); nota = 'Rimosso dalla strada'; }
+      const upd = { stato: az === 'scarta' ? 'scartato' : 'risolto', risolto_il: new Date().toISOString() }; if (nota) upd.nota_admin = nota;
+      chk(await sb.from('problemi_posti').update(upd).eq('id', it.id));
+    })) qFatto(az === 'sposta' ? 'Posto spostato.' : az === 'rimuovi' ? 'Posto rimosso dalla mappa.' : az === 'scarta' ? 'Scartato.' : 'Segnato come risolto.');
+  }
   function qActs() {
+    if (qTab === 'problemi') {
+      const prop = qSel && qSel.lat != null && qSel.lon != null;
+      $('#q-acts').innerHTML = `<button class="btn ap" data-act="p-sposta" ${prop ? '' : 'disabled title="L\'utente non ha indicato un punto"'}>📍 Sposta qui</button><button class="btn danger" data-act="p-rimuovi">Rimuovi il posto</button><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="#/mappa?id=${qSel ? qSel.stallo_id : ''}">Correggi dati</a><button class="btn" data-act="p-risolto">✓ Segna risolto</button><button class="btn" data-act="p-scarta">Scarta</button><button class="btn" data-act="skip">Salta › <kbd>→</kbd></button>`; return;
+    }
     const cand = kind() === 'cand'; let h;
     if (qRip) h = `<button class="btn ap" data-act="ripok">✓ Salva posizione e approva <kbd>R</kbd></button><button class="btn" data-act="ripno">Annulla <kbd>Esc</kbd></button>`;
     else if (cand && cf !== 'nuovo') h = `<button class="btn" data-act="reset">Rimetti tra i "da verificare"</button><button class="btn" data-act="skip">Salta ›</button>`;
@@ -1079,7 +1119,7 @@
   const flash = (t) => { $('#q-msg').textContent = t || ''; };
   $('#q-acts').addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]'); if (!b || !qSel || qBusy) return; const a = b.dataset.act;
-    if (a === 'ok') qOk(null); else if (a === 'no') qNo(); else if (a === 'skip') qSkip(); else if (a === 'reset') qReset();
+    if (a.startsWith('p-')) qProb(a.slice(2)); else if (a === 'ok') qOk(null); else if (a === 'no') qNo(); else if (a === 'skip') qSkip(); else if (a === 'reset') qReset();
     else if (a === 'rip') { qRip = true; cmarker.dragging.enable(); cmap.setView([qSel.lat, qSel.lon], 20); qActs(); flash('Trascina il pin nel punto giusto (puoi cambiare la vista della mappa), poi premi "Salva posizione e approva".'); const m = $('#cmap'); if (m) m.scrollIntoView({ block: 'nearest' }); }
     else if (a === 'ripno') { qRip = false; cmarker.dragging.disable(); cmarker.setLatLng([qSel.lat, qSel.lon]); qActs(); flash(''); }
     else if (a === 'ripok') { const p = cmarker.getLatLng(); qOk([+p.lat.toFixed(6), +p.lng.toFixed(6)]); }
