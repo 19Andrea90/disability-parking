@@ -58,12 +58,25 @@ jobs:
           m=android/app/src/main/AndroidManifest.xml
           if grep -q 'android:windowSoftInputMode' $m; then sed -i 's#android:windowSoftInputMode="[^"]*"#android:windowSoftInputMode="adjustResize"#' $m; else sed -i '0,/<activity/s#<activity#<activity android:windowSoftInputMode="adjustResize"#' $m; fi
           grep -q 'android:windowSoftInputMode="adjustResize"' $m
-      - name: Plugin locale TestLab (sui dispositivi di prova di Google Play l'app non manda statistiche)
+      - name: Plugin locali TestLab e SostAbile (statistiche sui dispositivi di prova, dimensione del carattere, testo condiviso, scorciatoie)
         run: |
           d=android/app/src/main/java/it/disabilityparking/app
           test -f $d/MainActivity.java
-          cp android-extra/TestLabPlugin.java android-extra/MainActivity.java $d/
+          cp android-extra/TestLabPlugin.java android-extra/SostAbilePlugin.java android-extra/MainActivity.java $d/
           grep -q 'registerPlugin(TestLabPlugin.class)' $d/MainActivity.java
+          grep -q 'registerPlugin(SostAbilePlugin.class)' $d/MainActivity.java
+      - name: Condividi verso SostAbile da altre app, per esempio Google Maps (testo semplice)
+        run: |
+          m=android/app/src/main/AndroidManifest.xml
+          sed -i '0,/<\/activity>/s##    <intent-filter>\n                <action android:name="android.intent.action.SEND" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="text/plain" />\n            </intent-filter>\n        </activity>#' $m
+          grep -q 'android.intent.action.SEND' $m
+      - name: Scorciatoie dall'icona dell'app (Posto più vicino, Casa, Lavoro, Auto)
+        run: |
+          m=android/app/src/main/AndroidManifest.xml
+          cp -r android-extra/res/. android/app/src/main/res/
+          test -f android/app/src/main/res/xml/shortcuts.xml
+          sed -i '0,/<\/activity>/s##    <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />\n        </activity>#' $m
+          grep -q 'android.app.shortcuts' $m
       - name: Permessi per la posizione
         run: |
           sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
