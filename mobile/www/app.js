@@ -1510,7 +1510,7 @@
     $('#m-body').innerHTML = `${acc}
       ${sez('h-posti', 'Dove vai spesso', `<div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>`)}
       ${sez('h-salvati', 'Posti salvati' + (v.length ? ' · ' + v.length : ''), salv)}
-      ${sez('h-info', 'Aiuto e informazioni', `<div class="grp">${riga('regole', 'shield', 'Regole della sosta con il contrassegno')}${riga('sugg', 'idea', 'Suggerisci un miglioramento')}${riga('consiglia', 'share', 'Consiglia l\'app a un amico')}${riga('fonti', 'flag', 'Fonti, condizioni e privacy')}</div>`)}
+      ${sez('h-info', 'Aiuto e informazioni', `<div class="grp">${riga('regole', 'shield', 'Regole della sosta con il contrassegno')}${riga('sugg', 'idea', 'Suggerisci un miglioramento')}${riga('consiglia', 'share', 'Consiglia l\'app a un amico')}${riga('novita', 'bell', 'Novità dell\'app')}${riga('fonti', 'flag', 'Fonti, condizioni e privacy')}</div>`)}
       ${sez('h-imp', 'Impostazioni', `<div class="grp"><button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>${eInterno() ? '<button class="rg int" data-a="interno-off">Dispositivo interno · tocca per togliere</button>' : ''}</div>`)}
       <div class="vers" data-a="versione">Versione ${esc(window.DP_VERSIONE || '')}</div>`;
   }
@@ -1569,6 +1569,7 @@
     }
     else if (a === 'interno-off') { ls.set('dp.interno', 0); menu(); toast('Dispositivo non più interno: rientra nelle statistiche.', 3500); }
     else if (a === 'google') accediGoogle();
+    else if (a === 'novita') apri('https://sostabile.it/novita.html'); // pagina sempre sul dominio, anche dall'app Android
     else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-cond').href = CFG.SITO + 'condizioni.html'; $('#f-priv').href = CFG.SITO + 'privacy.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
   $('#f-back').onclick = () => { $('#fonti').hidden = true; };
