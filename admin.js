@@ -151,7 +151,7 @@
   const addG = (s, n) => new Date(Date.parse(s + 'T12:00:00Z') + n * 864e5).toISOString().slice(0, 10);
   const diffG = (a, b) => Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 864e5);
   const oggiRoma = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
-  const dm = (s) => s.slice(8, 10) + '/' + s.slice(5, 7);
+  const dm = (s) => s ? s.slice(8, 10) + '/' + s.slice(5, 7) : '';
   const giornoLungo = (s) => new Date(s + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
   function intervallo() { // [dal, al] scelti, oppure null se la scelta "Personalizzato" non è valida
     const t = oggiRoma(), p = SF.p;
