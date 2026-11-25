@@ -643,7 +643,12 @@
     sottotitolo(); if (me) { tempi(me, [{ s }], 'car').then((ok) => { if (ok && selId === id) sottotitolo(); }); chiediTraffico(s).then((ok) => { if (ok && selId === id) sottotitolo(); }); }
     const fonte = s.stato === 'ufficiale' ? (s.fonte === 'opendata' ? 'Dato ufficiale del Comune' : 'Ufficiale') : lab;
     $('#c-badges').innerHTML = `<span class="badge ${cls}">${cls === 'uff' ? icon('shield') : ''}${fonte}</span><span class="badge">${posti(s.posti)}</span><span class="badge">Per tutti i contrassegni</span>${s.coperto ? '<span class="badge">Coperto</span>' : ''}`;
-    const nota = (s.note || '').replace(/;?\s*Dato ufficiale[^;]*\(open data[^)]*\)/i, '').replace(/^Accorpato in [^.]*\.\s*/i, '').trim();
+    // posti degli elenchi comunali con il solo indirizzo: pin messo sulla via (o presso un punto noto) finché non viene riposizionato
+    const indicativa = /posizione approssimata/i.test(s.note || '');
+    if (indicativa) $('#c-badges').insertAdjacentHTML('beforeend', '<span class="badge">Posizione indicativa</span>');
+    let nota = (s.note || '').replace(/;?\s*Dato ufficiale[^;]*\(open data[^)]*\)/i, '').replace(/^Accorpato in [^.]*\.\s*/i, '')
+      .replace(/\s*[;·]?\s*posizione approssimata[^;·]*/i, '').replace(/\s*[;·]?\s*elenco per via\s*/i, '').replace(/[\s;·]+$/, '').trim();
+    if (indicativa) nota = (nota ? nota + '. ' : '') + 'Posizione indicativa: il Comune indica la via, il punto esatto non è ancora stato verificato.';
     $('#c-note').hidden = !nota; $('#c-note').textContent = nota ? nota.charAt(0).toUpperCase() + nota.slice(1) : '';
     $('#c-save').setAttribute('aria-pressed', salvati.has(id)); $('#c-save').querySelector('span').textContent = salvati.has(id) ? 'Salvato' : 'Salva';
     aggiornaConferma();
