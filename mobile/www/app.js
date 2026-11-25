@@ -650,11 +650,27 @@
       .replace(/\s*[;·]?\s*posizione approssimata[^;·]*/i, '').replace(/\s*[;·]?\s*elenco per via\s*/i, '').replace(/[\s;·]+$/, '').trim();
     if (indicativa) nota = (nota ? nota + '. ' : '') + 'Posizione indicativa: il Comune indica la via, il punto esatto non è ancora stato verificato.';
     $('#c-note').hidden = !nota; $('#c-note').textContent = nota ? nota.charAt(0).toUpperCase() + nota.slice(1) : '';
+    $('#c-ind').hidden = !indicativa;
     $('#c-save').setAttribute('aria-pressed', salvati.has(id)); $('#c-save').querySelector('span').textContent = salvati.has(id) ? 'Salvato' : 'Salva';
     aggiornaConferma();
     mostra();
+    if (indicativa && !indVisto && !ls.get('dp.indMai', false)) avvisoInd(false);
     seguo = false; map.easeTo({ center: [s.lon, s.lat], zoom: Math.max(map.getZoom(), 16.5), padding: LARGO() ? padPC() : { top: 90, bottom: $('#card .sheet').offsetHeight + 20, left: 0, right: 0 }, duration: 500 });
   }
+  // Avviso «Posizione indicativa»: al primo tocco su uno di questi posti (una volta per sessione); con la spunta non compare più.
+  // Dal link nella scheda si riapre sempre, senza la spunta già messa.
+  let indVisto = false;
+  function avvisoInd(daLink) {
+    indVisto = true; const v = $('#velo-ind'); $('#vi-mai').checked = false; $('#vi-chk-l').hidden = !!daLink && !!ls.get('dp.indMai', false);
+    v.hidden = false; $('#vi-h').focus({ preventScroll: true });
+  }
+  function chiudiAvvisoInd() {
+    if ($('#vi-mai').checked) ls.set('dp.indMai', true);
+    $('#velo-ind').hidden = true; const l = $('#c-ind'); if (l && !$('#card').hidden && !l.hidden) l.focus({ preventScroll: true });
+  }
+  $('#vi-ok').onclick = chiudiAvvisoInd;
+  $('#velo-ind').addEventListener('click', (e) => { if (e.target.id === 'velo-ind') chiudiAvvisoInd(); });
+  $('#c-ind').onclick = () => avvisoInd(true);
   function sottotitolo() {
     const s = stalli.get(selId); if (!s) return; const r = me && (traffico(s) || suStrada(me, s, 'car')), d = me ? dist(me.lat, me.lon, s.lat, s.lon) : null;
     $('#c-sub').textContent = [s.comune, r ? inAuto(r) : (d != null ? fmtDist(d) + ' da te' : '')].filter(Boolean).join(' · ');
@@ -674,8 +690,8 @@
   // tasto Indietro del telefono: chiude la scheda; sulla mappa mette l'app in secondo piano
   (function () {
     const cap = window.Capacitor, App = cap && cap.isNativePlatform && cap.isNativePlatform() && cap.Plugins && cap.Plugins.App;
-    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (!$('#velo-nav').hidden) $('#vnv-no').click(); else if (probAperto()) probChiudi(); else if (fgStato) fgChiudi(); else if (!$('#nuova').hidden) $('#nuova').hidden = true; else if (!$('#elimina').hidden) $('#elimina').hidden = true; else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#account').hidden) chiudiAccount(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
-    else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (probAperto()) probChiudi(); else if (fgStato) fgChiudi(); else chiudiScheda(true); } });
+    if (App) App.addListener('backButton', () => { if (!$('#aggiorna').hidden || !$('#welcome').hidden) App.exitApp(); else if (!$('#velo-ind').hidden) chiudiAvvisoInd(); else if (!$('#velo-n').hidden) $('#vn-no').click(); else if (!$('#velo-nav').hidden) $('#vnv-no').click(); else if (probAperto()) probChiudi(); else if (fgStato) fgChiudi(); else if (!$('#nuova').hidden) $('#nuova').hidden = true; else if (!$('#elimina').hidden) $('#elimina').hidden = true; else if (!$('#fonti').hidden) $('#fonti').hidden = true; else if (!$('#segn').hidden) $('#segn').hidden = true; else if (!$('#sugg').hidden) $('#sugg').hidden = true; else if (!$('#regole').hidden) $('#regole').hidden = true; else if (!$('#voto').hidden) $('#voto').hidden = true; else if (!$('#profilo').hidden) $('#profilo').hidden = true; else if (!$('#search').hidden) { if (catAperta) inizio(); else chiudiRicerca(); } else if (!$('#account').hidden) chiudiAccount(); else if (!$('#menu').hidden) $('#menu').hidden = true; else if (selId) chiudiScheda(true); else if (aggiungo) chiudiAggiungi(); else if (dest) chiudiDest(); else if (App.minimizeApp) App.minimizeApp(); else App.exitApp(); });
+    else window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (!$('#velo-ind').hidden) chiudiAvvisoInd(); else if (probAperto()) probChiudi(); else if (fgStato) fgChiudi(); else chiudiScheda(true); } });
   })();
   $('#c-close').onclick = () => chiudiScheda(false);
   $('#c-nav').onclick = () => naviga(stalli.get(selId));

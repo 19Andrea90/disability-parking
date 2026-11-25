@@ -402,6 +402,9 @@ button.handle::after{content:"";position:absolute;left:50%;top:10px;width:44px;h
 .dlg h2{margin:0;font-size:1.375rem}.dlg p{margin:0 0 6px;font-size:1rem;line-height:1.45;color:var(--muted)}
 .dlg .bp{min-height:54px;border-radius:16px;background:var(--blu);color:#fff;font-size:1.0625rem;font-weight:700}
 .dlg .bl{min-height:46px;font-size:1rem;color:var(--blu-t);font-weight:600}
+.dlg p.aiuto{background:var(--soft);border-radius:14px;padding:10px 12px;color:inherit}
+.dlg .chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:1rem;color:var(--muted);cursor:pointer}
+.dlg .chk input{width:22px;height:22px;flex:none;accent-color:var(--blu)}
 
 .testo a{color:var(--blu-t);font-weight:700;text-decoration:underline;text-underline-offset:3px;word-break:break-word}
 

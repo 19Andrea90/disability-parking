@@ -170,6 +170,7 @@
       <div id="c-sub" class="muted"></div>
       <div id="c-badges" class="badges"></div>
       <p id="c-note" class="muted" hidden></p>
+      <button id="c-ind" class="lnk" hidden><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>Cos'è la posizione indicativa?</span></button>
       <button id="c-regole" class="lnk"><svg class="ic"><use href="#i-shield"/></svg><span>Con il contrassegno le strisce blu sono gratis · regole della sosta</span></button>
       <button id="c-nav" class="primary"><svg class="ic"><use href="#i-nav"/></svg><span>Portami lì</span></button>
       <div class="three">
@@ -365,6 +366,17 @@
     <button class="bp" data-v="si">Lascia una recensione</button>
     <button class="bl" data-v="dopo">Più tardi</button>
     <button class="bl" data-v="no">No, grazie</button>
+  </div>
+</div>
+
+<!-- Posizione indicativa: posti degli elenchi comunali con il solo nome della via (al primo tocco; «Non mostrare più» lo nasconde su tutti i posti) -->
+<div id="velo-ind" class="velo" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vi-h">
+    <h2 id="vi-h" tabindex="-1">Posizione indicativa</h2>
+    <p>Il Comune ci ha indicato solo la via di questo posto riservato, non il punto preciso. Il segnaposto è sulla via, ma il posto potrebbe essere più avanti o più indietro.</p>
+    <p class="aiuto"><strong>Ci aiuti?</strong> Se passi di qui e lo trovi, tocca «C'è un problema con questo posto?» e poi «È in un altro punto» per spostarlo dove si trova davvero. Chi cerca parcheggio dopo di te lo troverà subito.</p>
+    <label class="chk" id="vi-chk-l" for="vi-mai"><input type="checkbox" id="vi-mai"><span>Non mostrare più questo messaggio</span></label>
+    <button class="bp" id="vi-ok">Ho capito</button>
   </div>
 </div>
 
