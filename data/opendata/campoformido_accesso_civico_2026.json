@@ -1,0 +1,173 @@
+{
+ "fonte": "Accesso civico, risposta della Polizia Locale (prot. 0014338 del 25/11/2026): 14 stalli generici con coordinate",
+ "record": [
+  {
+   "osm_id": "opendata:campoformido:campoformidolargomunicipiofrontecivico130",
+   "lat": 46.0197469,
+   "lon": 13.1603688,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Largo Municipio fronte civico 13",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:campoformidolargomunicipiofrontecivico141",
+   "lat": 46.0196333,
+   "lon": 13.160593,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Largo Municipio fronte civico 14",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:campoformidolargomunicipio62",
+   "lat": 46.020039,
+   "lon": 13.1604449,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Largo Municipio 6",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:campoformidopiazzalerobertmiles3",
+   "lat": 46.022635,
+   "lon": 13.1529178,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazzale Robert Miles",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:campoformidoviacaterinapercotofrontecivico624",
+   "lat": 46.0215721,
+   "lon": 13.1551346,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Caterina Percoto fronte civico 62",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:campoformidoviacaterinapercotofrontecivico165",
+   "lat": 46.0204374,
+   "lon": 13.1574312,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Caterina Percoto fronte civico 16",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:bressapiazzaunione6",
+   "lat": 46.03354,
+   "lon": 13.1435016,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Unione (Bressa)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:bressaviaudine7",
+   "lat": 46.0324424,
+   "lon": 13.1449565,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Udine (Bressa)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:basaldellapiazza4novembreparcheggioaidonatori8",
+   "lat": 46.0277567,
+   "lon": 13.2034762,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza 4 Novembre (parcheggio ai donatori) (Basaldella)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:basaldellapiazza4novembrefrontecivico159",
+   "lat": 46.0275404,
+   "lon": 13.2040875,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza 4 Novembre fronte civico 15 (Basaldella)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:basaldellapiazzaumbertoifrontecivico610",
+   "lat": 46.027903,
+   "lon": 13.205693,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Umberto I fronte civico 6 (Basaldella)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:basaldellaviazugliano11",
+   "lat": 46.027808,
+   "lon": 13.206222,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Zugliano (Basaldella)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:basaldellaviazugliano12",
+   "lat": 46.0265571,
+   "lon": 13.20735,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Zugliano (Basaldella)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:campoformido:villaprimaveraviasantacaterina20413",
+   "lat": 46.0443983,
+   "lon": 13.1997085,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Santa Caterina 204 (Villa Primavera)",
+   "comune": "Campoformido",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · coordinate fornite dalla Polizia Locale",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  }
+ ]
+}
