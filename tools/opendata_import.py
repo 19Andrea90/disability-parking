@@ -223,8 +223,12 @@ def trani():  # risposta del Comune a un accesso civico (novembre 2026): elenco 
     return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'trani_accesso_civico_2026.json'), encoding='utf-8'))
 
 
+def trieste():  # risposta del Comune a un accesso civico (novembre 2026): 665 punti baricentrici degli stalli (EPSG 32633), convertiti in WGS84 in data/opendata/
+    return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'trieste_accesso_civico_2026.json'), encoding='utf-8'))
+
+
 FONTI = {'bologna': bologna, 'firenze': firenze, 'trento': trento, 'cesena': cesena, 'ferrara': ferrara, 'siena': siena, 'livorno': livorno,
-         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena, 'latina': latina, 'trani': trani}
+         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena, 'latina': latina, 'trani': trani, 'trieste': trieste}
 
 
 def sb(method, path, key, body=None, prefer='return=minimal'):
