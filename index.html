@@ -13,8 +13,8 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>SostAbile</title>
-<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=b8139d16">
-<link rel="stylesheet" href="mobile/www/app.css?v=b8139d16">
+<link rel="stylesheet" href="mobile/www/vendor/maplibre-gl.css?v=bccc55f7">
+<link rel="stylesheet" href="mobile/www/app.css?v=bccc55f7">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -176,6 +176,7 @@
       <div id="c-sub" class="muted"></div>
       <div id="c-badges" class="badges"></div>
       <p id="c-note" class="muted" hidden></p>
+      <button id="c-ind" class="lnk" hidden><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>Cos'è la posizione indicativa?</span></button>
       <button id="c-regole" class="lnk"><svg class="ic"><use href="#i-shield"/></svg><span>Con il contrassegno le strisce blu sono gratis · regole della sosta</span></button>
       <button id="c-nav" class="primary"><svg class="ic"><use href="#i-nav"/></svg><span>Portami lì</span></button>
       <div class="three">
@@ -374,6 +375,17 @@
   </div>
 </div>
 
+<!-- Posizione indicativa: posti degli elenchi comunali con il solo nome della via (al primo tocco; «Non mostrare più» lo nasconde su tutti i posti) -->
+<div id="velo-ind" class="velo" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vi-h">
+    <h2 id="vi-h" tabindex="-1">Posizione indicativa</h2>
+    <p>Il Comune ci ha indicato solo la via di questo posto riservato, non il punto preciso. Il segnaposto è sulla via, ma il posto potrebbe essere più avanti o più indietro.</p>
+    <p class="aiuto"><strong>Ci aiuti?</strong> Se passi di qui e lo trovi, tocca «C'è un problema con questo posto?» e poi «È in un altro punto» per spostarlo dove si trova davvero. Chi cerca parcheggio dopo di te lo troverà subito.</p>
+    <label class="chk" id="vi-chk-l" for="vi-mai"><input type="checkbox" id="vi-mai"><span>Non mostrare più questo messaggio</span></label>
+    <button class="bp" id="vi-ok">Ho capito</button>
+  </div>
+</div>
+
 <!-- Fonti e avvertenze -->
 <div id="fonti" class="page" hidden>
   <div class="p-top"><button id="f-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Fonti, condizioni e privacy</h1></div>
@@ -441,9 +453,9 @@
   </div>
 </div>
 
-<script src="mobile/www/vendor/maplibre-gl.js?v=b8139d16"></script>
-<script src="mobile/www/chiavi.js?v=b8139d16"></script>
-<script src="mobile/www/app.js?v=b8139d16"></script>
-<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web b8139d16'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
+<script src="mobile/www/vendor/maplibre-gl.js?v=bccc55f7"></script>
+<script src="mobile/www/chiavi.js?v=bccc55f7"></script>
+<script src="mobile/www/app.js?v=bccc55f7"></script>
+<script>window.DP_VERSIONE = window.DP_VERSIONE || 'web bccc55f7'; if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
 </body>
 </html>
