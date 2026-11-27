@@ -20,7 +20,7 @@
     ARRIVO_M: 50,           // al rientro nell'app, entro questa distanza dal posto si chiede "Hai parcheggiato qui?" (deciso da Andrea)
     GOOGLE: true,           // accesso con Google: fornitore configurato su Supabase il 19/11/2026
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
-    TURNSTILE: '',          // chiave pubblica (sitekey) di Cloudflare Turnstile per il web; VUOTA = passo anti-bot spento (vedi docs/anti-bot.md)
+    TURNSTILE: '0x4AAAAAAGVzj8VvrCjB4I81',        // chiave pubblica (sitekey) di Cloudflare Turnstile per il web; VUOTA = passo anti-bot spento (vedi docs/anti-bot.md)
     PASSO_URL: 'https://wwereqrojlwktgwlrsib.supabase.co/functions/v1/passo', // funzione Edge che scambia la prova Turnstile con un passo
     SITO: sitoBase(location.hostname, SITO_NATIVO()), // indirizzo base del sito vetrina (con / finale): vedi sitoBase() qui sopra
   };
