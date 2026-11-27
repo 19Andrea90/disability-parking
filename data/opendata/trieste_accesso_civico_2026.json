@@ -78,7 +78,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:6",
+"osm_id": "opendata:trieste:7",
 "lat": 45.6344491,
 "lon": 13.8270167,
 "tipo": "generico",
@@ -91,7 +91,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:6",
+"osm_id": "opendata:trieste:8",
 "lat": 45.6344397,
 "lon": 13.8269899,
 "tipo": "generico",
@@ -104,7 +104,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:7",
+"osm_id": "opendata:trieste:9",
 "lat": 45.635183,
 "lon": 13.8328605,
 "tipo": "generico",
@@ -117,7 +117,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:8",
+"osm_id": "opendata:trieste:10",
 "lat": 45.6408898,
 "lon": 13.8253248,
 "tipo": "generico",
@@ -130,7 +130,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:9",
+"osm_id": "opendata:trieste:11",
 "lat": 45.6409501,
 "lon": 13.8235206,
 "tipo": "generico",
@@ -143,7 +143,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:10",
+"osm_id": "opendata:trieste:12",
 "lat": 45.6453293,
 "lon": 13.8109895,
 "tipo": "generico",
@@ -156,7 +156,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:11",
+"osm_id": "opendata:trieste:13",
 "lat": 45.6446174,
 "lon": 13.8153122,
 "tipo": "generico",
@@ -169,7 +169,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:12",
+"osm_id": "opendata:trieste:14",
 "lat": 45.641803,
 "lon": 13.8059233,
 "tipo": "generico",
@@ -182,7 +182,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:13",
+"osm_id": "opendata:trieste:15",
 "lat": 45.6418779,
 "lon": 13.8048645,
 "tipo": "generico",
@@ -195,7 +195,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:14",
+"osm_id": "opendata:trieste:16",
 "lat": 45.6405462,
 "lon": 13.803006,
 "tipo": "generico",
@@ -208,7 +208,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:15",
+"osm_id": "opendata:trieste:17",
 "lat": 45.6395156,
 "lon": 13.8015237,
 "tipo": "generico",
@@ -221,7 +221,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:16",
+"osm_id": "opendata:trieste:18",
 "lat": 45.639587,
 "lon": 13.796425,
 "tipo": "generico",
@@ -234,7 +234,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:17",
+"osm_id": "opendata:trieste:19",
 "lat": 45.6420086,
 "lon": 13.7953829,
 "tipo": "generico",
@@ -247,7 +247,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:17",
+"osm_id": "opendata:trieste:20",
 "lat": 45.642013,
 "lon": 13.7954245,
 "tipo": "generico",
@@ -260,7 +260,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:18",
+"osm_id": "opendata:trieste:21",
 "lat": 45.6421187,
 "lon": 13.7966167,
 "tipo": "generico",
@@ -273,7 +273,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:19",
+"osm_id": "opendata:trieste:22",
 "lat": 45.640291,
 "lon": 13.7931879,
 "tipo": "generico",
@@ -286,7 +286,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:20",
+"osm_id": "opendata:trieste:23",
 "lat": 45.6396426,
 "lon": 13.7905972,
 "tipo": "generico",
@@ -299,7 +299,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:21",
+"osm_id": "opendata:trieste:24",
 "lat": 45.6399326,
 "lon": 13.7895199,
 "tipo": "generico",
@@ -312,7 +312,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:21",
+"osm_id": "opendata:trieste:25",
 "lat": 45.6399762,
 "lon": 13.789533,
 "tipo": "generico",
@@ -325,7 +325,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:22",
+"osm_id": "opendata:trieste:26",
 "lat": 45.6398436,
 "lon": 13.7894939,
 "tipo": "generico",
@@ -338,7 +338,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:23",
+"osm_id": "opendata:trieste:27",
 "lat": 45.6409968,
 "lon": 13.7900705,
 "tipo": "generico",
@@ -351,7 +351,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:24",
+"osm_id": "opendata:trieste:28",
 "lat": 45.6409195,
 "lon": 13.7900083,
 "tipo": "generico",
@@ -364,7 +364,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:25",
+"osm_id": "opendata:trieste:29",
 "lat": 45.6411653,
 "lon": 13.7910945,
 "tipo": "generico",
@@ -377,7 +377,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:26",
+"osm_id": "opendata:trieste:30",
 "lat": 45.6415518,
 "lon": 13.7903809,
 "tipo": "generico",
@@ -390,7 +390,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:27",
+"osm_id": "opendata:trieste:31",
 "lat": 45.6417269,
 "lon": 13.7905504,
 "tipo": "generico",
@@ -403,7 +403,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:28",
+"osm_id": "opendata:trieste:32",
 "lat": 45.6424622,
 "lon": 13.7908759,
 "tipo": "generico",
@@ -416,7 +416,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:29",
+"osm_id": "opendata:trieste:33",
 "lat": 45.6481107,
 "lon": 13.7549285,
 "tipo": "generico",
@@ -429,7 +429,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:29",
+"osm_id": "opendata:trieste:34",
 "lat": 45.648232,
 "lon": 13.7548978,
 "tipo": "generico",
@@ -442,7 +442,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:29",
+"osm_id": "opendata:trieste:35",
 "lat": 45.6482235,
 "lon": 13.7549455,
 "tipo": "generico",
@@ -455,7 +455,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:30",
+"osm_id": "opendata:trieste:36",
 "lat": 45.6469605,
 "lon": 13.7533517,
 "tipo": "generico",
@@ -468,7 +468,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:30",
+"osm_id": "opendata:trieste:37",
 "lat": 45.646997,
 "lon": 13.7533804,
 "tipo": "generico",
@@ -481,7 +481,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:31",
+"osm_id": "opendata:trieste:38",
 "lat": 45.6453011,
 "lon": 13.7547451,
 "tipo": "generico",
@@ -494,7 +494,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:32",
+"osm_id": "opendata:trieste:39",
 "lat": 45.6461422,
 "lon": 13.7570879,
 "tipo": "generico",
@@ -507,7 +507,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:33",
+"osm_id": "opendata:trieste:40",
 "lat": 45.6460404,
 "lon": 13.7572944,
 "tipo": "generico",
@@ -520,7 +520,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:34",
+"osm_id": "opendata:trieste:41",
 "lat": 45.6452701,
 "lon": 13.7587935,
 "tipo": "generico",
@@ -533,7 +533,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:35",
+"osm_id": "opendata:trieste:42",
 "lat": 45.6452749,
 "lon": 13.7591853,
 "tipo": "generico",
@@ -546,7 +546,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:36",
+"osm_id": "opendata:trieste:43",
 "lat": 45.6429657,
 "lon": 13.7544164,
 "tipo": "generico",
@@ -559,7 +559,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:37",
+"osm_id": "opendata:trieste:44",
 "lat": 45.6428898,
 "lon": 13.7553478,
 "tipo": "generico",
@@ -572,7 +572,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:38",
+"osm_id": "opendata:trieste:45",
 "lat": 45.6417691,
 "lon": 13.7537361,
 "tipo": "generico",
@@ -585,7 +585,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:39",
+"osm_id": "opendata:trieste:46",
 "lat": 45.6424258,
 "lon": 13.7585848,
 "tipo": "generico",
@@ -598,7 +598,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:40",
+"osm_id": "opendata:trieste:47",
 "lat": 45.6425409,
 "lon": 13.7602923,
 "tipo": "generico",
@@ -611,7 +611,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:41",
+"osm_id": "opendata:trieste:48",
 "lat": 45.6408239,
 "lon": 13.7622774,
 "tipo": "generico",
@@ -624,7 +624,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:41",
+"osm_id": "opendata:trieste:49",
 "lat": 45.6408443,
 "lon": 13.7622034,
 "tipo": "generico",
@@ -637,7 +637,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:42",
+"osm_id": "opendata:trieste:50",
 "lat": 45.6398902,
 "lon": 13.7595398,
 "tipo": "generico",
@@ -650,7 +650,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:42",
+"osm_id": "opendata:trieste:51",
 "lat": 45.6398665,
 "lon": 13.7596124,
 "tipo": "generico",
@@ -663,7 +663,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:43",
+"osm_id": "opendata:trieste:52",
 "lat": 45.6396586,
 "lon": 13.7600619,
 "tipo": "generico",
@@ -676,7 +676,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:44",
+"osm_id": "opendata:trieste:53",
 "lat": 45.6397056,
 "lon": 13.7599201,
 "tipo": "generico",
@@ -689,7 +689,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:45",
+"osm_id": "opendata:trieste:54",
 "lat": 45.6425216,
 "lon": 13.7582783,
 "tipo": "generico",
@@ -702,7 +702,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:46",
+"osm_id": "opendata:trieste:55",
 "lat": 45.6299018,
 "lon": 13.817755,
 "tipo": "generico",
@@ -715,7 +715,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:46",
+"osm_id": "opendata:trieste:56",
 "lat": 45.6299368,
 "lon": 13.8177984,
 "tipo": "generico",
@@ -728,7 +728,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:47",
+"osm_id": "opendata:trieste:57",
 "lat": 45.6371226,
 "lon": 13.7954437,
 "tipo": "generico",
@@ -741,7 +741,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:47",
+"osm_id": "opendata:trieste:58",
 "lat": 45.6371462,
 "lon": 13.7960673,
 "tipo": "generico",
@@ -754,7 +754,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:48",
+"osm_id": "opendata:trieste:59",
 "lat": 45.6368254,
 "lon": 13.7997875,
 "tipo": "generico",
@@ -767,7 +767,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:49",
+"osm_id": "opendata:trieste:60",
 "lat": 45.6369736,
 "lon": 13.7890316,
 "tipo": "generico",
@@ -780,7 +780,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:50",
+"osm_id": "opendata:trieste:61",
 "lat": 45.6383773,
 "lon": 13.786384,
 "tipo": "generico",
@@ -793,7 +793,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:51",
+"osm_id": "opendata:trieste:62",
 "lat": 45.6384359,
 "lon": 13.7845491,
 "tipo": "generico",
@@ -806,7 +806,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:52",
+"osm_id": "opendata:trieste:63",
 "lat": 45.6390512,
 "lon": 13.7841571,
 "tipo": "generico",
@@ -819,7 +819,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:53",
+"osm_id": "opendata:trieste:64",
 "lat": 45.6389874,
 "lon": 13.7828375,
 "tipo": "generico",
@@ -832,7 +832,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:54",
+"osm_id": "opendata:trieste:65",
 "lat": 45.6395788,
 "lon": 13.7836223,
 "tipo": "generico",
@@ -845,7 +845,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:55",
+"osm_id": "opendata:trieste:66",
 "lat": 45.6397571,
 "lon": 13.7834398,
 "tipo": "generico",
@@ -858,7 +858,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:56",
+"osm_id": "opendata:trieste:67",
 "lat": 45.6401416,
 "lon": 13.7834085,
 "tipo": "generico",
@@ -871,7 +871,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:57",
+"osm_id": "opendata:trieste:68",
 "lat": 45.6401247,
 "lon": 13.7830504,
 "tipo": "generico",
@@ -884,7 +884,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:58",
+"osm_id": "opendata:trieste:69",
 "lat": 45.64233,
 "lon": 13.779066,
 "tipo": "generico",
@@ -897,7 +897,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:58",
+"osm_id": "opendata:trieste:70",
 "lat": 45.6423782,
 "lon": 13.779028,
 "tipo": "generico",
@@ -910,7 +910,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:59",
+"osm_id": "opendata:trieste:71",
 "lat": 45.6452192,
 "lon": 13.7601742,
 "tipo": "generico",
@@ -923,7 +923,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:60",
+"osm_id": "opendata:trieste:72",
 "lat": 45.6447718,
 "lon": 13.7607484,
 "tipo": "generico",
@@ -936,7 +936,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:61",
+"osm_id": "opendata:trieste:73",
 "lat": 45.6420277,
 "lon": 13.7639548,
 "tipo": "generico",
@@ -949,7 +949,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:62",
+"osm_id": "opendata:trieste:74",
 "lat": 45.641607,
 "lon": 13.7646276,
 "tipo": "generico",
@@ -962,7 +962,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:63",
+"osm_id": "opendata:trieste:75",
 "lat": 45.6412675,
 "lon": 13.7654871,
 "tipo": "generico",
@@ -975,7 +975,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:64",
+"osm_id": "opendata:trieste:76",
 "lat": 45.6406933,
 "lon": 13.7651133,
 "tipo": "generico",
@@ -988,7 +988,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:65",
+"osm_id": "opendata:trieste:77",
 "lat": 45.6406883,
 "lon": 13.7672941,
 "tipo": "generico",
@@ -1001,7 +1001,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:65",
+"osm_id": "opendata:trieste:78",
 "lat": 45.6407112,
 "lon": 13.7673075,
 "tipo": "generico",
@@ -1014,7 +1014,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:66",
+"osm_id": "opendata:trieste:79",
 "lat": 45.6403465,
 "lon": 13.7692085,
 "tipo": "generico",
@@ -1027,7 +1027,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:67",
+"osm_id": "opendata:trieste:80",
 "lat": 45.6406555,
 "lon": 13.7701375,
 "tipo": "generico",
@@ -1040,7 +1040,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:68",
+"osm_id": "opendata:trieste:81",
 "lat": 45.640843,
 "lon": 13.7720593,
 "tipo": "generico",
@@ -1053,7 +1053,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:69",
+"osm_id": "opendata:trieste:82",
 "lat": 45.6432199,
 "lon": 13.7731077,
 "tipo": "generico",
@@ -1066,7 +1066,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:70",
+"osm_id": "opendata:trieste:83",
 "lat": 45.6440337,
 "lon": 13.7721713,
 "tipo": "generico",
@@ -1079,7 +1079,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:71",
+"osm_id": "opendata:trieste:84",
 "lat": 45.645086,
 "lon": 13.7725751,
 "tipo": "generico",
@@ -1092,7 +1092,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:72",
+"osm_id": "opendata:trieste:85",
 "lat": 45.6450628,
 "lon": 13.773737,
 "tipo": "generico",
@@ -1105,7 +1105,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:73",
+"osm_id": "opendata:trieste:86",
 "lat": 45.6466466,
 "lon": 13.7718679,
 "tipo": "generico",
@@ -1118,7 +1118,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:73",
+"osm_id": "opendata:trieste:87",
 "lat": 45.6466389,
 "lon": 13.7719507,
 "tipo": "generico",
@@ -1131,7 +1131,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:73",
+"osm_id": "opendata:trieste:88",
 "lat": 45.6466428,
 "lon": 13.7719093,
 "tipo": "generico",
@@ -1144,7 +1144,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:74",
+"osm_id": "opendata:trieste:89",
 "lat": 45.6471458,
 "lon": 13.771745,
 "tipo": "generico",
@@ -1157,7 +1157,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:75",
+"osm_id": "opendata:trieste:90",
 "lat": 45.6474406,
 "lon": 13.7738944,
 "tipo": "generico",
@@ -1170,7 +1170,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:76",
+"osm_id": "opendata:trieste:91",
 "lat": 45.6473622,
 "lon": 13.7752457,
 "tipo": "generico",
@@ -1183,7 +1183,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:77",
+"osm_id": "opendata:trieste:92",
 "lat": 45.6454284,
 "lon": 13.7765616,
 "tipo": "generico",
@@ -1196,7 +1196,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:78",
+"osm_id": "opendata:trieste:93",
 "lat": 45.6453228,
 "lon": 13.7769616,
 "tipo": "generico",
@@ -1209,7 +1209,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:79",
+"osm_id": "opendata:trieste:94",
 "lat": 45.6442379,
 "lon": 13.7773208,
 "tipo": "generico",
@@ -1222,7 +1222,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:79",
+"osm_id": "opendata:trieste:95",
 "lat": 45.6442923,
 "lon": 13.7773215,
 "tipo": "generico",
@@ -1235,7 +1235,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:80",
+"osm_id": "opendata:trieste:96",
 "lat": 45.643636,
 "lon": 13.7781055,
 "tipo": "generico",
@@ -1248,7 +1248,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:81",
+"osm_id": "opendata:trieste:97",
 "lat": 45.6329899,
 "lon": 13.7886326,
 "tipo": "generico",
@@ -1261,7 +1261,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:82",
+"osm_id": "opendata:trieste:98",
 "lat": 45.663252,
 "lon": 13.7698896,
 "tipo": "generico",
@@ -1274,7 +1274,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:83",
+"osm_id": "opendata:trieste:99",
 "lat": 45.6635821,
 "lon": 13.7697689,
 "tipo": "generico",
@@ -1287,7 +1287,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:84",
+"osm_id": "opendata:trieste:100",
 "lat": 45.6644573,
 "lon": 13.7714081,
 "tipo": "generico",
@@ -1300,7 +1300,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:85",
+"osm_id": "opendata:trieste:101",
 "lat": 45.6649047,
 "lon": 13.7710394,
 "tipo": "generico",
@@ -1313,7 +1313,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:86",
+"osm_id": "opendata:trieste:102",
 "lat": 45.6306632,
 "lon": 13.7809901,
 "tipo": "generico",
@@ -1326,7 +1326,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:87",
+"osm_id": "opendata:trieste:103",
 "lat": 45.6293249,
 "lon": 13.7812625,
 "tipo": "generico",
@@ -1339,7 +1339,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:88",
+"osm_id": "opendata:trieste:104",
 "lat": 45.6296629,
 "lon": 13.783382,
 "tipo": "generico",
@@ -1352,7 +1352,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:89",
+"osm_id": "opendata:trieste:105",
 "lat": 45.6303949,
 "lon": 13.7863553,
 "tipo": "generico",
@@ -1365,7 +1365,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:89",
+"osm_id": "opendata:trieste:106",
 "lat": 45.6304189,
 "lon": 13.7864273,
 "tipo": "generico",
@@ -1378,7 +1378,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:90",
+"osm_id": "opendata:trieste:107",
 "lat": 45.6290713,
 "lon": 13.7849289,
 "tipo": "generico",
@@ -1391,7 +1391,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:91",
+"osm_id": "opendata:trieste:108",
 "lat": 45.6309301,
 "lon": 13.7880482,
 "tipo": "generico",
@@ -1404,7 +1404,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:92",
+"osm_id": "opendata:trieste:109",
 "lat": 45.6307263,
 "lon": 13.7884404,
 "tipo": "generico",
@@ -1417,7 +1417,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:93",
+"osm_id": "opendata:trieste:110",
 "lat": 45.6305842,
 "lon": 13.7885325,
 "tipo": "generico",
@@ -1430,7 +1430,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:94",
+"osm_id": "opendata:trieste:111",
 "lat": 45.6304189,
 "lon": 13.7892034,
 "tipo": "generico",
@@ -1443,7 +1443,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:95",
+"osm_id": "opendata:trieste:112",
 "lat": 45.6301311,
 "lon": 13.788152,
 "tipo": "generico",
@@ -1456,7 +1456,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:96",
+"osm_id": "opendata:trieste:113",
 "lat": 45.6286565,
 "lon": 13.7877482,
 "tipo": "generico",
@@ -1469,7 +1469,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:97",
+"osm_id": "opendata:trieste:114",
 "lat": 45.6271015,
 "lon": 13.7907784,
 "tipo": "generico",
@@ -1482,7 +1482,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:98",
+"osm_id": "opendata:trieste:115",
 "lat": 45.6259016,
 "lon": 13.7851311,
 "tipo": "generico",
@@ -1495,7 +1495,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:99",
+"osm_id": "opendata:trieste:116",
 "lat": 45.6255918,
 "lon": 13.7855374,
 "tipo": "generico",
@@ -1508,7 +1508,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:100",
+"osm_id": "opendata:trieste:117",
 "lat": 45.6256582,
 "lon": 13.7821445,
 "tipo": "generico",
@@ -1521,7 +1521,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:101",
+"osm_id": "opendata:trieste:118",
 "lat": 45.6261242,
 "lon": 13.7823994,
 "tipo": "generico",
@@ -1534,7 +1534,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:102",
+"osm_id": "opendata:trieste:119",
 "lat": 45.6231808,
 "lon": 13.7794741,
 "tipo": "generico",
@@ -1547,7 +1547,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:103",
+"osm_id": "opendata:trieste:120",
 "lat": 45.6229773,
 "lon": 13.7836802,
 "tipo": "generico",
@@ -1560,7 +1560,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:104",
+"osm_id": "opendata:trieste:121",
 "lat": 45.624222,
 "lon": 13.7849861,
 "tipo": "generico",
@@ -1573,7 +1573,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:105",
+"osm_id": "opendata:trieste:122",
 "lat": 45.6235021,
 "lon": 13.7865927,
 "tipo": "generico",
@@ -1586,7 +1586,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:106",
+"osm_id": "opendata:trieste:123",
 "lat": 45.6233677,
 "lon": 13.7865565,
 "tipo": "generico",
@@ -1599,7 +1599,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:106",
+"osm_id": "opendata:trieste:124",
 "lat": 45.623395,
 "lon": 13.7865468,
 "tipo": "generico",
@@ -1612,7 +1612,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:107",
+"osm_id": "opendata:trieste:125",
 "lat": 45.6206977,
 "lon": 13.7863569,
 "tipo": "generico",
@@ -1625,7 +1625,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:107",
+"osm_id": "opendata:trieste:126",
 "lat": 45.6207178,
 "lon": 13.7863876,
 "tipo": "generico",
@@ -1638,7 +1638,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:108",
+"osm_id": "opendata:trieste:127",
 "lat": 45.6211485,
 "lon": 13.7869756,
 "tipo": "generico",
@@ -1651,7 +1651,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:108",
+"osm_id": "opendata:trieste:128",
 "lat": 45.6211836,
 "lon": 13.7870376,
 "tipo": "generico",
@@ -1664,7 +1664,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:109",
+"osm_id": "opendata:trieste:129",
 "lat": 45.6242763,
 "lon": 13.792797,
 "tipo": "generico",
@@ -1677,7 +1677,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:109",
+"osm_id": "opendata:trieste:130",
 "lat": 45.6242967,
 "lon": 13.7928322,
 "tipo": "generico",
@@ -1690,7 +1690,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:110",
+"osm_id": "opendata:trieste:131",
 "lat": 45.6248451,
 "lon": 13.7914886,
 "tipo": "generico",
@@ -1703,7 +1703,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:111",
+"osm_id": "opendata:trieste:132",
 "lat": 45.6260527,
 "lon": 13.7953332,
 "tipo": "generico",
@@ -1716,7 +1716,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:112",
+"osm_id": "opendata:trieste:133",
 "lat": 45.6259904,
 "lon": 13.7952944,
 "tipo": "generico",
@@ -1729,7 +1729,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:113",
+"osm_id": "opendata:trieste:134",
 "lat": 45.6282403,
 "lon": 13.7947345,
 "tipo": "generico",
@@ -1742,7 +1742,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:113",
+"osm_id": "opendata:trieste:135",
 "lat": 45.6282677,
 "lon": 13.7947254,
 "tipo": "generico",
@@ -1755,7 +1755,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:114",
+"osm_id": "opendata:trieste:136",
 "lat": 45.6245904,
 "lon": 13.7959888,
 "tipo": "generico",
@@ -1768,7 +1768,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:115",
+"osm_id": "opendata:trieste:137",
 "lat": 45.6254784,
 "lon": 13.7978918,
 "tipo": "generico",
@@ -1781,7 +1781,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:115",
+"osm_id": "opendata:trieste:138",
 "lat": 45.6254854,
 "lon": 13.7979697,
 "tipo": "generico",
@@ -1794,7 +1794,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:116",
+"osm_id": "opendata:trieste:139",
 "lat": 45.6258698,
 "lon": 13.8042937,
 "tipo": "generico",
@@ -1807,7 +1807,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:117",
+"osm_id": "opendata:trieste:140",
 "lat": 45.6243878,
 "lon": 13.8026131,
 "tipo": "generico",
@@ -1820,7 +1820,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:118",
+"osm_id": "opendata:trieste:141",
 "lat": 45.6230565,
 "lon": 13.796929,
 "tipo": "generico",
@@ -1833,7 +1833,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:119",
+"osm_id": "opendata:trieste:142",
 "lat": 45.6229955,
 "lon": 13.7987444,
 "tipo": "generico",
@@ -1846,7 +1846,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:120",
+"osm_id": "opendata:trieste:143",
 "lat": 45.6233328,
 "lon": 13.8028664,
 "tipo": "generico",
@@ -1859,7 +1859,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:120",
+"osm_id": "opendata:trieste:144",
 "lat": 45.6233525,
 "lon": 13.8029391,
 "tipo": "generico",
@@ -1872,7 +1872,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:121",
+"osm_id": "opendata:trieste:145",
 "lat": 45.6235392,
 "lon": 13.8059512,
 "tipo": "generico",
@@ -1885,7 +1885,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:122",
+"osm_id": "opendata:trieste:146",
 "lat": 45.6260864,
 "lon": 13.8072561,
 "tipo": "generico",
@@ -1898,7 +1898,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:123",
+"osm_id": "opendata:trieste:147",
 "lat": 45.6320229,
 "lon": 13.7945264,
 "tipo": "generico",
@@ -1911,7 +1911,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:124",
+"osm_id": "opendata:trieste:148",
 "lat": 45.632005,
 "lon": 13.7944933,
 "tipo": "generico",
@@ -1924,7 +1924,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:125",
+"osm_id": "opendata:trieste:149",
 "lat": 45.6217089,
 "lon": 13.7994587,
 "tipo": "generico",
@@ -1937,7 +1937,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:126",
+"osm_id": "opendata:trieste:150",
 "lat": 45.6405505,
 "lon": 13.7855296,
 "tipo": "generico",
@@ -1950,7 +1950,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:127",
+"osm_id": "opendata:trieste:151",
 "lat": 45.6653448,
 "lon": 13.7699225,
 "tipo": "generico",
@@ -1963,7 +1963,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:128",
+"osm_id": "opendata:trieste:152",
 "lat": 45.6664814,
 "lon": 13.7706852,
 "tipo": "generico",
@@ -1976,7 +1976,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:129",
+"osm_id": "opendata:trieste:153",
 "lat": 45.6656109,
 "lon": 13.7705583,
 "tipo": "generico",
@@ -1989,7 +1989,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:130",
+"osm_id": "opendata:trieste:154",
 "lat": 45.6654648,
 "lon": 13.7706929,
 "tipo": "generico",
@@ -2002,7 +2002,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:131",
+"osm_id": "opendata:trieste:155",
 "lat": 45.6653398,
 "lon": 13.7733755,
 "tipo": "generico",
@@ -2015,7 +2015,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:132",
+"osm_id": "opendata:trieste:156",
 "lat": 45.6622404,
 "lon": 13.7728023,
 "tipo": "generico",
@@ -2028,7 +2028,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:133",
+"osm_id": "opendata:trieste:157",
 "lat": 45.6614851,
 "lon": 13.7716973,
 "tipo": "generico",
@@ -2041,7 +2041,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:134",
+"osm_id": "opendata:trieste:158",
 "lat": 45.6601781,
 "lon": 13.7720075,
 "tipo": "generico",
@@ -2054,7 +2054,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:135",
+"osm_id": "opendata:trieste:159",
 "lat": 45.6587927,
 "lon": 13.7722752,
 "tipo": "generico",
@@ -2067,7 +2067,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:136",
+"osm_id": "opendata:trieste:160",
 "lat": 45.6588755,
 "lon": 13.7730483,
 "tipo": "generico",
@@ -2080,7 +2080,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:137",
+"osm_id": "opendata:trieste:161",
 "lat": 45.6588245,
 "lon": 13.7730773,
 "tipo": "generico",
@@ -2093,7 +2093,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:138",
+"osm_id": "opendata:trieste:162",
 "lat": 45.6586347,
 "lon": 13.7737296,
 "tipo": "generico",
@@ -2106,7 +2106,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:139",
+"osm_id": "opendata:trieste:163",
 "lat": 45.6586805,
 "lon": 13.7744133,
 "tipo": "generico",
@@ -2119,7 +2119,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:140",
+"osm_id": "opendata:trieste:164",
 "lat": 45.6580532,
 "lon": 13.7761647,
 "tipo": "generico",
@@ -2132,7 +2132,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:141",
+"osm_id": "opendata:trieste:165",
 "lat": 45.658098,
 "lon": 13.7761176,
 "tipo": "generico",
@@ -2145,7 +2145,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:142",
+"osm_id": "opendata:trieste:166",
 "lat": 45.657396,
 "lon": 13.775971,
 "tipo": "generico",
@@ -2158,7 +2158,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:143",
+"osm_id": "opendata:trieste:167",
 "lat": 45.6568567,
 "lon": 13.7744125,
 "tipo": "generico",
@@ -2171,7 +2171,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:144",
+"osm_id": "opendata:trieste:168",
 "lat": 45.6569965,
 "lon": 13.7748096,
 "tipo": "generico",
@@ -2184,7 +2184,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:144",
+"osm_id": "opendata:trieste:169",
 "lat": 45.6570212,
 "lon": 13.77488,
 "tipo": "generico",
@@ -2197,7 +2197,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:145",
+"osm_id": "opendata:trieste:170",
 "lat": 45.6575079,
 "lon": 13.7739468,
 "tipo": "generico",
@@ -2210,7 +2210,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:146",
+"osm_id": "opendata:trieste:171",
 "lat": 45.6572853,
 "lon": 13.7734899,
 "tipo": "generico",
@@ -2223,7 +2223,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:147",
+"osm_id": "opendata:trieste:172",
 "lat": 45.6571964,
 "lon": 13.7731656,
 "tipo": "generico",
@@ -2236,7 +2236,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:148",
+"osm_id": "opendata:trieste:173",
 "lat": 45.6566607,
 "lon": 13.7733175,
 "tipo": "generico",
@@ -2249,7 +2249,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:148",
+"osm_id": "opendata:trieste:174",
 "lat": 45.6567117,
 "lon": 13.7732875,
 "tipo": "generico",
@@ -2262,7 +2262,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:149",
+"osm_id": "opendata:trieste:175",
 "lat": 45.656409,
 "lon": 13.7753509,
 "tipo": "generico",
@@ -2275,7 +2275,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:150",
+"osm_id": "opendata:trieste:176",
 "lat": 45.6552733,
 "lon": 13.7755355,
 "tipo": "generico",
@@ -2288,7 +2288,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:151",
+"osm_id": "opendata:trieste:177",
 "lat": 45.6402944,
 "lon": 13.7842782,
 "tipo": "generico",
@@ -2301,7 +2301,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:152",
+"osm_id": "opendata:trieste:178",
 "lat": 45.6423979,
 "lon": 13.785439,
 "tipo": "generico",
@@ -2314,7 +2314,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:153",
+"osm_id": "opendata:trieste:179",
 "lat": 45.642349,
 "lon": 13.7854045,
 "tipo": "generico",
@@ -2327,7 +2327,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:154",
+"osm_id": "opendata:trieste:180",
 "lat": 45.6419353,
 "lon": 13.7870553,
 "tipo": "generico",
@@ -2340,7 +2340,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:155",
+"osm_id": "opendata:trieste:181",
 "lat": 45.6419301,
 "lon": 13.7869348,
 "tipo": "generico",
@@ -2353,7 +2353,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:156",
+"osm_id": "opendata:trieste:182",
 "lat": 45.6412898,
 "lon": 13.7879787,
 "tipo": "generico",
@@ -2366,7 +2366,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:157",
+"osm_id": "opendata:trieste:183",
 "lat": 45.6412604,
 "lon": 13.7878152,
 "tipo": "generico",
@@ -2379,7 +2379,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:158",
+"osm_id": "opendata:trieste:184",
 "lat": 45.6424842,
 "lon": 13.7883193,
 "tipo": "generico",
@@ -2392,7 +2392,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:159",
+"osm_id": "opendata:trieste:185",
 "lat": 45.6424914,
 "lon": 13.7887173,
 "tipo": "generico",
@@ -2405,7 +2405,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:160",
+"osm_id": "opendata:trieste:186",
 "lat": 45.6424602,
 "lon": 13.7877694,
 "tipo": "generico",
@@ -2418,7 +2418,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:161",
+"osm_id": "opendata:trieste:187",
 "lat": 45.6347655,
 "lon": 13.7827008,
 "tipo": "generico",
@@ -2431,7 +2431,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:162",
+"osm_id": "opendata:trieste:188",
 "lat": 45.6337597,
 "lon": 13.7845828,
 "tipo": "generico",
@@ -2444,7 +2444,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:163",
+"osm_id": "opendata:trieste:189",
 "lat": 45.6325851,
 "lon": 13.7817693,
 "tipo": "generico",
@@ -2457,7 +2457,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:164",
+"osm_id": "opendata:trieste:190",
 "lat": 45.6324872,
 "lon": 13.7806384,
 "tipo": "generico",
@@ -2470,7 +2470,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:165",
+"osm_id": "opendata:trieste:191",
 "lat": 45.63672,
 "lon": 13.782088,
 "tipo": "generico",
@@ -2483,7 +2483,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:166",
+"osm_id": "opendata:trieste:192",
 "lat": 45.6412238,
 "lon": 13.8619162,
 "tipo": "generico",
@@ -2496,7 +2496,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:167",
+"osm_id": "opendata:trieste:193",
 "lat": 45.6874484,
 "lon": 13.7893023,
 "tipo": "generico",
@@ -2509,7 +2509,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:168",
+"osm_id": "opendata:trieste:194",
 "lat": 45.6521487,
 "lon": 13.7914494,
 "tipo": "generico",
@@ -2522,7 +2522,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:169",
+"osm_id": "opendata:trieste:195",
 "lat": 45.6448189,
 "lon": 13.7631308,
 "tipo": "generico",
@@ -2535,7 +2535,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:170",
+"osm_id": "opendata:trieste:196",
 "lat": 45.6545776,
 "lon": 13.7930729,
 "tipo": "generico",
@@ -2548,7 +2548,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:171",
+"osm_id": "opendata:trieste:197",
 "lat": 45.6543314,
 "lon": 13.7966663,
 "tipo": "generico",
@@ -2561,7 +2561,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:171",
+"osm_id": "opendata:trieste:198",
 "lat": 45.6543371,
 "lon": 13.7967458,
 "tipo": "generico",
@@ -2574,7 +2574,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:172",
+"osm_id": "opendata:trieste:199",
 "lat": 45.6547507,
 "lon": 13.7976204,
 "tipo": "generico",
@@ -2587,7 +2587,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:173",
+"osm_id": "opendata:trieste:200",
 "lat": 45.6549228,
 "lon": 13.7976751,
 "tipo": "generico",
@@ -2600,7 +2600,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:174",
+"osm_id": "opendata:trieste:201",
 "lat": 45.6551063,
 "lon": 13.800583,
 "tipo": "generico",
@@ -2613,7 +2613,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:175",
+"osm_id": "opendata:trieste:202",
 "lat": 45.6555373,
 "lon": 13.802377,
 "tipo": "generico",
@@ -2626,7 +2626,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:176",
+"osm_id": "opendata:trieste:203",
 "lat": 45.6559855,
 "lon": 13.8015229,
 "tipo": "generico",
@@ -2639,7 +2639,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:177",
+"osm_id": "opendata:trieste:204",
 "lat": 45.6561439,
 "lon": 13.8020038,
 "tipo": "generico",
@@ -2652,7 +2652,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:178",
+"osm_id": "opendata:trieste:205",
 "lat": 45.6571914,
 "lon": 13.8065205,
 "tipo": "generico",
@@ -2665,7 +2665,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:179",
+"osm_id": "opendata:trieste:206",
 "lat": 45.6563529,
 "lon": 13.8055609,
 "tipo": "generico",
@@ -2678,7 +2678,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:180",
+"osm_id": "opendata:trieste:207",
 "lat": 45.650994,
 "lon": 13.7830796,
 "tipo": "generico",
@@ -2691,7 +2691,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:181",
+"osm_id": "opendata:trieste:208",
 "lat": 45.6504416,
 "lon": 13.7832303,
 "tipo": "generico",
@@ -2704,7 +2704,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:182",
+"osm_id": "opendata:trieste:209",
 "lat": 45.65054,
 "lon": 13.7821799,
 "tipo": "generico",
@@ -2717,7 +2717,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:183",
+"osm_id": "opendata:trieste:210",
 "lat": 45.6504306,
 "lon": 13.7812347,
 "tipo": "generico",
@@ -2730,7 +2730,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:184",
+"osm_id": "opendata:trieste:211",
 "lat": 45.6502119,
 "lon": 13.7800426,
 "tipo": "generico",
@@ -2743,7 +2743,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:185",
+"osm_id": "opendata:trieste:212",
 "lat": 45.6501629,
 "lon": 13.7797593,
 "tipo": "generico",
@@ -2756,7 +2756,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:185",
+"osm_id": "opendata:trieste:213",
 "lat": 45.6501765,
 "lon": 13.7798349,
 "tipo": "generico",
@@ -2769,7 +2769,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:186",
+"osm_id": "opendata:trieste:214",
 "lat": 45.6501031,
 "lon": 13.7794343,
 "tipo": "generico",
@@ -2782,7 +2782,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:187",
+"osm_id": "opendata:trieste:215",
 "lat": 45.6503432,
 "lon": 13.7807586,
 "tipo": "generico",
@@ -2795,7 +2795,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:188",
+"osm_id": "opendata:trieste:216",
 "lat": 45.6503797,
 "lon": 13.7798384,
 "tipo": "generico",
@@ -2808,7 +2808,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:188",
+"osm_id": "opendata:trieste:217",
 "lat": 45.6504325,
 "lon": 13.7798173,
 "tipo": "generico",
@@ -2821,7 +2821,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:189",
+"osm_id": "opendata:trieste:218",
 "lat": 45.6505789,
 "lon": 13.7797874,
 "tipo": "generico",
@@ -2834,7 +2834,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:190",
+"osm_id": "opendata:trieste:219",
 "lat": 45.6514763,
 "lon": 13.7794087,
 "tipo": "generico",
@@ -2847,7 +2847,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:191",
+"osm_id": "opendata:trieste:220",
 "lat": 45.6514881,
 "lon": 13.780157,
 "tipo": "generico",
@@ -2860,7 +2860,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:191",
+"osm_id": "opendata:trieste:221",
 "lat": 45.651383,
 "lon": 13.7801974,
 "tipo": "generico",
@@ -2873,7 +2873,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:191",
+"osm_id": "opendata:trieste:222",
 "lat": 45.6514356,
 "lon": 13.7801772,
 "tipo": "generico",
@@ -2886,7 +2886,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:192",
+"osm_id": "opendata:trieste:223",
 "lat": 45.6512273,
 "lon": 13.7787792,
 "tipo": "generico",
@@ -2899,7 +2899,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:192",
+"osm_id": "opendata:trieste:224",
 "lat": 45.6512802,
 "lon": 13.7787587,
 "tipo": "generico",
@@ -2912,7 +2912,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:193",
+"osm_id": "opendata:trieste:225",
 "lat": 45.6506066,
 "lon": 13.7790215,
 "tipo": "generico",
@@ -2925,7 +2925,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:194",
+"osm_id": "opendata:trieste:226",
 "lat": 45.6503692,
 "lon": 13.778644,
 "tipo": "generico",
@@ -2938,7 +2938,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:195",
+"osm_id": "opendata:trieste:227",
 "lat": 45.6519758,
 "lon": 13.7733714,
 "tipo": "generico",
@@ -2951,7 +2951,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:195",
+"osm_id": "opendata:trieste:228",
 "lat": 45.6520018,
 "lon": 13.7733861,
 "tipo": "generico",
@@ -2964,7 +2964,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:196",
+"osm_id": "opendata:trieste:229",
 "lat": 45.6437275,
 "lon": 13.7874175,
 "tipo": "generico",
@@ -2977,7 +2977,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:197",
+"osm_id": "opendata:trieste:230",
 "lat": 45.6437592,
 "lon": 13.7830831,
 "tipo": "generico",
@@ -2990,7 +2990,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:197",
+"osm_id": "opendata:trieste:231",
 "lat": 45.6438116,
 "lon": 13.7830609,
 "tipo": "generico",
@@ -3003,7 +3003,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:198",
+"osm_id": "opendata:trieste:232",
 "lat": 45.6482345,
 "lon": 13.7630623,
 "tipo": "generico",
@@ -3016,7 +3016,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:198",
+"osm_id": "opendata:trieste:233",
 "lat": 45.6481241,
 "lon": 13.7628847,
 "tipo": "generico",
@@ -3029,7 +3029,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:198",
+"osm_id": "opendata:trieste:234",
 "lat": 45.6481618,
 "lon": 13.7629452,
 "tipo": "generico",
@@ -3042,7 +3042,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:198",
+"osm_id": "opendata:trieste:235",
 "lat": 45.6481429,
 "lon": 13.7629149,
 "tipo": "generico",
@@ -3055,7 +3055,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:199",
+"osm_id": "opendata:trieste:236",
 "lat": 45.6495875,
 "lon": 13.7644069,
 "tipo": "generico",
@@ -3068,7 +3068,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:199",
+"osm_id": "opendata:trieste:237",
 "lat": 45.649443,
 "lon": 13.764173,
 "tipo": "generico",
@@ -3081,7 +3081,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:199",
+"osm_id": "opendata:trieste:238",
 "lat": 45.6495512,
 "lon": 13.7643486,
 "tipo": "generico",
@@ -3094,7 +3094,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:199",
+"osm_id": "opendata:trieste:239",
 "lat": 45.649515,
 "lon": 13.7642903,
 "tipo": "generico",
@@ -3107,7 +3107,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:199",
+"osm_id": "opendata:trieste:240",
 "lat": 45.649479,
 "lon": 13.7642316,
 "tipo": "generico",
@@ -3120,7 +3120,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:200",
+"osm_id": "opendata:trieste:241",
 "lat": 45.6498147,
 "lon": 13.7651437,
 "tipo": "generico",
@@ -3133,7 +3133,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:200",
+"osm_id": "opendata:trieste:242",
 "lat": 45.6496169,
 "lon": 13.7648935,
 "tipo": "generico",
@@ -3146,7 +3146,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:200",
+"osm_id": "opendata:trieste:243",
 "lat": 45.6496837,
 "lon": 13.7648654,
 "tipo": "generico",
@@ -3159,7 +3159,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:200",
+"osm_id": "opendata:trieste:244",
 "lat": 45.6496837,
 "lon": 13.7649447,
 "tipo": "generico",
@@ -3172,7 +3172,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:201",
+"osm_id": "opendata:trieste:245",
 "lat": 45.649578,
 "lon": 13.7664851,
 "tipo": "generico",
@@ -3185,7 +3185,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:201",
+"osm_id": "opendata:trieste:246",
 "lat": 45.6495252,
 "lon": 13.7665484,
 "tipo": "generico",
@@ -3198,7 +3198,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:201",
+"osm_id": "opendata:trieste:247",
 "lat": 45.6495515,
 "lon": 13.7665168,
 "tipo": "generico",
@@ -3211,7 +3211,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:202",
+"osm_id": "opendata:trieste:248",
 "lat": 45.649466,
 "lon": 13.7670837,
 "tipo": "generico",
@@ -3224,7 +3224,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:203",
+"osm_id": "opendata:trieste:249",
 "lat": 45.64946,
 "lon": 13.7672654,
 "tipo": "generico",
@@ -3237,7 +3237,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:204",
+"osm_id": "opendata:trieste:250",
 "lat": 45.6492892,
 "lon": 13.7667343,
 "tipo": "generico",
@@ -3250,7 +3250,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:205",
+"osm_id": "opendata:trieste:251",
 "lat": 45.6493396,
 "lon": 13.7662823,
 "tipo": "generico",
@@ -3263,7 +3263,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:206",
+"osm_id": "opendata:trieste:252",
 "lat": 45.6450864,
 "lon": 13.764351,
 "tipo": "generico",
@@ -3276,7 +3276,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:207",
+"osm_id": "opendata:trieste:253",
 "lat": 45.7081279,
 "lon": 13.7323666,
 "tipo": "generico",
@@ -3289,7 +3289,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:208",
+"osm_id": "opendata:trieste:254",
 "lat": 45.6901244,
 "lon": 13.7865573,
 "tipo": "generico",
@@ -3302,7 +3302,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:209",
+"osm_id": "opendata:trieste:255",
 "lat": 45.6884428,
 "lon": 13.7884671,
 "tipo": "generico",
@@ -3315,7 +3315,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:210",
+"osm_id": "opendata:trieste:256",
 "lat": 45.6420895,
 "lon": 13.7825378,
 "tipo": "generico",
@@ -3328,7 +3328,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:211",
+"osm_id": "opendata:trieste:257",
 "lat": 45.6877273,
 "lon": 13.788162,
 "tipo": "generico",
@@ -3341,7 +3341,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:211",
+"osm_id": "opendata:trieste:258",
 "lat": 45.6877485,
 "lon": 13.7882371,
 "tipo": "generico",
@@ -3354,7 +3354,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:212",
+"osm_id": "opendata:trieste:259",
 "lat": 45.6561709,
 "lon": 13.8022656,
 "tipo": "generico",
@@ -3367,7 +3367,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:213",
+"osm_id": "opendata:trieste:260",
 "lat": 45.6460687,
 "lon": 13.8020214,
 "tipo": "generico",
@@ -3380,7 +3380,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:214",
+"osm_id": "opendata:trieste:261",
 "lat": 45.6460993,
 "lon": 13.8023976,
 "tipo": "generico",
@@ -3393,7 +3393,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:215",
+"osm_id": "opendata:trieste:262",
 "lat": 45.664719,
 "lon": 13.770672,
 "tipo": "generico",
@@ -3406,7 +3406,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:216",
+"osm_id": "opendata:trieste:263",
 "lat": 45.6306228,
 "lon": 13.7808423,
 "tipo": "generico",
@@ -3419,7 +3419,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:216",
+"osm_id": "opendata:trieste:264",
 "lat": 45.6306788,
 "lon": 13.7808307,
 "tipo": "generico",
@@ -3432,7 +3432,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:217",
+"osm_id": "opendata:trieste:265",
 "lat": 45.6468718,
 "lon": 13.7804245,
 "tipo": "generico",
@@ -3445,7 +3445,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:218",
+"osm_id": "opendata:trieste:266",
 "lat": 45.6432273,
 "lon": 13.7867477,
 "tipo": "generico",
@@ -3458,7 +3458,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:219",
+"osm_id": "opendata:trieste:267",
 "lat": 45.6436721,
 "lon": 13.7874207,
 "tipo": "generico",
@@ -3471,7 +3471,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:220",
+"osm_id": "opendata:trieste:268",
 "lat": 45.6448789,
 "lon": 13.7861416,
 "tipo": "generico",
@@ -3484,7 +3484,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:221",
+"osm_id": "opendata:trieste:269",
 "lat": 45.6438715,
 "lon": 13.7856926,
 "tipo": "generico",
@@ -3497,7 +3497,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:222",
+"osm_id": "opendata:trieste:270",
 "lat": 45.6432146,
 "lon": 13.7890279,
 "tipo": "generico",
@@ -3510,7 +3510,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:223",
+"osm_id": "opendata:trieste:271",
 "lat": 45.6455184,
 "lon": 13.7860681,
 "tipo": "generico",
@@ -3523,7 +3523,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:224",
+"osm_id": "opendata:trieste:272",
 "lat": 45.645624,
 "lon": 13.7879592,
 "tipo": "generico",
@@ -3536,7 +3536,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:225",
+"osm_id": "opendata:trieste:273",
 "lat": 45.6466691,
 "lon": 13.7871263,
 "tipo": "generico",
@@ -3549,7 +3549,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:226",
+"osm_id": "opendata:trieste:274",
 "lat": 45.6447686,
 "lon": 13.7824635,
 "tipo": "generico",
@@ -3562,7 +3562,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:227",
+"osm_id": "opendata:trieste:275",
 "lat": 45.6445864,
 "lon": 13.7826885,
 "tipo": "generico",
@@ -3575,7 +3575,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:228",
+"osm_id": "opendata:trieste:276",
 "lat": 45.6449932,
 "lon": 13.78337,
 "tipo": "generico",
@@ -3588,7 +3588,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:229",
+"osm_id": "opendata:trieste:277",
 "lat": 45.6461287,
 "lon": 13.7832905,
 "tipo": "generico",
@@ -3601,7 +3601,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:229",
+"osm_id": "opendata:trieste:278",
 "lat": 45.6461834,
 "lon": 13.7832866,
 "tipo": "generico",
@@ -3614,7 +3614,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:230",
+"osm_id": "opendata:trieste:279",
 "lat": 45.6453279,
 "lon": 13.7806558,
 "tipo": "generico",
@@ -3627,7 +3627,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:231",
+"osm_id": "opendata:trieste:280",
 "lat": 45.646036,
 "lon": 13.7813378,
 "tipo": "generico",
@@ -3640,7 +3640,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:232",
+"osm_id": "opendata:trieste:281",
 "lat": 45.6463586,
 "lon": 13.7802681,
 "tipo": "generico",
@@ -3653,7 +3653,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:233",
+"osm_id": "opendata:trieste:282",
 "lat": 45.6470703,
 "lon": 13.7784404,
 "tipo": "generico",
@@ -3666,7 +3666,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:234",
+"osm_id": "opendata:trieste:283",
 "lat": 45.6471103,
 "lon": 13.778534,
 "tipo": "generico",
@@ -3679,7 +3679,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:235",
+"osm_id": "opendata:trieste:284",
 "lat": 45.6473996,
 "lon": 13.7797636,
 "tipo": "generico",
@@ -3692,7 +3692,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:236",
+"osm_id": "opendata:trieste:285",
 "lat": 45.6474371,
 "lon": 13.7816263,
 "tipo": "generico",
@@ -3705,7 +3705,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:237",
+"osm_id": "opendata:trieste:286",
 "lat": 45.6467353,
 "lon": 13.7814066,
 "tipo": "generico",
@@ -3718,7 +3718,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:238",
+"osm_id": "opendata:trieste:287",
 "lat": 45.6476892,
 "lon": 13.782639,
 "tipo": "generico",
@@ -3731,7 +3731,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:239",
+"osm_id": "opendata:trieste:288",
 "lat": 45.6467704,
 "lon": 13.7834043,
 "tipo": "generico",
@@ -3744,7 +3744,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:240",
+"osm_id": "opendata:trieste:289",
 "lat": 45.6468178,
 "lon": 13.7835366,
 "tipo": "generico",
@@ -3757,7 +3757,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:241",
+"osm_id": "opendata:trieste:290",
 "lat": 45.6483301,
 "lon": 13.7840452,
 "tipo": "generico",
@@ -3770,7 +3770,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:242",
+"osm_id": "opendata:trieste:291",
 "lat": 45.6489731,
 "lon": 13.7835039,
 "tipo": "generico",
@@ -3783,7 +3783,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:243",
+"osm_id": "opendata:trieste:292",
 "lat": 45.6486655,
 "lon": 13.7827882,
 "tipo": "generico",
@@ -3796,7 +3796,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:244",
+"osm_id": "opendata:trieste:293",
 "lat": 45.6481947,
 "lon": 13.782786,
 "tipo": "generico",
@@ -3809,7 +3809,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:245",
+"osm_id": "opendata:trieste:294",
 "lat": 45.6486338,
 "lon": 13.7829565,
 "tipo": "generico",
@@ -3822,7 +3822,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:246",
+"osm_id": "opendata:trieste:295",
 "lat": 45.6485912,
 "lon": 13.7820902,
 "tipo": "generico",
@@ -3835,7 +3835,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:246",
+"osm_id": "opendata:trieste:296",
 "lat": 45.6486053,
 "lon": 13.7821655,
 "tipo": "generico",
@@ -3848,7 +3848,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:247",
+"osm_id": "opendata:trieste:297",
 "lat": 45.6484743,
 "lon": 13.7814665,
 "tipo": "generico",
@@ -3861,7 +3861,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:247",
+"osm_id": "opendata:trieste:298",
 "lat": 45.6484885,
 "lon": 13.7815425,
 "tipo": "generico",
@@ -3874,7 +3874,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:248",
+"osm_id": "opendata:trieste:299",
 "lat": 45.6483555,
 "lon": 13.7807935,
 "tipo": "generico",
@@ -3887,7 +3887,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:249",
+"osm_id": "opendata:trieste:300",
 "lat": 45.6483023,
 "lon": 13.7808217,
 "tipo": "generico",
@@ -3900,7 +3900,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:250",
+"osm_id": "opendata:trieste:301",
 "lat": 45.6483177,
 "lon": 13.7798641,
 "tipo": "generico",
@@ -3913,7 +3913,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:250",
+"osm_id": "opendata:trieste:302",
 "lat": 45.6483662,
 "lon": 13.7799016,
 "tipo": "generico",
@@ -3926,7 +3926,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:251",
+"osm_id": "opendata:trieste:303",
 "lat": 45.648703,
 "lon": 13.7788056,
 "tipo": "generico",
@@ -3939,7 +3939,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:252",
+"osm_id": "opendata:trieste:304",
 "lat": 45.6484305,
 "lon": 13.7792627,
 "tipo": "generico",
@@ -3952,7 +3952,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:253",
+"osm_id": "opendata:trieste:305",
 "lat": 45.6492316,
 "lon": 13.779894,
 "tipo": "generico",
@@ -3965,7 +3965,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:254",
+"osm_id": "opendata:trieste:306",
 "lat": 45.6491258,
 "lon": 13.7764319,
 "tipo": "generico",
@@ -3978,7 +3978,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:255",
+"osm_id": "opendata:trieste:307",
 "lat": 45.648104,
 "lon": 13.7787589,
 "tipo": "generico",
@@ -3991,7 +3991,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:256",
+"osm_id": "opendata:trieste:308",
 "lat": 45.6498186,
 "lon": 13.7756414,
 "tipo": "generico",
@@ -4004,7 +4004,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:256",
+"osm_id": "opendata:trieste:309",
 "lat": 45.6498694,
 "lon": 13.7756714,
 "tipo": "generico",
@@ -4017,7 +4017,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:257",
+"osm_id": "opendata:trieste:310",
 "lat": 45.6496803,
 "lon": 13.7745344,
 "tipo": "generico",
@@ -4030,7 +4030,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:258",
+"osm_id": "opendata:trieste:311",
 "lat": 45.6497965,
 "lon": 13.7740622,
 "tipo": "generico",
@@ -4043,7 +4043,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:259",
+"osm_id": "opendata:trieste:312",
 "lat": 45.6502541,
 "lon": 13.7743161,
 "tipo": "generico",
@@ -4056,7 +4056,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:259",
+"osm_id": "opendata:trieste:313",
 "lat": 45.6503052,
 "lon": 13.7743445,
 "tipo": "generico",
@@ -4069,7 +4069,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:260",
+"osm_id": "opendata:trieste:314",
 "lat": 45.6495152,
 "lon": 13.7739153,
 "tipo": "generico",
@@ -4082,7 +4082,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:261",
+"osm_id": "opendata:trieste:315",
 "lat": 45.6497406,
 "lon": 13.7722336,
 "tipo": "generico",
@@ -4095,7 +4095,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:262",
+"osm_id": "opendata:trieste:316",
 "lat": 45.6504135,
 "lon": 13.7724762,
 "tipo": "generico",
@@ -4108,7 +4108,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:263",
+"osm_id": "opendata:trieste:317",
 "lat": 45.6442765,
 "lon": 13.7800139,
 "tipo": "generico",
@@ -4121,7 +4121,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:264",
+"osm_id": "opendata:trieste:318",
 "lat": 45.6439452,
 "lon": 13.7791614,
 "tipo": "generico",
@@ -4134,7 +4134,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:265",
+"osm_id": "opendata:trieste:319",
 "lat": 45.6430989,
 "lon": 13.7796455,
 "tipo": "generico",
@@ -4147,7 +4147,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:266",
+"osm_id": "opendata:trieste:320",
 "lat": 45.6426997,
 "lon": 13.7772689,
 "tipo": "generico",
@@ -4160,7 +4160,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:266",
+"osm_id": "opendata:trieste:321",
 "lat": 45.6427398,
 "lon": 13.7772139,
 "tipo": "generico",
@@ -4173,7 +4173,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:267",
+"osm_id": "opendata:trieste:322",
 "lat": 45.6432646,
 "lon": 13.7765796,
 "tipo": "generico",
@@ -4186,7 +4186,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:268",
+"osm_id": "opendata:trieste:323",
 "lat": 45.6423085,
 "lon": 13.7772538,
 "tipo": "generico",
@@ -4199,7 +4199,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:269",
+"osm_id": "opendata:trieste:324",
 "lat": 45.6404123,
 "lon": 13.7749023,
 "tipo": "generico",
@@ -4212,7 +4212,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:270",
+"osm_id": "opendata:trieste:325",
 "lat": 45.6401046,
 "lon": 13.7756788,
 "tipo": "generico",
@@ -4225,7 +4225,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:271",
+"osm_id": "opendata:trieste:326",
 "lat": 45.6371462,
 "lon": 13.7780089,
 "tipo": "generico",
@@ -4238,7 +4238,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:271",
+"osm_id": "opendata:trieste:327",
 "lat": 45.6371896,
 "lon": 13.7780581,
 "tipo": "generico",
@@ -4251,7 +4251,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:272",
+"osm_id": "opendata:trieste:328",
 "lat": 45.6375618,
 "lon": 13.7796526,
 "tipo": "generico",
@@ -4264,7 +4264,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:273",
+"osm_id": "opendata:trieste:329",
 "lat": 45.6363666,
 "lon": 13.781928,
 "tipo": "generico",
@@ -4277,7 +4277,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:274",
+"osm_id": "opendata:trieste:330",
 "lat": 45.6349739,
 "lon": 13.7811946,
 "tipo": "generico",
@@ -4290,7 +4290,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:275",
+"osm_id": "opendata:trieste:331",
 "lat": 45.6430885,
 "lon": 13.7833544,
 "tipo": "generico",
@@ -4303,7 +4303,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:276",
+"osm_id": "opendata:trieste:332",
 "lat": 45.6431187,
 "lon": 13.7839789,
 "tipo": "generico",
@@ -4316,7 +4316,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:277",
+"osm_id": "opendata:trieste:333",
 "lat": 45.641452,
 "lon": 13.7817966,
 "tipo": "generico",
@@ -4329,7 +4329,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:278",
+"osm_id": "opendata:trieste:334",
 "lat": 45.6532971,
 "lon": 13.7856499,
 "tipo": "generico",
@@ -4342,7 +4342,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:279",
+"osm_id": "opendata:trieste:335",
 "lat": 45.6545719,
 "lon": 13.7810049,
 "tipo": "generico",
@@ -4355,7 +4355,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:279",
+"osm_id": "opendata:trieste:336",
 "lat": 45.6546175,
 "lon": 13.7809605,
 "tipo": "generico",
@@ -4368,7 +4368,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:280",
+"osm_id": "opendata:trieste:337",
 "lat": 45.6421577,
 "lon": 13.7865834,
 "tipo": "generico",
@@ -4381,7 +4381,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:281",
+"osm_id": "opendata:trieste:338",
 "lat": 45.6519669,
 "lon": 13.7687189,
 "tipo": "generico",
@@ -4394,7 +4394,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:281",
+"osm_id": "opendata:trieste:339",
 "lat": 45.6519956,
 "lon": 13.7687481,
 "tipo": "generico",
@@ -4407,7 +4407,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:282",
+"osm_id": "opendata:trieste:340",
 "lat": 45.6512925,
 "lon": 13.7687479,
 "tipo": "generico",
@@ -4420,7 +4420,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:282",
+"osm_id": "opendata:trieste:341",
 "lat": 45.6513353,
 "lon": 13.7686992,
 "tipo": "generico",
@@ -4433,7 +4433,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:283",
+"osm_id": "opendata:trieste:342",
 "lat": 45.650586,
 "lon": 13.768405,
 "tipo": "generico",
@@ -4446,7 +4446,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:283",
+"osm_id": "opendata:trieste:343",
 "lat": 45.6506297,
 "lon": 13.7683581,
 "tipo": "generico",
@@ -4459,7 +4459,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:284",
+"osm_id": "opendata:trieste:344",
 "lat": 45.6466905,
 "lon": 13.7606857,
 "tipo": "generico",
@@ -4472,7 +4472,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:284",
+"osm_id": "opendata:trieste:345",
 "lat": 45.6466597,
 "lon": 13.7606352,
 "tipo": "generico",
@@ -4485,7 +4485,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:284",
+"osm_id": "opendata:trieste:346",
 "lat": 45.6466751,
 "lon": 13.7606605,
 "tipo": "generico",
@@ -4498,7 +4498,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:285",
+"osm_id": "opendata:trieste:347",
 "lat": 45.6565133,
 "lon": 13.8053733,
 "tipo": "generico",
@@ -4511,7 +4511,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:285",
+"osm_id": "opendata:trieste:348",
 "lat": 45.6565369,
 "lon": 13.8054085,
 "tipo": "generico",
@@ -4524,7 +4524,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:286",
+"osm_id": "opendata:trieste:349",
 "lat": 45.6559465,
 "lon": 13.8057092,
 "tipo": "generico",
@@ -4537,7 +4537,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:287",
+"osm_id": "opendata:trieste:350",
 "lat": 45.6555959,
 "lon": 13.8065083,
 "tipo": "generico",
@@ -4550,7 +4550,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:288",
+"osm_id": "opendata:trieste:351",
 "lat": 45.6540496,
 "lon": 13.8038493,
 "tipo": "generico",
@@ -4563,7 +4563,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:289",
+"osm_id": "opendata:trieste:352",
 "lat": 45.6554252,
 "lon": 13.7956396,
 "tipo": "generico",
@@ -4576,7 +4576,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:290",
+"osm_id": "opendata:trieste:353",
 "lat": 45.6553862,
 "lon": 13.7962144,
 "tipo": "generico",
@@ -4589,7 +4589,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:291",
+"osm_id": "opendata:trieste:354",
 "lat": 45.655449,
 "lon": 13.7933833,
 "tipo": "generico",
@@ -4602,7 +4602,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:292",
+"osm_id": "opendata:trieste:355",
 "lat": 45.6554269,
 "lon": 13.7941856,
 "tipo": "generico",
@@ -4615,7 +4615,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:292",
+"osm_id": "opendata:trieste:356",
 "lat": 45.6554326,
 "lon": 13.7941081,
 "tipo": "generico",
@@ -4628,7 +4628,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:293",
+"osm_id": "opendata:trieste:357",
 "lat": 45.6551343,
 "lon": 13.79219,
 "tipo": "generico",
@@ -4641,7 +4641,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:294",
+"osm_id": "opendata:trieste:358",
 "lat": 45.6541682,
 "lon": 13.7873411,
 "tipo": "generico",
@@ -4654,7 +4654,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:295",
+"osm_id": "opendata:trieste:359",
 "lat": 45.6542746,
 "lon": 13.7902971,
 "tipo": "generico",
@@ -4667,7 +4667,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:296",
+"osm_id": "opendata:trieste:360",
 "lat": 45.6536195,
 "lon": 13.7879253,
 "tipo": "generico",
@@ -4680,7 +4680,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:297",
+"osm_id": "opendata:trieste:361",
 "lat": 45.6532643,
 "lon": 13.7868172,
 "tipo": "generico",
@@ -4693,7 +4693,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:298",
+"osm_id": "opendata:trieste:362",
 "lat": 45.6526463,
 "lon": 13.7841647,
 "tipo": "generico",
@@ -4706,7 +4706,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:298",
+"osm_id": "opendata:trieste:363",
 "lat": 45.6526547,
 "lon": 13.7842082,
 "tipo": "generico",
@@ -4719,7 +4719,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:299",
+"osm_id": "opendata:trieste:364",
 "lat": 45.6527777,
 "lon": 13.7843102,
 "tipo": "generico",
@@ -4732,7 +4732,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:300",
+"osm_id": "opendata:trieste:365",
 "lat": 45.6543441,
 "lon": 13.789537,
 "tipo": "generico",
@@ -4745,7 +4745,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:300",
+"osm_id": "opendata:trieste:366",
 "lat": 45.6543971,
 "lon": 13.7895169,
 "tipo": "generico",
@@ -4758,7 +4758,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:301",
+"osm_id": "opendata:trieste:367",
 "lat": 45.6553799,
 "lon": 13.7884599,
 "tipo": "generico",
@@ -4771,7 +4771,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:302",
+"osm_id": "opendata:trieste:368",
 "lat": 45.6556477,
 "lon": 13.7881667,
 "tipo": "generico",
@@ -4784,7 +4784,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:303",
+"osm_id": "opendata:trieste:369",
 "lat": 45.6567732,
 "lon": 13.7883711,
 "tipo": "generico",
@@ -4797,7 +4797,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:304",
+"osm_id": "opendata:trieste:370",
 "lat": 45.6564894,
 "lon": 13.7864894,
 "tipo": "generico",
@@ -4810,7 +4810,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:305",
+"osm_id": "opendata:trieste:371",
 "lat": 45.6568067,
 "lon": 13.7906927,
 "tipo": "generico",
@@ -4823,7 +4823,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:306",
+"osm_id": "opendata:trieste:372",
 "lat": 45.6567913,
 "lon": 13.7917353,
 "tipo": "generico",
@@ -4836,7 +4836,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:307",
+"osm_id": "opendata:trieste:373",
 "lat": 45.6565316,
 "lon": 13.7849289,
 "tipo": "generico",
@@ -4849,7 +4849,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:308",
+"osm_id": "opendata:trieste:374",
 "lat": 45.6556677,
 "lon": 13.7840301,
 "tipo": "generico",
@@ -4862,7 +4862,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:309",
+"osm_id": "opendata:trieste:375",
 "lat": 45.6558686,
 "lon": 13.7838639,
 "tipo": "generico",
@@ -4875,7 +4875,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:310",
+"osm_id": "opendata:trieste:376",
 "lat": 45.6562446,
 "lon": 13.7814526,
 "tipo": "generico",
@@ -4888,7 +4888,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:311",
+"osm_id": "opendata:trieste:377",
 "lat": 45.6563909,
 "lon": 13.7814859,
 "tipo": "generico",
@@ -4901,7 +4901,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:312",
+"osm_id": "opendata:trieste:378",
 "lat": 45.6559956,
 "lon": 13.7800468,
 "tipo": "generico",
@@ -4914,7 +4914,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:313",
+"osm_id": "opendata:trieste:379",
 "lat": 45.6550815,
 "lon": 13.782745,
 "tipo": "generico",
@@ -4927,7 +4927,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:314",
+"osm_id": "opendata:trieste:380",
 "lat": 45.6543009,
 "lon": 13.7814678,
 "tipo": "generico",
@@ -4940,7 +4940,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:315",
+"osm_id": "opendata:trieste:381",
 "lat": 45.6541153,
 "lon": 13.7811194,
 "tipo": "generico",
@@ -4953,7 +4953,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:315",
+"osm_id": "opendata:trieste:382",
 "lat": 45.6541479,
 "lon": 13.781183,
 "tipo": "generico",
@@ -4966,7 +4966,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:316",
+"osm_id": "opendata:trieste:383",
 "lat": 45.6537904,
 "lon": 13.7802189,
 "tipo": "generico",
@@ -4979,7 +4979,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:317",
+"osm_id": "opendata:trieste:384",
 "lat": 45.653234,
 "lon": 13.7793759,
 "tipo": "generico",
@@ -4992,7 +4992,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:318",
+"osm_id": "opendata:trieste:385",
 "lat": 45.652679,
 "lon": 13.7782892,
 "tipo": "generico",
@@ -5005,7 +5005,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:318",
+"osm_id": "opendata:trieste:386",
 "lat": 45.6527112,
 "lon": 13.7783544,
 "tipo": "generico",
@@ -5018,7 +5018,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:319",
+"osm_id": "opendata:trieste:387",
 "lat": 45.6533237,
 "lon": 13.7774136,
 "tipo": "generico",
@@ -5031,7 +5031,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:320",
+"osm_id": "opendata:trieste:388",
 "lat": 45.653718,
 "lon": 13.7781923,
 "tipo": "generico",
@@ -5044,7 +5044,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:321",
+"osm_id": "opendata:trieste:389",
 "lat": 45.6537166,
 "lon": 13.7788175,
 "tipo": "generico",
@@ -5057,7 +5057,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:322",
+"osm_id": "opendata:trieste:390",
 "lat": 45.6541645,
 "lon": 13.7781596,
 "tipo": "generico",
@@ -5070,7 +5070,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:323",
+"osm_id": "opendata:trieste:391",
 "lat": 45.6539568,
 "lon": 13.7768183,
 "tipo": "generico",
@@ -5083,7 +5083,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:323",
+"osm_id": "opendata:trieste:392",
 "lat": 45.6539678,
 "lon": 13.7767695,
 "tipo": "generico",
@@ -5096,7 +5096,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:324",
+"osm_id": "opendata:trieste:393",
 "lat": 45.6545344,
 "lon": 13.7770511,
 "tipo": "generico",
@@ -5109,7 +5109,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:325",
+"osm_id": "opendata:trieste:394",
 "lat": 45.6544778,
 "lon": 13.7771964,
 "tipo": "generico",
@@ -5122,7 +5122,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:326",
+"osm_id": "opendata:trieste:395",
 "lat": 45.6544206,
 "lon": 13.77595,
 "tipo": "generico",
@@ -5135,7 +5135,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:327",
+"osm_id": "opendata:trieste:396",
 "lat": 45.653823,
 "lon": 13.7756232,
 "tipo": "generico",
@@ -5148,7 +5148,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:327",
+"osm_id": "opendata:trieste:397",
 "lat": 45.6538419,
 "lon": 13.7756963,
 "tipo": "generico",
@@ -5161,7 +5161,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:328",
+"osm_id": "opendata:trieste:398",
 "lat": 45.654708,
 "lon": 13.7756831,
 "tipo": "generico",
@@ -5174,7 +5174,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:329",
+"osm_id": "opendata:trieste:399",
 "lat": 45.6547343,
 "lon": 13.7763139,
 "tipo": "generico",
@@ -5187,7 +5187,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:330",
+"osm_id": "opendata:trieste:400",
 "lat": 45.6546607,
 "lon": 13.77624,
 "tipo": "generico",
@@ -5200,7 +5200,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:331",
+"osm_id": "opendata:trieste:401",
 "lat": 45.6544439,
 "lon": 13.7746993,
 "tipo": "generico",
@@ -5213,7 +5213,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:331",
+"osm_id": "opendata:trieste:402",
 "lat": 45.65438,
 "lon": 13.7746638,
 "tipo": "generico",
@@ -5226,7 +5226,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:331",
+"osm_id": "opendata:trieste:403",
 "lat": 45.654412,
 "lon": 13.7746815,
 "tipo": "generico",
@@ -5239,7 +5239,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:332",
+"osm_id": "opendata:trieste:404",
 "lat": 45.6546937,
 "lon": 13.7741294,
 "tipo": "generico",
@@ -5252,7 +5252,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:332",
+"osm_id": "opendata:trieste:405",
 "lat": 45.6547139,
 "lon": 13.7740561,
 "tipo": "generico",
@@ -5265,7 +5265,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:333",
+"osm_id": "opendata:trieste:406",
 "lat": 45.6548651,
 "lon": 13.7735066,
 "tipo": "generico",
@@ -5278,7 +5278,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:333",
+"osm_id": "opendata:trieste:407",
 "lat": 45.6548849,
 "lon": 13.7734338,
 "tipo": "generico",
@@ -5291,7 +5291,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:334",
+"osm_id": "opendata:trieste:408",
 "lat": 45.655325,
 "lon": 13.7716747,
 "tipo": "generico",
@@ -5304,7 +5304,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:335",
+"osm_id": "opendata:trieste:409",
 "lat": 45.6548544,
 "lon": 13.7718673,
 "tipo": "generico",
@@ -5317,7 +5317,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:336",
+"osm_id": "opendata:trieste:410",
 "lat": 45.6547539,
 "lon": 13.771875,
 "tipo": "generico",
@@ -5330,7 +5330,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:337",
+"osm_id": "opendata:trieste:411",
 "lat": 45.6560085,
 "lon": 13.770759,
 "tipo": "generico",
@@ -5343,7 +5343,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:337",
+"osm_id": "opendata:trieste:412",
 "lat": 45.6559537,
 "lon": 13.7707483,
 "tipo": "generico",
@@ -5356,7 +5356,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:337",
+"osm_id": "opendata:trieste:413",
 "lat": 45.655981,
 "lon": 13.7707536,
 "tipo": "generico",
@@ -5369,7 +5369,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:338",
+"osm_id": "opendata:trieste:414",
 "lat": 45.6556801,
 "lon": 13.7723005,
 "tipo": "generico",
@@ -5382,7 +5382,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:339",
+"osm_id": "opendata:trieste:415",
 "lat": 45.6553447,
 "lon": 13.7733192,
 "tipo": "generico",
@@ -5395,7 +5395,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:340",
+"osm_id": "opendata:trieste:416",
 "lat": 45.655006,
 "lon": 13.7745406,
 "tipo": "generico",
@@ -5408,7 +5408,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:341",
+"osm_id": "opendata:trieste:417",
 "lat": 45.6537694,
 "lon": 13.7702638,
 "tipo": "generico",
@@ -5421,7 +5421,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:342",
+"osm_id": "opendata:trieste:418",
 "lat": 45.6530035,
 "lon": 13.771519,
 "tipo": "generico",
@@ -5434,7 +5434,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:343",
+"osm_id": "opendata:trieste:419",
 "lat": 45.6530239,
 "lon": 13.7714467,
 "tipo": "generico",
@@ -5447,7 +5447,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:344",
+"osm_id": "opendata:trieste:420",
 "lat": 45.6532889,
 "lon": 13.7706691,
 "tipo": "generico",
@@ -5460,7 +5460,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:345",
+"osm_id": "opendata:trieste:421",
 "lat": 45.6527787,
 "lon": 13.7723194,
 "tipo": "generico",
@@ -5473,7 +5473,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:346",
+"osm_id": "opendata:trieste:422",
 "lat": 45.6526228,
 "lon": 13.7728721,
 "tipo": "generico",
@@ -5486,7 +5486,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:347",
+"osm_id": "opendata:trieste:423",
 "lat": 45.6523474,
 "lon": 13.7738664,
 "tipo": "generico",
@@ -5499,7 +5499,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:347",
+"osm_id": "opendata:trieste:424",
 "lat": 45.6523684,
 "lon": 13.7737928,
 "tipo": "generico",
@@ -5512,7 +5512,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:348",
+"osm_id": "opendata:trieste:425",
 "lat": 45.6521382,
 "lon": 13.7746012,
 "tipo": "generico",
@@ -5525,7 +5525,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:349",
+"osm_id": "opendata:trieste:426",
 "lat": 45.6534046,
 "lon": 13.7719314,
 "tipo": "generico",
@@ -5538,7 +5538,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:350",
+"osm_id": "opendata:trieste:427",
 "lat": 45.6552796,
 "lon": 13.7726204,
 "tipo": "generico",
@@ -5551,7 +5551,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:351",
+"osm_id": "opendata:trieste:428",
 "lat": 45.6532836,
 "lon": 13.777646,
 "tipo": "generico",
@@ -5564,7 +5564,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:352",
+"osm_id": "opendata:trieste:429",
 "lat": 45.6416501,
 "lon": 13.7859045,
 "tipo": "generico",
@@ -5577,7 +5577,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:353",
+"osm_id": "opendata:trieste:430",
 "lat": 45.6530814,
 "lon": 13.7757202,
 "tipo": "generico",
@@ -5590,7 +5590,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:354",
+"osm_id": "opendata:trieste:431",
 "lat": 45.6526015,
 "lon": 13.7747555,
 "tipo": "generico",
@@ -5603,7 +5603,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:355",
+"osm_id": "opendata:trieste:432",
 "lat": 45.6529424,
 "lon": 13.7733834,
 "tipo": "generico",
@@ -5616,7 +5616,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:356",
+"osm_id": "opendata:trieste:433",
 "lat": 45.651782,
 "lon": 13.7752273,
 "tipo": "generico",
@@ -5629,7 +5629,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:356",
+"osm_id": "opendata:trieste:434",
 "lat": 45.6518332,
 "lon": 13.775256,
 "tipo": "generico",
@@ -5642,7 +5642,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:357",
+"osm_id": "opendata:trieste:435",
 "lat": 45.651824,
 "lon": 13.7751841,
 "tipo": "generico",
@@ -5655,7 +5655,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:358",
+"osm_id": "opendata:trieste:436",
 "lat": 45.6580658,
 "lon": 13.7722525,
 "tipo": "generico",
@@ -5668,7 +5668,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:358",
+"osm_id": "opendata:trieste:437",
 "lat": 45.6580971,
 "lon": 13.772235,
 "tipo": "generico",
@@ -5681,7 +5681,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:359",
+"osm_id": "opendata:trieste:438",
 "lat": 45.6523067,
 "lon": 13.77924,
 "tipo": "generico",
@@ -5694,7 +5694,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:360",
+"osm_id": "opendata:trieste:439",
 "lat": 45.652236,
 "lon": 13.7790542,
 "tipo": "generico",
@@ -5707,7 +5707,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:361",
+"osm_id": "opendata:trieste:440",
 "lat": 45.6524921,
 "lon": 13.7797469,
 "tipo": "generico",
@@ -5720,7 +5720,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:362",
+"osm_id": "opendata:trieste:441",
 "lat": 45.6530217,
 "lon": 13.7812795,
 "tipo": "generico",
@@ -5733,7 +5733,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:363",
+"osm_id": "opendata:trieste:442",
 "lat": 45.6534923,
 "lon": 13.7829772,
 "tipo": "generico",
@@ -5746,7 +5746,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:364",
+"osm_id": "opendata:trieste:443",
 "lat": 45.6538093,
 "lon": 13.7845648,
 "tipo": "generico",
@@ -5759,7 +5759,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:365",
+"osm_id": "opendata:trieste:444",
 "lat": 45.6529937,
 "lon": 13.7827007,
 "tipo": "generico",
@@ -5772,7 +5772,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:366",
+"osm_id": "opendata:trieste:445",
 "lat": 45.6539355,
 "lon": 13.7851985,
 "tipo": "generico",
@@ -5785,7 +5785,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:367",
+"osm_id": "opendata:trieste:446",
 "lat": 45.6474655,
 "lon": 13.7651913,
 "tipo": "generico",
@@ -5798,7 +5798,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:367",
+"osm_id": "opendata:trieste:447",
 "lat": 45.6475061,
 "lon": 13.7651385,
 "tipo": "generico",
@@ -5811,7 +5811,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:368",
+"osm_id": "opendata:trieste:448",
 "lat": 45.6467232,
 "lon": 13.7645039,
 "tipo": "generico",
@@ -5824,7 +5824,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:369",
+"osm_id": "opendata:trieste:449",
 "lat": 45.6469662,
 "lon": 13.765673,
 "tipo": "generico",
@@ -5837,7 +5837,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:370",
+"osm_id": "opendata:trieste:450",
 "lat": 45.6462483,
 "lon": 13.764502,
 "tipo": "generico",
@@ -5850,7 +5850,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:371",
+"osm_id": "opendata:trieste:451",
 "lat": 45.6462155,
 "lon": 13.764441,
 "tipo": "generico",
@@ -5863,7 +5863,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:372",
+"osm_id": "opendata:trieste:452",
 "lat": 45.6457608,
 "lon": 13.7631289,
 "tipo": "generico",
@@ -5876,7 +5876,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:373",
+"osm_id": "opendata:trieste:453",
 "lat": 45.6454172,
 "lon": 13.7623368,
 "tipo": "generico",
@@ -5889,7 +5889,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:373",
+"osm_id": "opendata:trieste:454",
 "lat": 45.6454464,
 "lon": 13.7624041,
 "tipo": "generico",
@@ -5902,7 +5902,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:374",
+"osm_id": "opendata:trieste:455",
 "lat": 45.6461349,
 "lon": 13.7687156,
 "tipo": "generico",
@@ -5915,7 +5915,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:375",
+"osm_id": "opendata:trieste:456",
 "lat": 45.6448808,
 "lon": 13.7666315,
 "tipo": "generico",
@@ -5928,7 +5928,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:376",
+"osm_id": "opendata:trieste:457",
 "lat": 45.6460364,
 "lon": 13.7689668,
 "tipo": "generico",
@@ -5941,7 +5941,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:377",
+"osm_id": "opendata:trieste:458",
 "lat": 45.6468911,
 "lon": 13.7681891,
 "tipo": "generico",
@@ -5954,7 +5954,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:378",
+"osm_id": "opendata:trieste:459",
 "lat": 45.6470904,
 "lon": 13.7675433,
 "tipo": "generico",
@@ -5967,7 +5967,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:378",
+"osm_id": "opendata:trieste:460",
 "lat": 45.6471217,
 "lon": 13.7674792,
 "tipo": "generico",
@@ -5980,7 +5980,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:379",
+"osm_id": "opendata:trieste:461",
 "lat": 45.6483692,
 "lon": 13.7696189,
 "tipo": "generico",
@@ -5993,7 +5993,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:380",
+"osm_id": "opendata:trieste:462",
 "lat": 45.6487503,
 "lon": 13.767934,
 "tipo": "generico",
@@ -6006,7 +6006,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:381",
+"osm_id": "opendata:trieste:463",
 "lat": 45.6486034,
 "lon": 13.7686624,
 "tipo": "generico",
@@ -6019,7 +6019,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:381",
+"osm_id": "opendata:trieste:464",
 "lat": 45.6486163,
 "lon": 13.7687093,
 "tipo": "generico",
@@ -6032,7 +6032,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:382",
+"osm_id": "opendata:trieste:465",
 "lat": 45.648726,
 "lon": 13.7691468,
 "tipo": "generico",
@@ -6045,7 +6045,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:383",
+"osm_id": "opendata:trieste:466",
 "lat": 45.648898,
 "lon": 13.7698984,
 "tipo": "generico",
@@ -6058,7 +6058,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:384",
+"osm_id": "opendata:trieste:467",
 "lat": 45.6490842,
 "lon": 13.770554,
 "tipo": "generico",
@@ -6071,7 +6071,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:385",
+"osm_id": "opendata:trieste:468",
 "lat": 45.6493918,
 "lon": 13.7703968,
 "tipo": "generico",
@@ -6084,7 +6084,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:386",
+"osm_id": "opendata:trieste:469",
 "lat": 45.6537263,
 "lon": 13.7823317,
 "tipo": "generico",
@@ -6097,7 +6097,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:387",
+"osm_id": "opendata:trieste:470",
 "lat": 45.6539887,
 "lon": 13.782742,
 "tipo": "generico",
@@ -6110,7 +6110,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:388",
+"osm_id": "opendata:trieste:471",
 "lat": 45.6547241,
 "lon": 13.7838819,
 "tipo": "generico",
@@ -6123,7 +6123,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:389",
+"osm_id": "opendata:trieste:472",
 "lat": 45.6524266,
 "lon": 13.781235,
 "tipo": "generico",
@@ -6136,7 +6136,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:390",
+"osm_id": "opendata:trieste:473",
 "lat": 45.6521011,
 "lon": 13.7841045,
 "tipo": "generico",
@@ -6149,7 +6149,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:391",
+"osm_id": "opendata:trieste:474",
 "lat": 45.6516771,
 "lon": 13.7827914,
 "tipo": "generico",
@@ -6162,7 +6162,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:392",
+"osm_id": "opendata:trieste:475",
 "lat": 45.6512667,
 "lon": 13.7805728,
 "tipo": "generico",
@@ -6175,7 +6175,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:393",
+"osm_id": "opendata:trieste:476",
 "lat": 45.6511171,
 "lon": 13.7797473,
 "tipo": "generico",
@@ -6188,7 +6188,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:394",
+"osm_id": "opendata:trieste:477",
 "lat": 45.650786,
 "lon": 13.7778401,
 "tipo": "generico",
@@ -6201,7 +6201,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:394",
+"osm_id": "opendata:trieste:478",
 "lat": 45.6507281,
 "lon": 13.7776197,
 "tipo": "generico",
@@ -6214,7 +6214,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:394",
+"osm_id": "opendata:trieste:479",
 "lat": 45.6507666,
 "lon": 13.7777666,
 "tipo": "generico",
@@ -6227,7 +6227,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:394",
+"osm_id": "opendata:trieste:480",
 "lat": 45.6507473,
 "lon": 13.7776932,
 "tipo": "generico",
@@ -6240,7 +6240,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:395",
+"osm_id": "opendata:trieste:481",
 "lat": 45.6511461,
 "lon": 13.7764838,
 "tipo": "generico",
@@ -6253,7 +6253,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:395",
+"osm_id": "opendata:trieste:482",
 "lat": 45.6511886,
 "lon": 13.7765337,
 "tipo": "generico",
@@ -6266,7 +6266,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:396",
+"osm_id": "opendata:trieste:483",
 "lat": 45.6504623,
 "lon": 13.7847848,
 "tipo": "generico",
@@ -6279,7 +6279,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:397",
+"osm_id": "opendata:trieste:484",
 "lat": 45.6499311,
 "lon": 13.7852505,
 "tipo": "generico",
@@ -6292,7 +6292,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:398",
+"osm_id": "opendata:trieste:485",
 "lat": 45.6484574,
 "lon": 13.7868614,
 "tipo": "generico",
@@ -6305,7 +6305,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:399",
+"osm_id": "opendata:trieste:486",
 "lat": 45.6481528,
 "lon": 13.7871847,
 "tipo": "generico",
@@ -6318,7 +6318,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:400",
+"osm_id": "opendata:trieste:487",
 "lat": 45.6481712,
 "lon": 13.7859894,
 "tipo": "generico",
@@ -6331,7 +6331,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:401",
+"osm_id": "opendata:trieste:488",
 "lat": 45.650344,
 "lon": 13.7834323,
 "tipo": "generico",
@@ -6344,7 +6344,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:401",
+"osm_id": "opendata:trieste:489",
 "lat": 45.6503969,
 "lon": 13.783411,
 "tipo": "generico",
@@ -6357,7 +6357,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:402",
+"osm_id": "opendata:trieste:490",
 "lat": 45.6497281,
 "lon": 13.7836862,
 "tipo": "generico",
@@ -6370,7 +6370,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:403",
+"osm_id": "opendata:trieste:491",
 "lat": 45.6506142,
 "lon": 13.7833059,
 "tipo": "generico",
@@ -6383,7 +6383,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:404",
+"osm_id": "opendata:trieste:492",
 "lat": 45.6484105,
 "lon": 13.7650817,
 "tipo": "generico",
@@ -6396,7 +6396,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:405",
+"osm_id": "opendata:trieste:493",
 "lat": 45.6506096,
 "lon": 13.7702617,
 "tipo": "generico",
@@ -6409,7 +6409,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:406",
+"osm_id": "opendata:trieste:494",
 "lat": 45.646017,
 "lon": 13.7760656,
 "tipo": "generico",
@@ -6422,7 +6422,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:407",
+"osm_id": "opendata:trieste:495",
 "lat": 45.6609474,
 "lon": 13.785676,
 "tipo": "generico",
@@ -6435,7 +6435,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:407",
+"osm_id": "opendata:trieste:496",
 "lat": 45.6609666,
 "lon": 13.7856018,
 "tipo": "generico",
@@ -6448,7 +6448,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:408",
+"osm_id": "opendata:trieste:497",
 "lat": 45.6596608,
 "lon": 13.7872059,
 "tipo": "generico",
@@ -6461,7 +6461,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:409",
+"osm_id": "opendata:trieste:498",
 "lat": 45.6589528,
 "lon": 13.7902868,
 "tipo": "generico",
@@ -6474,7 +6474,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:410",
+"osm_id": "opendata:trieste:499",
 "lat": 45.6405059,
 "lon": 13.8004332,
 "tipo": "generico",
@@ -6487,7 +6487,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:411",
+"osm_id": "opendata:trieste:500",
 "lat": 45.6460726,
 "lon": 13.7614889,
 "tipo": "generico",
@@ -6500,7 +6500,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:412",
+"osm_id": "opendata:trieste:501",
 "lat": 45.6457138,
 "lon": 13.7608275,
 "tipo": "generico",
@@ -6513,7 +6513,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:412",
+"osm_id": "opendata:trieste:502",
 "lat": 45.6457508,
 "lon": 13.7608852,
 "tipo": "generico",
@@ -6526,7 +6526,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:413",
+"osm_id": "opendata:trieste:503",
 "lat": 45.6466783,
 "lon": 13.7624236,
 "tipo": "generico",
@@ -6539,7 +6539,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:413",
+"osm_id": "opendata:trieste:504",
 "lat": 45.6467152,
 "lon": 13.762481,
 "tipo": "generico",
@@ -6552,7 +6552,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:414",
+"osm_id": "opendata:trieste:505",
 "lat": 45.6467869,
 "lon": 13.7625948,
 "tipo": "generico",
@@ -6565,7 +6565,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:415",
+"osm_id": "opendata:trieste:506",
 "lat": 45.6473724,
 "lon": 13.7640615,
 "tipo": "generico",
@@ -6578,7 +6578,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:416",
+"osm_id": "opendata:trieste:507",
 "lat": 45.6478685,
 "lon": 13.7648366,
 "tipo": "generico",
@@ -6591,7 +6591,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:417",
+"osm_id": "opendata:trieste:508",
 "lat": 45.6485811,
 "lon": 13.7658811,
 "tipo": "generico",
@@ -6604,7 +6604,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:417",
+"osm_id": "opendata:trieste:509",
 "lat": 45.6485037,
 "lon": 13.7657708,
 "tipo": "generico",
@@ -6617,7 +6617,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:417",
+"osm_id": "opendata:trieste:510",
 "lat": 45.6485424,
 "lon": 13.765826,
 "tipo": "generico",
@@ -6630,7 +6630,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:418",
+"osm_id": "opendata:trieste:511",
 "lat": 45.6490361,
 "lon": 13.7723222,
 "tipo": "generico",
@@ -6643,7 +6643,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:419",
+"osm_id": "opendata:trieste:512",
 "lat": 45.6508791,
 "lon": 13.7929255,
 "tipo": "generico",
@@ -6656,7 +6656,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:420",
+"osm_id": "opendata:trieste:513",
 "lat": 45.6505334,
 "lon": 13.793102,
 "tipo": "generico",
@@ -6669,7 +6669,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:421",
+"osm_id": "opendata:trieste:514",
 "lat": 45.6465567,
 "lon": 13.8007369,
 "tipo": "generico",
@@ -6682,7 +6682,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:422",
+"osm_id": "opendata:trieste:515",
 "lat": 45.6495669,
 "lon": 13.8162803,
 "tipo": "generico",
@@ -6695,7 +6695,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:423",
+"osm_id": "opendata:trieste:516",
 "lat": 45.6408025,
 "lon": 13.7909326,
 "tipo": "generico",
@@ -6708,7 +6708,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:424",
+"osm_id": "opendata:trieste:517",
 "lat": 45.6221546,
 "lon": 13.7950233,
 "tipo": "generico",
@@ -6721,7 +6721,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:424",
+"osm_id": "opendata:trieste:518",
 "lat": 45.6221851,
 "lon": 13.7950883,
 "tipo": "generico",
@@ -6734,7 +6734,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:425",
+"osm_id": "opendata:trieste:519",
 "lat": 45.6488065,
 "lon": 13.7687668,
 "tipo": "generico",
@@ -6747,7 +6747,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:425",
+"osm_id": "opendata:trieste:520",
 "lat": 45.6488552,
 "lon": 13.7687316,
 "tipo": "generico",
@@ -6760,7 +6760,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:426",
+"osm_id": "opendata:trieste:521",
 "lat": 45.6492967,
 "lon": 13.768556,
 "tipo": "generico",
@@ -6773,7 +6773,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:426",
+"osm_id": "opendata:trieste:522",
 "lat": 45.6493404,
 "lon": 13.7685041,
 "tipo": "generico",
@@ -6786,7 +6786,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:426",
+"osm_id": "opendata:trieste:523",
 "lat": 45.6493185,
 "lon": 13.7685301,
 "tipo": "generico",
@@ -6799,7 +6799,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:427",
+"osm_id": "opendata:trieste:524",
 "lat": 45.6483782,
 "lon": 13.7641677,
 "tipo": "generico",
@@ -6812,7 +6812,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:427",
+"osm_id": "opendata:trieste:525",
 "lat": 45.6484191,
 "lon": 13.7642194,
 "tipo": "generico",
@@ -6825,7 +6825,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:428",
+"osm_id": "opendata:trieste:526",
 "lat": 45.6519687,
 "lon": 13.7707292,
 "tipo": "generico",
@@ -6838,7 +6838,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:428",
+"osm_id": "opendata:trieste:527",
 "lat": 45.6520093,
 "lon": 13.7705842,
 "tipo": "generico",
@@ -6851,7 +6851,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:428",
+"osm_id": "opendata:trieste:528",
 "lat": 45.651989,
 "lon": 13.7706566,
 "tipo": "generico",
@@ -6864,7 +6864,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:429",
+"osm_id": "opendata:trieste:529",
 "lat": 45.6577334,
 "lon": 13.8013437,
 "tipo": "generico",
@@ -6877,7 +6877,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:430",
+"osm_id": "opendata:trieste:530",
 "lat": 45.636252,
 "lon": 13.8313855,
 "tipo": "generico",
@@ -6890,7 +6890,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:431",
+"osm_id": "opendata:trieste:531",
 "lat": 45.6246575,
 "lon": 13.7928554,
 "tipo": "generico",
@@ -6903,7 +6903,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:432",
+"osm_id": "opendata:trieste:532",
 "lat": 45.6476029,
 "lon": 13.7959016,
 "tipo": "generico",
@@ -6916,7 +6916,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:433",
+"osm_id": "opendata:trieste:533",
 "lat": 45.6383442,
 "lon": 13.8057576,
 "tipo": "generico",
@@ -6929,7 +6929,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:434",
+"osm_id": "opendata:trieste:534",
 "lat": 45.6515957,
 "lon": 13.7720602,
 "tipo": "generico",
@@ -6942,7 +6942,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:435",
+"osm_id": "opendata:trieste:535",
 "lat": 45.6516884,
 "lon": 13.7717284,
 "tipo": "generico",
@@ -6955,7 +6955,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:435",
+"osm_id": "opendata:trieste:536",
 "lat": 45.6517289,
 "lon": 13.7715833,
 "tipo": "generico",
@@ -6968,7 +6968,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:435",
+"osm_id": "opendata:trieste:537",
 "lat": 45.6517086,
 "lon": 13.7716559,
 "tipo": "generico",
@@ -6981,7 +6981,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:436",
+"osm_id": "opendata:trieste:538",
 "lat": 45.6208545,
 "lon": 13.7897297,
 "tipo": "generico",
@@ -6994,7 +6994,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:437",
+"osm_id": "opendata:trieste:539",
 "lat": 45.6612131,
 "lon": 13.7713464,
 "tipo": "generico",
@@ -7007,7 +7007,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:438",
+"osm_id": "opendata:trieste:540",
 "lat": 45.657257,
 "lon": 13.7825922,
 "tipo": "generico",
@@ -7020,7 +7020,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:439",
+"osm_id": "opendata:trieste:541",
 "lat": 45.6548094,
 "lon": 13.7869012,
 "tipo": "generico",
@@ -7033,7 +7033,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:440",
+"osm_id": "opendata:trieste:542",
 "lat": 45.6354796,
 "lon": 13.7807637,
 "tipo": "generico",
@@ -7046,7 +7046,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:441",
+"osm_id": "opendata:trieste:543",
 "lat": 45.6401292,
 "lon": 13.7879163,
 "tipo": "generico",
@@ -7059,7 +7059,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:442",
+"osm_id": "opendata:trieste:544",
 "lat": 45.6538835,
 "lon": 13.7699499,
 "tipo": "generico",
@@ -7072,7 +7072,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:443",
+"osm_id": "opendata:trieste:545",
 "lat": 45.6557447,
 "lon": 13.7702252,
 "tipo": "generico",
@@ -7085,7 +7085,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:444",
+"osm_id": "opendata:trieste:546",
 "lat": 45.6467193,
 "lon": 13.7968333,
 "tipo": "generico",
@@ -7098,7 +7098,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:445",
+"osm_id": "opendata:trieste:547",
 "lat": 45.6458957,
 "lon": 13.7747471,
 "tipo": "generico",
@@ -7111,7 +7111,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:446",
+"osm_id": "opendata:trieste:548",
 "lat": 45.6453765,
 "lon": 13.7821823,
 "tipo": "generico",
@@ -7124,7 +7124,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:446",
+"osm_id": "opendata:trieste:549",
 "lat": 45.645379,
 "lon": 13.7822619,
 "tipo": "generico",
@@ -7137,7 +7137,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:447",
+"osm_id": "opendata:trieste:550",
 "lat": 45.6561679,
 "lon": 13.7744582,
 "tipo": "generico",
@@ -7150,7 +7150,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:447",
+"osm_id": "opendata:trieste:551",
 "lat": 45.6561887,
 "lon": 13.7743854,
 "tipo": "generico",
@@ -7163,7 +7163,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:448",
+"osm_id": "opendata:trieste:552",
 "lat": 45.6298888,
 "lon": 13.7938964,
 "tipo": "generico",
@@ -7176,7 +7176,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:449",
+"osm_id": "opendata:trieste:553",
 "lat": 45.6296146,
 "lon": 13.7941686,
 "tipo": "generico",
@@ -7189,7 +7189,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:450",
+"osm_id": "opendata:trieste:554",
 "lat": 45.6203282,
 "lon": 13.7857982,
 "tipo": "generico",
@@ -7202,7 +7202,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:450",
+"osm_id": "opendata:trieste:555",
 "lat": 45.6203647,
 "lon": 13.7858586,
 "tipo": "generico",
@@ -7215,7 +7215,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:451",
+"osm_id": "opendata:trieste:556",
 "lat": 45.6492551,
 "lon": 13.7791718,
 "tipo": "generico",
@@ -7228,7 +7228,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:452",
+"osm_id": "opendata:trieste:557",
 "lat": 45.6494446,
 "lon": 13.7793185,
 "tipo": "generico",
@@ -7241,7 +7241,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:453",
+"osm_id": "opendata:trieste:558",
 "lat": 45.6454947,
 "lon": 13.7833358,
 "tipo": "generico",
@@ -7254,7 +7254,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:454",
+"osm_id": "opendata:trieste:559",
 "lat": 45.6411853,
 "lon": 13.7558754,
 "tipo": "generico",
@@ -7267,7 +7267,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:455",
+"osm_id": "opendata:trieste:560",
 "lat": 45.6668572,
 "lon": 13.772262,
 "tipo": "generico",
@@ -7280,7 +7280,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:456",
+"osm_id": "opendata:trieste:561",
 "lat": 45.7326157,
 "lon": 13.692368,
 "tipo": "generico",
@@ -7293,7 +7293,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:456",
+"osm_id": "opendata:trieste:562",
 "lat": 45.7326232,
 "lon": 13.6922888,
 "tipo": "generico",
@@ -7306,7 +7306,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:457",
+"osm_id": "opendata:trieste:563",
 "lat": 45.6821661,
 "lon": 13.7518357,
 "tipo": "generico",
@@ -7319,7 +7319,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:457",
+"osm_id": "opendata:trieste:564",
 "lat": 45.6822032,
 "lon": 13.7517952,
 "tipo": "generico",
@@ -7332,7 +7332,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:457",
+"osm_id": "opendata:trieste:565",
 "lat": 45.6821845,
 "lon": 13.7518155,
 "tipo": "generico",
@@ -7345,7 +7345,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:458",
+"osm_id": "opendata:trieste:566",
 "lat": 45.6435281,
 "lon": 13.7905968,
 "tipo": "generico",
@@ -7358,7 +7358,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:459",
+"osm_id": "opendata:trieste:567",
 "lat": 45.6694139,
 "lon": 13.7644394,
 "tipo": "generico",
@@ -7371,7 +7371,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:460",
+"osm_id": "opendata:trieste:568",
 "lat": 45.6289179,
 "lon": 13.7844273,
 "tipo": "generico",
@@ -7384,7 +7384,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:461",
+"osm_id": "opendata:trieste:569",
 "lat": 45.6402241,
 "lon": 13.7836912,
 "tipo": "generico",
@@ -7397,7 +7397,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:462",
+"osm_id": "opendata:trieste:570",
 "lat": 45.7046751,
 "lon": 13.719733,
 "tipo": "generico",
@@ -7410,7 +7410,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:463",
+"osm_id": "opendata:trieste:571",
 "lat": 45.7032196,
 "lon": 13.7202584,
 "tipo": "generico",
@@ -7423,7 +7423,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:464",
+"osm_id": "opendata:trieste:572",
 "lat": 45.6782042,
 "lon": 13.7550669,
 "tipo": "generico",
@@ -7436,7 +7436,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:465",
+"osm_id": "opendata:trieste:573",
 "lat": 45.6531867,
 "lon": 13.7764309,
 "tipo": "generico",
@@ -7449,7 +7449,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:465",
+"osm_id": "opendata:trieste:574",
 "lat": 45.6532903,
 "lon": 13.7763786,
 "tipo": "generico",
@@ -7462,7 +7462,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:465",
+"osm_id": "opendata:trieste:575",
 "lat": 45.6532386,
 "lon": 13.7764047,
 "tipo": "generico",
@@ -7475,7 +7475,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:466",
+"osm_id": "opendata:trieste:576",
 "lat": 45.6803967,
 "lon": 13.7556066,
 "tipo": "generico",
@@ -7488,7 +7488,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:467",
+"osm_id": "opendata:trieste:577",
 "lat": 45.6653865,
 "lon": 13.7870657,
 "tipo": "generico",
@@ -7501,7 +7501,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:467",
+"osm_id": "opendata:trieste:578",
 "lat": 45.665411,
 "lon": 13.7870432,
 "tipo": "generico",
@@ -7514,7 +7514,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:468",
+"osm_id": "opendata:trieste:579",
 "lat": 45.6862488,
 "lon": 13.788324,
 "tipo": "generico",
@@ -7527,7 +7527,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:469",
+"osm_id": "opendata:trieste:580",
 "lat": 45.6192222,
 "lon": 13.8255811,
 "tipo": "generico",
@@ -7540,7 +7540,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:470",
+"osm_id": "opendata:trieste:581",
 "lat": 45.643027,
 "lon": 13.7840979,
 "tipo": "generico",
@@ -7553,7 +7553,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:471",
+"osm_id": "opendata:trieste:582",
 "lat": 45.6882792,
 "lon": 13.785799,
 "tipo": "generico",
@@ -7566,7 +7566,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:472",
+"osm_id": "opendata:trieste:583",
 "lat": 45.6886149,
 "lon": 13.7856854,
 "tipo": "generico",
@@ -7579,7 +7579,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:472",
+"osm_id": "opendata:trieste:584",
 "lat": 45.6886386,
 "lon": 13.7856963,
 "tipo": "generico",
@@ -7592,7 +7592,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:473",
+"osm_id": "opendata:trieste:585",
 "lat": 45.6859993,
 "lon": 13.7834164,
 "tipo": "generico",
@@ -7605,7 +7605,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:474",
+"osm_id": "opendata:trieste:586",
 "lat": 45.6897736,
 "lon": 13.7872144,
 "tipo": "generico",
@@ -7618,7 +7618,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:475",
+"osm_id": "opendata:trieste:587",
 "lat": 45.6437692,
 "lon": 13.788653,
 "tipo": "generico",
@@ -7631,7 +7631,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:476",
+"osm_id": "opendata:trieste:588",
 "lat": 45.6854048,
 "lon": 13.7567076,
 "tipo": "generico",
@@ -7644,7 +7644,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:477",
+"osm_id": "opendata:trieste:589",
 "lat": 45.6794464,
 "lon": 13.7618989,
 "tipo": "generico",
@@ -7657,7 +7657,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:478",
+"osm_id": "opendata:trieste:590",
 "lat": 45.6698257,
 "lon": 13.7628263,
 "tipo": "generico",
@@ -7670,7 +7670,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:479",
+"osm_id": "opendata:trieste:591",
 "lat": 45.6454307,
 "lon": 13.7839226,
 "tipo": "generico",
@@ -7683,7 +7683,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:480",
+"osm_id": "opendata:trieste:592",
 "lat": 45.681395,
 "lon": 13.7518296,
 "tipo": "generico",
@@ -7696,7 +7696,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:481",
+"osm_id": "opendata:trieste:593",
 "lat": 45.6811805,
 "lon": 13.7523109,
 "tipo": "generico",
@@ -7709,7 +7709,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:482",
+"osm_id": "opendata:trieste:594",
 "lat": 45.6355448,
 "lon": 13.7860145,
 "tipo": "generico",
@@ -7722,7 +7722,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:482",
+"osm_id": "opendata:trieste:595",
 "lat": 45.636067,
 "lon": 13.7857744,
 "tipo": "generico",
@@ -7735,7 +7735,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:483",
+"osm_id": "opendata:trieste:596",
 "lat": 45.7078662,
 "lon": 13.714078,
 "tipo": "generico",
@@ -7748,7 +7748,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:484",
+"osm_id": "opendata:trieste:597",
 "lat": 45.6654922,
 "lon": 13.7652535,
 "tipo": "generico",
@@ -7761,7 +7761,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:485",
+"osm_id": "opendata:trieste:598",
 "lat": 45.6755676,
 "lon": 13.7552211,
 "tipo": "generico",
@@ -7774,7 +7774,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:485",
+"osm_id": "opendata:trieste:599",
 "lat": 45.675492,
 "lon": 13.755283,
 "tipo": "generico",
@@ -7787,7 +7787,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:485",
+"osm_id": "opendata:trieste:600",
 "lat": 45.6755424,
 "lon": 13.7552417,
 "tipo": "generico",
@@ -7800,7 +7800,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:485",
+"osm_id": "opendata:trieste:601",
 "lat": 45.6755172,
 "lon": 13.7552623,
 "tipo": "generico",
@@ -7813,7 +7813,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:486",
+"osm_id": "opendata:trieste:602",
 "lat": 45.6758728,
 "lon": 13.7549848,
 "tipo": "generico",
@@ -7826,7 +7826,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:486",
+"osm_id": "opendata:trieste:603",
 "lat": 45.6757958,
 "lon": 13.7550408,
 "tipo": "generico",
@@ -7839,7 +7839,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:486",
+"osm_id": "opendata:trieste:604",
 "lat": 45.675847,
 "lon": 13.7550034,
 "tipo": "generico",
@@ -7852,7 +7852,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:486",
+"osm_id": "opendata:trieste:605",
 "lat": 45.6758214,
 "lon": 13.7550221,
 "tipo": "generico",
@@ -7865,7 +7865,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:487",
+"osm_id": "opendata:trieste:606",
 "lat": 45.6783086,
 "lon": 13.7545766,
 "tipo": "generico",
@@ -7878,7 +7878,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:488",
+"osm_id": "opendata:trieste:607",
 "lat": 45.6811188,
 "lon": 13.7533028,
 "tipo": "generico",
@@ -7891,7 +7891,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:489",
+"osm_id": "opendata:trieste:608",
 "lat": 45.6835193,
 "lon": 13.7508593,
 "tipo": "generico",
@@ -7904,7 +7904,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:490",
+"osm_id": "opendata:trieste:609",
 "lat": 45.6869389,
 "lon": 13.7464078,
 "tipo": "generico",
@@ -7917,7 +7917,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:491",
+"osm_id": "opendata:trieste:610",
 "lat": 45.6903618,
 "lon": 13.7416323,
 "tipo": "generico",
@@ -7930,7 +7930,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:491",
+"osm_id": "opendata:trieste:611",
 "lat": 45.6904117,
 "lon": 13.7415687,
 "tipo": "generico",
@@ -7943,7 +7943,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:492",
+"osm_id": "opendata:trieste:612",
 "lat": 45.6914926,
 "lon": 13.7401971,
 "tipo": "generico",
@@ -7956,7 +7956,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:492",
+"osm_id": "opendata:trieste:613",
 "lat": 45.6915341,
 "lon": 13.7401448,
 "tipo": "generico",
@@ -7969,7 +7969,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:493",
+"osm_id": "opendata:trieste:614",
 "lat": 45.6920782,
 "lon": 13.7394567,
 "tipo": "generico",
@@ -7982,7 +7982,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:493",
+"osm_id": "opendata:trieste:615",
 "lat": 45.6921201,
 "lon": 13.7394037,
 "tipo": "generico",
@@ -7995,7 +7995,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:494",
+"osm_id": "opendata:trieste:616",
 "lat": 45.6948399,
 "lon": 13.7358086,
 "tipo": "generico",
@@ -8008,7 +8008,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:495",
+"osm_id": "opendata:trieste:617",
 "lat": 45.6959891,
 "lon": 13.7341177,
 "tipo": "generico",
@@ -8021,7 +8021,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:495",
+"osm_id": "opendata:trieste:618",
 "lat": 45.6960268,
 "lon": 13.7340603,
 "tipo": "generico",
@@ -8034,7 +8034,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:496",
+"osm_id": "opendata:trieste:619",
 "lat": 45.6966408,
 "lon": 13.7328708,
 "tipo": "generico",
@@ -8047,7 +8047,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:497",
+"osm_id": "opendata:trieste:620",
 "lat": 45.7002476,
 "lon": 13.7237255,
 "tipo": "generico",
@@ -8060,7 +8060,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:498",
+"osm_id": "opendata:trieste:621",
 "lat": 45.7009649,
 "lon": 13.722403,
 "tipo": "generico",
@@ -8073,7 +8073,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:499",
+"osm_id": "opendata:trieste:622",
 "lat": 45.6660548,
 "lon": 13.7711768,
 "tipo": "generico",
@@ -8086,7 +8086,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:499",
+"osm_id": "opendata:trieste:623",
 "lat": 45.6661053,
 "lon": 13.7712112,
 "tipo": "generico",
@@ -8099,7 +8099,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:500",
+"osm_id": "opendata:trieste:624",
 "lat": 45.6409221,
 "lon": 13.7720229,
 "tipo": "generico",
@@ -8112,7 +8112,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:501",
+"osm_id": "opendata:trieste:625",
 "lat": 45.679588,
 "lon": 13.7805852,
 "tipo": "generico",
@@ -8125,7 +8125,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:501",
+"osm_id": "opendata:trieste:626",
 "lat": 45.6795909,
 "lon": 13.7806256,
 "tipo": "generico",
@@ -8138,7 +8138,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:502",
+"osm_id": "opendata:trieste:627",
 "lat": 45.6389418,
 "lon": 13.7817868,
 "tipo": "generico",
@@ -8151,7 +8151,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:503",
+"osm_id": "opendata:trieste:628",
 "lat": 45.6694741,
 "lon": 13.7669707,
 "tipo": "generico",
@@ -8164,7 +8164,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:504",
+"osm_id": "opendata:trieste:629",
 "lat": 45.6247916,
 "lon": 13.8062522,
 "tipo": "generico",
@@ -8177,7 +8177,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:505",
+"osm_id": "opendata:trieste:630",
 "lat": 45.6534266,
 "lon": 13.7785413,
 "tipo": "generico",
@@ -8190,7 +8190,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:506",
+"osm_id": "opendata:trieste:631",
 "lat": 45.6470288,
 "lon": 13.7841237,
 "tipo": "generico",
@@ -8203,7 +8203,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:507",
+"osm_id": "opendata:trieste:632",
 "lat": 45.7408287,
 "lon": 13.6711521,
 "tipo": "generico",
@@ -8216,7 +8216,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:507",
+"osm_id": "opendata:trieste:633",
 "lat": 45.7408516,
 "lon": 13.6710805,
 "tipo": "generico",
@@ -8229,7 +8229,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:508",
+"osm_id": "opendata:trieste:634",
 "lat": 45.6671733,
 "lon": 13.761062,
 "tipo": "generico",
@@ -8242,7 +8242,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:509",
+"osm_id": "opendata:trieste:635",
 "lat": 45.6452767,
 "lon": 13.7820889,
 "tipo": "generico",
@@ -8255,7 +8255,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:510",
+"osm_id": "opendata:trieste:636",
 "lat": 45.6430676,
 "lon": 13.7842596,
 "tipo": "generico",
@@ -8268,7 +8268,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:510",
+"osm_id": "opendata:trieste:637",
 "lat": 45.643101,
 "lon": 13.7842158,
 "tipo": "generico",
@@ -8281,7 +8281,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:511",
+"osm_id": "opendata:trieste:638",
 "lat": 45.6492531,
 "lon": 13.7936958,
 "tipo": "generico",
@@ -8294,7 +8294,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:512",
+"osm_id": "opendata:trieste:639",
 "lat": 45.6807758,
 "lon": 13.7540557,
 "tipo": "generico",
@@ -8307,7 +8307,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:513",
+"osm_id": "opendata:trieste:640",
 "lat": 45.6431745,
 "lon": 13.7743751,
 "tipo": "generico",
@@ -8320,7 +8320,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:513",
+"osm_id": "opendata:trieste:641",
 "lat": 45.6432177,
 "lon": 13.7743247,
 "tipo": "generico",
@@ -8333,7 +8333,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:514",
+"osm_id": "opendata:trieste:642",
 "lat": 45.6977373,
 "lon": 13.7419125,
 "tipo": "generico",
@@ -8346,7 +8346,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:514",
+"osm_id": "opendata:trieste:643",
 "lat": 45.6977805,
 "lon": 13.741864,
 "tipo": "generico",
@@ -8359,7 +8359,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:515",
+"osm_id": "opendata:trieste:644",
 "lat": 45.6880397,
 "lon": 13.7894294,
 "tipo": "generico",
@@ -8372,7 +8372,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:516",
+"osm_id": "opendata:trieste:645",
 "lat": 45.6850962,
 "lon": 13.7744041,
 "tipo": "generico",
@@ -8385,7 +8385,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:517",
+"osm_id": "opendata:trieste:646",
 "lat": 45.6527017,
 "lon": 13.7846345,
 "tipo": "generico",
@@ -8398,7 +8398,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:517",
+"osm_id": "opendata:trieste:647",
 "lat": 45.6527193,
 "lon": 13.7847227,
 "tipo": "generico",
@@ -8411,7 +8411,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:517",
+"osm_id": "opendata:trieste:648",
 "lat": 45.6527104,
 "lon": 13.7846782,
 "tipo": "generico",
@@ -8424,7 +8424,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:518",
+"osm_id": "opendata:trieste:649",
 "lat": 45.6437707,
 "lon": 13.7816809,
 "tipo": "generico",
@@ -8437,7 +8437,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:519",
+"osm_id": "opendata:trieste:650",
 "lat": 45.6433441,
 "lon": 13.781998,
 "tipo": "generico",
@@ -8450,7 +8450,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:520",
+"osm_id": "opendata:trieste:651",
 "lat": 45.6664208,
 "lon": 13.7600017,
 "tipo": "generico",
@@ -8463,7 +8463,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:520",
+"osm_id": "opendata:trieste:652",
 "lat": 45.6664395,
 "lon": 13.7600686,
 "tipo": "generico",
@@ -8476,7 +8476,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:520",
+"osm_id": "opendata:trieste:653",
 "lat": 45.6664301,
 "lon": 13.7600355,
 "tipo": "generico",
@@ -8489,7 +8489,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:521",
+"osm_id": "opendata:trieste:654",
 "lat": 45.654431,
 "lon": 13.7685119,
 "tipo": "generico",
@@ -8502,7 +8502,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:521",
+"osm_id": "opendata:trieste:655",
 "lat": 45.6543773,
 "lon": 13.7685241,
 "tipo": "generico",
@@ -8515,7 +8515,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:521",
+"osm_id": "opendata:trieste:656",
 "lat": 45.6542696,
 "lon": 13.7685486,
 "tipo": "generico",
@@ -8528,7 +8528,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:521",
+"osm_id": "opendata:trieste:657",
 "lat": 45.6543233,
 "lon": 13.7685362,
 "tipo": "generico",
@@ -8541,7 +8541,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:522",
+"osm_id": "opendata:trieste:658",
 "lat": 45.6565459,
 "lon": 13.7697134,
 "tipo": "generico",
@@ -8554,7 +8554,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:523",
+"osm_id": "opendata:trieste:659",
 "lat": 45.6664699,
 "lon": 13.7624748,
 "tipo": "generico",
@@ -8567,7 +8567,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:523",
+"osm_id": "opendata:trieste:660",
 "lat": 45.6665024,
 "lon": 13.7624218,
 "tipo": "generico",
@@ -8580,7 +8580,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:523",
+"osm_id": "opendata:trieste:661",
 "lat": 45.6664862,
 "lon": 13.7624484,
 "tipo": "generico",
@@ -8593,7 +8593,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:524",
+"osm_id": "opendata:trieste:662",
 "lat": 45.645456,
 "lon": 13.7735299,
 "tipo": "generico",
@@ -8606,7 +8606,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:525",
+"osm_id": "opendata:trieste:663",
 "lat": 45.6370813,
 "lon": 13.7873761,
 "tipo": "generico",
@@ -8619,7 +8619,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:526",
+"osm_id": "opendata:trieste:664",
 "lat": 45.6381666,
 "lon": 13.7891501,
 "tipo": "generico",
@@ -8632,7 +8632,7 @@
 "fonte": "opendata"
 },
 {
-"osm_id": "opendata:trieste:527",
+"osm_id": "opendata:trieste:665",
 "lat": 45.6569101,
 "lon": 13.7890786,
 "tipo": "generico",
