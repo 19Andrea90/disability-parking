@@ -79,7 +79,10 @@ jobs:
           grep -q 'android.app.shortcuts' $m
       - name: Permessi per la posizione
         run: |
-          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" tools:node="replace" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
+          m=android/app/src/main/AndroidManifest.xml
+          grep -q 'xmlns:tools=' $m || sed -i '0,/<manifest /s##<manifest xmlns:tools="http://schemas.android.com/tools" #' $m
+          grep -n 'xmlns:tools\|location.gps' $m
       - name: Versione
         run: |
           sed -i "s/versionCode 1/versionCode ${{ steps.v.outputs.code }}/; s/versionName \"1.0\"/versionName \"${{ steps.v.outputs.name }}\"/" android/app/build.gradle
