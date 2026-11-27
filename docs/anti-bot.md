@@ -14,7 +14,7 @@ Con `CFG.TURNSTILE` vuota, su Android o con modo `spento` l'app si comporta come
 1. **Turnstile**: su Cloudflare, Turnstile, crea un widget per i domini `sostabile.it` e `19andrea90.github.io` (tipo Managed). Prendi la *site key* (pubblica) e la *secret key*.
 2. **Segreto**: `supabase secrets set TURNSTILE_SECRET=...` (progetto `wwereqrojlwktgwlrsib`). `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` li fornisce Supabase.
 3. **Deploy** della funzione: `supabase functions deploy passo` (lascia attiva la verifica JWT: l'app manda già la chiave anon).
-4. **SQL**: esegui a mano `supabase/13_passo_anti_bot.sql` nell'editor SQL (dopo il 11; rieseguibile). Non cambia nulla: il modo parte da `spento`. Controllo: `select public.app_config();` mostra `anti_bot_modo: "spento"`.
+4. **SQL**: esegui a mano `supabase/24_passo_anti_bot.sql` nell'editor SQL (dopo il 11 e il 15; rieseguibile). Non cambia nulla: il modo parte da `spento`. Controllo: `select public.app_config();` mostra `anti_bot_modo: "spento"`.
 5. **App**: metti la site key in `CFG.TURNSTILE` (`mobile/www/app.js`), `python3 -I tools/web.py`, pubblica il web. Finché il modo è `spento` non cambia nulla.
 6. **Osserva**: `update public.app_config_valori set valore = '{"modo":"osserva"}' where chiave = 'anti_bot';` Dopo qualche giorno: `select giorno, sum(con_passo) con, sum(senza_passo) senza from accessi_dati group by 1 order by 1 desc;`. Il web deve risultare quasi tutto «con»; «senza» sono Android, versioni vecchie e bot.
 7. **Obbliga**: solo quando web **e** Android sono pronti (vedi avvertenza). `... '{"modo":"obbliga"}' ...`. Per tornare indietro: `'{"modo":"spento"}'`.

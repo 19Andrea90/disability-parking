@@ -1,5 +1,5 @@
--- 13 · Passo anti-bot, predisposto ma SPENTO (19 novembre 2026)
--- Da eseguire a mano nell'editor SQL di Supabase, DOPO 11_protezione_dati.sql. Si può rieseguire senza danni. Solo aggiunte.
+-- 24 · Passo anti-bot, predisposto ma SPENTO (19 novembre 2026)
+-- Da eseguire a mano nell'editor SQL di Supabase, DOPO 11_protezione_dati.sql e 15_chiave_esri.sql. Si può rieseguire senza danni. Solo aggiunte.
 -- Idea: oggi il limite d'uso è per indirizzo IP e chi ruota molti IP lo aggira. Con questo file i dati si possono servire solo
 -- a chi presenta un «passo» valido (intestazione x-dp-passo), che la funzione Edge «passo» rilascia a chi dimostra di essere
 -- un browser reale (Cloudflare Turnstile) o, in futuro, l'app Android vera (Play Integrity). Vedi docs/anti-bot.md.
@@ -122,13 +122,14 @@ begin
 end $$;
 revoke all on function public._limite_dati(integer) from public, anon, authenticated;
 
--- 6) app_config(): in più il modo anti-bot, perché l'app sappia se chiedere il passo ("spento" se la chiave manca).
+-- 6) app_config() (stessa della 15, con chiave_esri): in più il modo anti-bot, perché l'app sappia se chiedere il passo ("spento" se la chiave manca).
 create or replace function public.app_config()
 returns jsonb
 language sql stable security definer set search_path = public, pg_temp as $$
   select jsonb_build_object(
     'versione_minima_android', coalesce((select valore from public.app_config_valori where chiave = 'versione_minima_android'), '"0"'::jsonb),
     'messaggio', coalesce((select valore from public.app_config_valori where chiave = 'messaggio'), 'null'::jsonb),
+    'chiave_esri', coalesce((select valore from public.app_config_valori where chiave = 'chiave_esri'), 'null'::jsonb),
     'anti_bot_modo', coalesce((select to_jsonb(valore ->> 'modo') from public.app_config_valori where chiave = 'anti_bot'), '"spento"'::jsonb))
 $$;
 revoke all on function public.app_config() from public;

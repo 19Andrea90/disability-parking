@@ -1,4 +1,4 @@
-// Rilascia il «passo» anti-bot (vedi docs/anti-bot.md e supabase/13_passo_anti_bot.sql).
+// Rilascia il «passo» anti-bot (vedi docs/anti-bot.md e supabase/24_passo_anti_bot.sql).
 // POST { origine: 'web', prova: '<token Turnstile>' } -> verifica il token con Cloudflare e, se valido, risponde con
 // { passo, scade } (passo casuale di 32 byte, valido 30 minuti, salvato nella tabella passi).
 // origine 'android': 501, verrà fatto con Play Integrity. Segreti nell'ambiente: TURNSTILE_SECRET, SUPABASE_URL,
@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
     const sb = createClient(url, chiave, { auth: { persistSession: false } });
     const { error } = await sb.from('passi').insert({ token: passo, scade, origine: 'web', ip: ip ? ip.slice(0, 64) : null });
     if (error) { console.error('passo: salvataggio non riuscito', error.code); return risp({ errore: 'errore interno' }, 500); }
+    if (Math.random() < 0.02) await sb.from('passi').delete().lt('scade', new Date(Date.now() - 86400000).toISOString()); // pulizia: via i passi scaduti da più di un giorno
     return risp({ passo, scade });
   } catch (e) {
     console.error('passo: errore', (e as Error).name);
