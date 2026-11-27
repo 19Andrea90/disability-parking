@@ -199,18 +199,23 @@
   // aggiunge intestazioni). Quando il database è in "osserva" o "obbliga", il web dimostra di essere un browser vero con
   // Turnstile, la funzione Edge «passo» lo cambia in un passo (30 minuti) che si manda in x-dp-passo. Resta solo in memoria.
   let passo = null, passoP = null, modoAB = null, tsScript = null;
-  const abAttivo = () => modoAB || (modoAB = fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
-    .then((r) => r.ok ? r.json() : null).then((c) => !!c && (c.anti_bot_modo === 'osserva' || c.anti_bot_modo === 'obbliga')).catch(() => { modoAB = null; return false; }));
+  // modo letto dal database una volta per sessione: 'spento' | 'osserva' | 'obbliga' (errore = 'spento', si riprova alla prossima)
+  const modoAntiBot = () => modoAB || (modoAB = fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
+    .then((r) => r.ok ? r.json() : null).then((c) => (c && (c.anti_bot_modo === 'osserva' || c.anti_bot_modo === 'obbliga')) ? c.anti_bot_modo : 'spento').catch(() => { modoAB = null; return 'spento'; }));
   const caricaTurnstile = () => tsScript || (tsScript = new Promise((ok, ko) => {
     const el = document.createElement('script'); el.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; el.async = true;
     el.onload = () => ok(window.turnstile); el.onerror = () => { tsScript = null; ko(new Error('turnstile')); }; document.head.appendChild(el);
   }));
   async function provaTurnstile() { // un widget nuovo per ogni prova (la prova vale una volta sola); si vede solo se serve un gesto
     const ts = await caricaTurnstile(), box = document.createElement('div'); box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999'; document.body.appendChild(box);
-    try {
-      return await new Promise((ok, ko) => { ts.render(box, { sitekey: CFG.TURNSTILE, execution: 'execute', appearance: 'interaction-only', callback: ok,
-        'error-callback': () => ko(new Error('turnstile')), 'timeout-callback': () => ko(new Error('turnstile')) }); });
-    } finally { box.remove(); }
+    let id = null, timer;
+    try { // la prova parte da sola al render; se dopo 45 secondi non è arrivata si rinuncia (mai bloccare l'app all'infinito)
+      return await new Promise((ok, ko) => {
+        timer = setTimeout(() => ko(new Error('turnstile')), 45000);
+        id = ts.render(box, { sitekey: CFG.TURNSTILE, appearance: 'interaction-only', callback: ok,
+          'error-callback': () => ko(new Error('turnstile')), 'timeout-callback': () => ko(new Error('turnstile')) });
+      });
+    } finally { clearTimeout(timer); try { if (id != null) ts.remove(id); } catch (e) {} box.remove(); }
   }
   function ottieniPasso(rinnova) { // rinnovo anche quando mancano meno di 2 minuti alla scadenza
     if (!rinnova && passo && passo.scade - Date.now() > 120000) return Promise.resolve(passo.t);
@@ -228,14 +233,17 @@
     const limite = () => Object.assign(new Error('429'), { status: 429 });
     if (Date.now() < pausa429) throw limite(); // già bloccati da poco: inutile insistere (si riprova da soli dopo 30 secondi, solo se l'utente muove la mappa)
     const web = !!CFG.TURNSTILE && !NATIVO();
-    let ab = web ? await abAttivo() : false;
+    let modo = web ? await modoAntiBot() : 'spento', ab = modo !== 'spento';
     for (let giro = 0; ; giro++) {
       const h = Object.assign({ 'Content-Type': 'application/json' }, H);
-      if (ab) { const t = await ottieniPasso(giro > 0); if (t) h['x-dp-passo'] = t; }
+      if (modo === 'obbliga' || giro > 0) { const t = await ottieniPasso(giro > 0); if (t) h['x-dp-passo'] = t; }
+      else if (modo === 'osserva') { // in osserva non si aspetta mai: si manda il passo se c'è già, intanto lo si chiede in sottofondo
+        if (passo && passo.scade - Date.now() > 120000) h['x-dp-passo'] = passo.t; else ottieniPasso(false);
+      }
       let r; try { r = await fetch(`${CFG.SB}/rest/v1/rpc/${nome}`, { method: 'POST', headers: h, body: JSON.stringify(args), signal }); }
       catch (e) { if (e.name !== 'AbortError') segnalaRete(true); throw e; } // senza rete: avviso fisso «Sei offline»
       segnalaRete(false);
-      if (r.status === 401 && web && giro === 0) { if (!ab) { modoAB = null; ab = await abAttivo(); } if (ab) continue; } // 401: il database ha acceso il controllo o il passo è scaduto, una sola ripetizione
+      if (r.status === 401 && web && giro === 0) { if (!ab) { modoAB = null; modo = await modoAntiBot(); ab = modo !== 'spento'; } if (ab) continue; } // 401: il database ha acceso il controllo o il passo è scaduto, una sola ripetizione
       if (r.status === 401 && ab) { toast('Non riesco a verificare il dispositivo. Ricarica la pagina.', 5000); throw Object.assign(new Error('401'), { status: 401, avvisato: true }); }
       if (r.status === 429) { pausa429 = Date.now() + 30000; throw limite(); }
       if (!r.ok) throw Object.assign(new Error(r.status), { status: r.status });
