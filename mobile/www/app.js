@@ -3,7 +3,7 @@
   'use strict';
   // Indirizzo base del sito vetrina (con / finale). Sul web aperto da sostabile.it (o www.) è il dominio; altrove (GitHub Pages,
   // prove in locale) e su Android resta quello provvisorio. È l'unico punto dell'app dove compare un indirizzo del sito.
-  const SITO_ANDROID = 'https://19andrea90.github.io/disability-parking/sito/'; // da cambiare in https://sostabile.it/ quando il dominio è attivo
+  const SITO_ANDROID = 'https://sostabile.it/'; // sito vetrina (dominio attivo dal 19/11/2026)
   const sitoBase = (host, nativo) => (!nativo && /^(www\.)?sostabile\.it$/i.test(host || '')) ? 'https://sostabile.it/' : SITO_ANDROID;
   const SITO_NATIVO = () => { const cap = window.Capacitor; return !!(cap && cap.isNativePlatform && cap.isNativePlatform()); };
   const CFG = {

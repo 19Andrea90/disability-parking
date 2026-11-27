@@ -85,6 +85,14 @@ jobs:
           sed -i "s/versionCode 1/versionCode ${{ steps.v.outputs.code }}/; s/versionName \"1.0\"/versionName \"${{ steps.v.outputs.name }}\"/" android/app/build.gradle
           grep -n "versionCode\|versionName\|applicationId" android/app/build.gradle
           grep -n "Sdk" android/variables.gradle
+      - name: Riduzione del codice (R8) con file di deoffuscamento e simboli nativi, per togliere gli avvisi di Play al caricamento
+        run: |
+          g=android/app/build.gradle
+          sed -i 's/minifyEnabled false/minifyEnabled true/' $g
+          grep -q 'minifyEnabled true' $g
+          sed -i '0,/minifyEnabled true/s//minifyEnabled true\n            ndk { debugSymbolLevel "FULL" }/' $g
+          cat android-extra/proguard-sostabile.pro >> android/app/proguard-rules.pro
+          sed -n '/buildTypes/,/^    }/p' $g
       - name: Icona e schermata di avvio
         run: npx --yes @capacitor/assets@3 generate --android
       - run: npx cap sync android
@@ -97,6 +105,7 @@ jobs:
           KP: ${{ secrets.PLAY_KEYSTORE_PASSWORD }}
         run: |
           cp android/app/build/outputs/bundle/release/app-release.aab disability-parking.aab
+          cp android/app/build/outputs/mapping/release/mapping.txt deoffuscamento-mapping.txt
           if [ -z "$KS" ] || [ -z "$KP" ]; then echo "::warning::Mancano i segreti PLAY_KEYSTORE / PLAY_KEYSTORE_PASSWORD: compilazione riuscita, ma il file non è firmato e non viene pubblicato."; echo "ok=no" >> "$GITHUB_OUTPUT"; exit 0; fi
           printf '%s' "$KS" | tr -d ' \n\r' | base64 -d > "$RUNNER_TEMP/k.jks"
           jarsigner -keystore "$RUNNER_TEMP/k.jks" -storepass:env KP -sigalg SHA256withRSA -digestalg SHA-256 disability-parking.aab upload
@@ -108,7 +117,9 @@ jobs:
         with:
           tag_name: app-play
           name: App Android · file per Google Play
-          body: "Versione ${{ steps.v.outputs.name }} (codice ${{ steps.v.outputs.code }}). File da caricare nella Play Console, non installabile direttamente sul telefono."
+          body: "Versione ${{ steps.v.outputs.name }} (codice ${{ steps.v.outputs.code }}). File da caricare nella Play Console, non installabile direttamente sul telefono. Il file mapping.txt è il file di deoffuscamento da caricare per la stessa versione."
           prerelease: true
           make_latest: false
-          files: mobile/disability-parking.aab
+          files: |
+            mobile/disability-parking.aab
+            mobile/deoffuscamento-mapping.txt
