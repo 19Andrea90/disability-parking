@@ -20,6 +20,8 @@
     ARRIVO_M: 50,           // al rientro nell'app, entro questa distanza dal posto si chiede "Hai parcheggiato qui?" (deciso da Andrea)
     GOOGLE: true,           // accesso con Google: fornitore configurato su Supabase il 19/11/2026
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
+    TURNSTILE: '',          // chiave pubblica (sitekey) di Cloudflare Turnstile per il web; VUOTA = passo anti-bot spento (vedi docs/anti-bot.md)
+    PASSO_URL: 'https://wwereqrojlwktgwlrsib.supabase.co/functions/v1/passo', // funzione Edge che scambia la prova Turnstile con un passo
     SITO: sitoBase(location.hostname, SITO_NATIVO()), // indirizzo base del sito vetrina (con / finale): vedi sitoBase() qui sopra
   };
   const $ = (s) => document.querySelector(s);
@@ -193,18 +195,55 @@
   // di richieste per indirizzo: a mappa larga si chiedono solo conteggi a griglia (stalli_conteggi).
   const H = { apikey: CFG.KEY, Authorization: 'Bearer ' + CFG.KEY };
   let ctl, pausa429 = 0;
+  // Passo anti-bot (DORMIENTE: con CFG.TURNSTILE vuota, su Android o con modo "spento" non cambia nulla, non carica nulla e non
+  // aggiunge intestazioni). Quando il database è in "osserva" o "obbliga", il web dimostra di essere un browser vero con
+  // Turnstile, la funzione Edge «passo» lo cambia in un passo (30 minuti) che si manda in x-dp-passo. Resta solo in memoria.
+  let passo = null, passoP = null, modoAB = null, tsScript = null;
+  const abAttivo = () => modoAB || (modoAB = fetch(`${CFG.SB}/rest/v1/rpc/app_config`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' })
+    .then((r) => r.ok ? r.json() : null).then((c) => !!c && (c.anti_bot_modo === 'osserva' || c.anti_bot_modo === 'obbliga')).catch(() => { modoAB = null; return false; }));
+  const caricaTurnstile = () => tsScript || (tsScript = new Promise((ok, ko) => {
+    const el = document.createElement('script'); el.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; el.async = true;
+    el.onload = () => ok(window.turnstile); el.onerror = () => { tsScript = null; ko(new Error('turnstile')); }; document.head.appendChild(el);
+  }));
+  async function provaTurnstile() { // un widget nuovo per ogni prova (la prova vale una volta sola); si vede solo se serve un gesto
+    const ts = await caricaTurnstile(), box = document.createElement('div'); box.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999'; document.body.appendChild(box);
+    try {
+      return await new Promise((ok, ko) => { ts.render(box, { sitekey: CFG.TURNSTILE, execution: 'execute', appearance: 'interaction-only', callback: ok,
+        'error-callback': () => ko(new Error('turnstile')), 'timeout-callback': () => ko(new Error('turnstile')) }); });
+    } finally { box.remove(); }
+  }
+  function ottieniPasso(rinnova) { // rinnovo anche quando mancano meno di 2 minuti alla scadenza
+    if (!rinnova && passo && passo.scade - Date.now() > 120000) return Promise.resolve(passo.t);
+    if (passoP) return passoP;
+    return passoP = (async () => {
+      try {
+        const prova = await provaTurnstile();
+        const r = await fetch(CFG.PASSO_URL, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ origine: 'web', prova }) });
+        if (!r.ok) throw new Error(r.status);
+        const j = await r.json(); passo = { t: j.passo, scade: Date.parse(j.scade) || Date.now() + 25 * 60000 }; return passo.t;
+      } catch (e) { passo = null; return null; } finally { passoP = null; }
+    })();
+  }
   async function rpc(nome, args, signal) { // chiama una funzione del database; 429 = troppe richieste, non si ripete da soli
     const limite = () => Object.assign(new Error('429'), { status: 429 });
     if (Date.now() < pausa429) throw limite(); // già bloccati da poco: inutile insistere (si riprova da soli dopo 30 secondi, solo se l'utente muove la mappa)
-    let r; try { r = await fetch(`${CFG.SB}/rest/v1/rpc/${nome}`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(args), signal }); }
-    catch (e) { if (e.name !== 'AbortError') segnalaRete(true); throw e; } // senza rete: avviso fisso «Sei offline»
-    segnalaRete(false);
-    if (r.status === 429) { pausa429 = Date.now() + 30000; throw limite(); }
-    if (!r.ok) throw Object.assign(new Error(r.status), { status: r.status });
-    return r.json();
+    const web = !!CFG.TURNSTILE && !NATIVO();
+    let ab = web ? await abAttivo() : false;
+    for (let giro = 0; ; giro++) {
+      const h = Object.assign({ 'Content-Type': 'application/json' }, H);
+      if (ab) { const t = await ottieniPasso(giro > 0); if (t) h['x-dp-passo'] = t; }
+      let r; try { r = await fetch(`${CFG.SB}/rest/v1/rpc/${nome}`, { method: 'POST', headers: h, body: JSON.stringify(args), signal }); }
+      catch (e) { if (e.name !== 'AbortError') segnalaRete(true); throw e; } // senza rete: avviso fisso «Sei offline»
+      segnalaRete(false);
+      if (r.status === 401 && web && giro === 0) { if (!ab) { modoAB = null; ab = await abAttivo(); } if (ab) continue; } // 401: il database ha acceso il controllo o il passo è scaduto, una sola ripetizione
+      if (r.status === 401 && ab) { toast('Non riesco a verificare il dispositivo. Ricarica la pagina.', 5000); throw Object.assign(new Error('401'), { status: 401, avvisato: true }); }
+      if (r.status === 429) { pausa429 = Date.now() + 30000; throw limite(); }
+      if (!r.ok) throw Object.assign(new Error(r.status), { status: r.status });
+      return r.json();
+    }
   }
   const troppe = () => toast('Troppe richieste in poco tempo. Riprova tra qualche minuto.', 4500);
-  const erroreDati = (err) => { if (err.name === 'AbortError') return; if (err.status === 429) troppe(); else if (err instanceof TypeError && !offline.hidden) { /* senza rete c'è già l'avviso fisso */ } else toast('Non riesco a caricare i posti. Controlla la connessione.'); };
+  const erroreDati = (err) => { if (err.name === 'AbortError' || err.avvisato) return; if (err.status === 429) troppe(); else if (err instanceof TypeError && !offline.hidden) { /* senza rete c'è già l'avviso fisso */ } else toast('Non riesco a caricare i posti. Controlla la connessione.'); };
   async function carica(s, w, n, e, annullabile) {
     if (annullabile) { if (ctl) ctl.abort(); ctl = new AbortController(); }
     const ZH = 0.049, ZW = 0.074; // il riquadro non può superare 0,05° x 0,075: se è più grande si stringe attorno al centro
