@@ -7,7 +7,9 @@ valuta il rilevamento su zone geografiche tenute fuori e salva il modello.
 Uso: SUPABASE_SERVICE_KEY=... python3 train_torch.py CROPS_DIR OUT_DIR [--fake N]
   --fake N  collaudo senza etichette: usa i punti OSM di N stalli come se fossero clic (solo per verificare il codice)
 """
-import argparse, json, math, os, time, urllib.request, urllib.parse
+import argparse, json, math, os, sys, time, urllib.request, urllib.parse
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sbleggero as L  # regola: mai scaricare tutti gli stalli; colonne scelte + cache 6 h (--no-cache / SB_NOCACHE=1)
 import numpy as np
 from PIL import Image
 import torch, torchvision
@@ -29,17 +31,12 @@ MEAN = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1); STD = torch.tensor(
 
 
 def sb_get(path, key):
-    req = urllib.request.Request(f'{SB}/rest/v1/{path}', headers={'apikey': key, 'Authorization': f'Bearer {key}'})
-    return json.load(urllib.request.urlopen(req, timeout=60))
+    return json.loads(L.richiedi('GET', path, key)[0])
 
 
-def sb_all(path, key, page=1000):
-    """Come sb_get ma a pagine: il server restituisce al massimo 1000 righe per richiesta."""
-    import re
-    path = re.sub(r'[&?]limit=\d+', '', path); sep = '&' if '?' in path else '?'; out = []
-    while True:
-        b = sb_get(f'{path}{sep}order=id&limit={page}&offset={len(out)}', key); out += b
-        if len(b) < page: return out
+def sb_all(path, key, page=1000, cache=True):
+    """GET paginato (max 1000 righe per richiesta), ordinato per id, con cache su disco di 6 h: per l'addestramento non serve rileggere ogni volta."""
+    return L.get(path, key, page=page, cache=cache, ordine='id')
 
 
 def bbox(lat, lon, side):
@@ -66,7 +63,7 @@ def load_items(crops, key, fake, dtype=np.float32):
         labs = [{'ref_id': r['id'], 'centro_lat': r['lat'], 'centro_lon': r['lon'], 'crop_m': 60 if 'Parcheggio con posti' in (r.get('nome') or '') else 40,
                  'esito': 'stalli', 'punti': [[r['lat'], r['lon']]]} for r in list(stalli.values())[:fake] if 'Parcheggio con posti' not in (r.get('nome') or '')]
     else:
-        labs = sb_all('etichette?select=*', key)
+        labs = sb_all('etichette?select=ref_id,centro_lat,centro_lon,crop_m,esito,punti', key)
     for l in labs:
         fn = os.path.join(crops, f"{l['ref_id']}.jpg")
         if not os.path.exists(fn) and not wms(l['centro_lat'], l['centro_lon'], l['crop_m'], 400, fn): continue

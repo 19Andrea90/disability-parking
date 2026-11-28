@@ -2,9 +2,11 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#0b2a5b">
-<title>Disability Parking</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0b2a5b" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b2230" media="(prefers-color-scheme: dark)">
+<title>SostAbile</title>
 <link rel="stylesheet" href="vendor/maplibre-gl.css">
 <link rel="stylesheet" href="app.css">
 </head>
@@ -16,12 +18,14 @@
     <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 5-5 8-5s6.5 1 8 5"/></symbol>
     <symbol id="i-nav" viewBox="0 0 24 24"><path d="M21 3L3 10.5l7.5 3L13.5 21z"/></symbol>
     <symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 16.5 9 5 9-5"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
     <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.7C3.9 8.5 2 12 2 12s3.5 7 10 7c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
     <symbol id="i-save" viewBox="0 0 24 24"><path d="M6 4h12v16l-6-4-6 4z"/></symbol>
     <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M5 13v6h14v-6"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></symbol>
@@ -36,6 +40,13 @@
     <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 1 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-10a6 6 0 1 1 12 0c0 4.5-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></symbol>
     <symbol id="i-idea" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></symbol>
+    <symbol id="i-ospedale" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 8v8M15 8v8M9 12h6"/></symbol>
+    <symbol id="i-treno" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M9 21l2-4M15 21l-2-4M9 14h.01M15 14h.01"/></symbol>
+    <symbol id="i-ufficio" viewBox="0 0 24 24"><path d="M3 9l9-5 9 5M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 20h18"/></symbol>
+    <symbol id="i-farmacia" viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></symbol>
+    <symbol id="i-carrello" viewBox="0 0 24 24"><path d="M3 4h3l2.5 11h9L20 7H7"/><circle cx="10" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/></symbol>
+    <symbol id="i-scuola" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/></symbol>
   </defs>
 </svg>
 
@@ -47,6 +58,7 @@
     <button id="b-search" class="search"><svg class="ic"><use href="#i-search"/></svg><span>Dove vai?</span></button>
     <button id="b-menu" class="sq" aria-label="Menu e impostazioni"><svg class="ic"><use href="#i-user"/></svg></button>
   </div>
+  <button id="b-auto" class="autopill" hidden><svg class="ic"><use href="#i-car"/></svg><span>La tua auto</span></button>
   <div class="chips">
     <button class="chip" data-f="ver" aria-pressed="false"><svg class="ic sm"><use href="#i-check"/></svg><span>Verificati</span></button>
     <button class="chip" data-f="cop" aria-pressed="false">Coperti</button>
@@ -54,11 +66,23 @@
   </div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="fg-live" class="vh" role="status" aria-live="polite"></div>
+<div id="offline" role="status" hidden></div>
+
+<!-- Fogli di arrivo: com'è andata, hai parcheggiato qui, piano B, auto salvata, ritorno all'auto -->
+<div id="fg" hidden>
+  <div id="fg-top" class="fg-top" hidden></div>
+  <section id="fg-sheet" class="sheet" role="dialog" aria-labelledby="fg-h"></section>
+</div>
 
 <div id="home">
   <div class="float">
     <button id="b-add" class="pill"><svg class="ic"><use href="#i-plus"/></svg><span>Segnala un posto</span></button>
-    <button id="b-me" class="round" aria-label="Centra la mappa sulla mia posizione"><svg class="ic"><use href="#i-locate"/></svg></button>
+    <div class="dx">
+      <div id="slot-i" class="slot-i"></div>
+      <button id="b-sat" class="round" aria-pressed="false" aria-label="Vista satellitare, non attiva" hidden><svg class="ic"><use href="#i-layers"/></svg></button>
+      <button id="b-me" class="round" aria-label="Centra la mappa sulla mia posizione"><svg class="ic"><use href="#i-locate"/></svg></button>
+    </div>
   </div>
   <section id="near" class="sheet" aria-label="Posti vicini">
     <button class="handle" aria-label="Mostra più posti vicini" aria-expanded="false"></button>
@@ -146,6 +170,7 @@
       <div id="c-sub" class="muted"></div>
       <div id="c-badges" class="badges"></div>
       <p id="c-note" class="muted" hidden></p>
+      <button id="c-ind" class="lnk" hidden><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>Cos'è la posizione indicativa?</span></button>
       <button id="c-regole" class="lnk"><svg class="ic"><use href="#i-shield"/></svg><span>Con il contrassegno le strisce blu sono gratis · regole della sosta</span></button>
       <button id="c-nav" class="primary"><svg class="ic"><use href="#i-nav"/></svg><span>Portami lì</span></button>
       <div class="three">
@@ -162,7 +187,39 @@
         </div>
       </div>
       <div id="c-conf-far" class="muted small"></div>
+      <button id="c-problema" class="lnk prob"><svg class="ic" aria-hidden="true"><use href="#i-flag"/></svg><span>C'è un problema con questo posto?</span></button>
     </div>
+  </section>
+</div>
+
+<!-- C'è un problema con questo posto? Foglio con le scelte, poi (solo per «È in un altro punto») la mappa per indicare il punto giusto -->
+<div id="prob" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="p-tit">
+    <div class="handle"></div>
+    <div class="p-testa"><h2 id="p-tit" tabindex="-1">C'è un problema?</h2><button id="p-x" class="p-x" aria-label="Chiudi"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <p class="p-sub" id="p-sub"></p>
+    <div class="p-scelte" role="radiogroup" aria-label="Tipo di problema" id="p-scelte">
+      <button class="p-sc" role="radio" aria-checked="false" data-t="non_esiste"><i aria-hidden="true"></i>Il posto non c'è più</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="spostato"><i aria-hidden="true"></i>È in un altro punto</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="targa"><i aria-hidden="true"></i>È riservato a una sola targa</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="dati_errati"><i aria-hidden="true"></i>Indirizzo o numero di posti sbagliato</button>
+      <button class="p-sc" role="radio" aria-checked="false" data-t="altro"><i aria-hidden="true"></i>Altro</button>
+    </div>
+    <div class="p-dove" id="p-dove" hidden><b>Dov'è davvero?</b><span>Si apre la mappa: sposta il segnaposto nel punto giusto.</span></div>
+    <label class="p-note" for="p-testo">Note (facoltative)<textarea id="p-testo" rows="2" maxlength="500"></textarea></label>
+    <button id="p-invia" class="primary" disabled><span>Invia la segnalazione</span></button>
+  </section>
+</div>
+<div id="probpos" hidden>
+  <div class="add-top">
+    <button id="pp-close" class="round" aria-label="Annulla e torna alle scelte"><svg class="ic"><use href="#i-x"/></svg></button>
+    <div class="add-hint">Sposta la mappa finché il segnaposto è sopra lo stallo</div>
+  </div>
+  <div id="p-pin" aria-hidden="true"><i></i></div>
+  <section class="sheet" aria-label="Indica il punto giusto">
+    <div class="handle"></div>
+    <div><h1>Dov'è davvero il posto?</h1><div id="pp-dove" class="muted small" style="margin-top:4px"></div></div>
+    <button id="pp-invia" class="primary"><svg class="ic"><use href="#i-check"/></svg><span>Invia la segnalazione</span></button>
   </section>
 </div>
 
@@ -170,6 +227,12 @@
 <div id="menu" class="page" hidden>
   <div class="p-top"><button id="m-back" aria-label="Torna alla mappa"><svg class="ic"><use href="#i-back"/></svg></button><h1>I tuoi posti</h1></div>
   <div id="m-body"></div>
+</div>
+
+<!-- Il mio account (solo con l'accesso fatto) -->
+<div id="account" class="page" hidden aria-labelledby="ac-tit">
+  <div class="p-top"><button id="ac-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="ac-tit" tabindex="-1">Il mio account</h1></div>
+  <div id="ac-body"></div>
 </div>
 
 <!-- Schermata 8 · Il mio profilo e il contrassegno -->
@@ -205,6 +268,60 @@
   </div>
 </div>
 
+<!-- Elimina account -->
+<div id="elimina" class="page" hidden role="dialog" aria-labelledby="x-tit">
+  <div class="p-top"><button id="x-back" aria-label="Torna ai tuoi posti"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="x-tit" tabindex="-1">Elimina account</h1></div>
+  <div class="testo sug">
+    <p><b>Stai per eliminare il tuo account SostAbile.</b> L'operazione è definitiva: non si può annullare e non possiamo recuperare nulla.</p>
+    <div class="xbox"><div class="b">Cosa viene cancellato</div><ul>
+      <li>il tuo account e il tuo indirizzo email;</li>
+      <li>i posti salvati e i luoghi come Casa e Lavoro;</li>
+      <li>la data di scadenza del contrassegno e le preferenze di avviso, anche su questo telefono.</li></ul></div>
+    <div class="xbox ok"><div class="b">Cosa resta</div><ul>
+      <li>Le segnalazioni e le conferme che hai già fatto restano sulla mappa, in forma anonima e senza alcun collegamento con te: servono agli altri utenti.</li>
+      <li>Potrai usare l'app anche senza account, o crearne uno nuovo quando vuoi.</li></ul></div>
+    <label for="x-conf" class="eyebrow">Per confermare scrivi ELIMINA</label>
+    <input id="x-conf" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ELIMINA" aria-describedby="x-msg">
+    <div class="msg small muted" id="x-msg" role="status"></div>
+    <button class="bp bd" id="x-go" disabled>Elimina definitivamente</button>
+    <button class="bp bn" id="x-no">Annulla, tieni il mio account</button>
+  </div>
+</div>
+
+<!-- Password dimenticata -->
+<div id="recupero" class="page" hidden role="dialog" aria-labelledby="re-tit">
+  <div class="p-top"><button id="re-back" aria-label="Torna all'accesso"><svg class="ic"><use href="#i-back"/></svg></button><h1 id="re-tit" tabindex="-1">Password dimenticata</h1></div>
+  <div class="testo sug">
+    <p>Scrivi l'email con cui ti sei registrato: ti mandiamo un link per scegliere una nuova password.</p>
+    <p id="re-nota" hidden>Il link si apre nel browser: lì scegli la nuova password, poi torna nell'app e accedi.</p>
+    <label for="re-email" class="eyebrow">La tua email</label>
+    <input id="re-email" type="email" autocomplete="username" placeholder="La tua email" aria-describedby="re-msg">
+    <div class="msg small muted" id="re-msg" role="status"></div>
+    <button class="bp" id="re-go">Mandami il link</button>
+    <button class="bp bn" id="re-no">Torna all'accesso</button>
+  </div>
+</div>
+
+<!-- Scegli una nuova password (arrivo dal link ricevuto per email) -->
+<div id="nuova" class="page" hidden role="dialog" aria-labelledby="n-tit">
+  <div class="p-top"><h1 id="n-tit" tabindex="-1">Scegli una nuova password</h1></div>
+  <div class="testo sug" id="n-form">
+    <p class="reg">Almeno 10 caratteri, con minuscola, maiuscola, numero e carattere speciale.</p>
+    <label for="n-p1" class="eyebrow">Nuova password</label>
+    <span class="pw"><input id="n-p1" type="password" autocomplete="new-password" placeholder="Password"><button type="button" class="occhio" aria-label="Mostra password" aria-pressed="false" aria-controls="n-p1"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+    <label for="n-p2" class="eyebrow">Ripeti la nuova password</label>
+    <span class="pw"><input id="n-p2" type="password" autocomplete="new-password" placeholder="Password"><button type="button" class="occhio" aria-label="Mostra password" aria-pressed="false" aria-controls="n-p2"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></button></span>
+    <div class="msg small muted" id="n-msg" role="status"></div>
+    <button class="bp" id="n-go">Salva la nuova password</button>
+    <button class="bp bn" id="n-annulla" hidden>Annulla</button>
+  </div>
+  <div class="testo sug" id="n-scaduto" hidden>
+    <p><b>Il link non è più valido o è scaduto.</b> Per sicurezza i link funzionano una volta sola e per poco tempo.</p>
+    <button class="bp" id="n-nuovo">Richiedi un nuovo link</button>
+    <button class="bp bn" id="n-chiudi">Chiudi</button>
+  </div>
+</div>
+
 <!-- Regole della sosta -->
 <div id="regole" class="page" hidden>
   <div class="p-top"><button id="r-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Regole della sosta</h1></div>
@@ -215,15 +332,36 @@
     <p><b>Zone con disco orario</b><br>Non sei tenuto a rispettare i limiti di tempo (art. 188, comma 3).</p>
     <p><b>ZTL</b><br>Le auto al servizio di persone con disabilità possono circolare nelle zone a traffico limitato, ma quasi sempre bisogna comunicare prima la targa al Comune per non ricevere la multa dalle telecamere. In molti comuni si fa una volta sola sulla Piattaforma unica nazionale CUDE.</p>
     <div id="r-comune"></div>
-    <p><b>Fonte ufficiale</b><br><a href="https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285~art188" target="_blank" rel="noopener">Art. 188 del Codice della strada su Normattiva</a>. Disability Parking non rappresenta alcun ente pubblico.</p>
+    <p><b>Fonte ufficiale</b><br><a href="https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285~art188" target="_blank" rel="noopener">Art. 188 del Codice della strada su Normattiva</a>. SostAbile non rappresenta alcun ente pubblico.</p>
     <p class="small muted">Sono indicazioni generali: controlla sempre la segnaletica sul posto e il regolamento del comune, che è quello che vale.</p>
+  </div>
+</div>
+
+<!-- Frase di spiegazione prima del permesso per le notifiche (solo app Android) -->
+<div id="velo-n" class="velo" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vn-h">
+    <h2 id="vn-h" tabindex="-1">Vuoi un avviso?</h2>
+    <p id="vn-p"></p>
+    <button class="bp" id="vn-si">Continua</button>
+    <button class="bl" id="vn-no">Non ora</button>
+  </div>
+</div>
+
+<!-- Scelta del navigatore, quando in "I tuoi posti" è impostato «Chiedi ogni volta» -->
+<div id="velo-nav" class="velo" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vnv-h">
+    <h2 id="vnv-h" tabindex="-1">Con quale navigatore?</h2>
+    <p>Puoi cambiare la scelta in «I tuoi posti», alla voce Navigatore.</p>
+    <button class="bp" data-app="google">Google Maps</button>
+    <button class="bp" data-app="waze">Waze</button>
+    <button class="bl" id="vnv-no">Annulla</button>
   </div>
 </div>
 
 <!-- Invito a lasciare una recensione (solo app Android) -->
 <div id="voto" class="velo" hidden>
   <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="v-t">
-    <h2 id="v-t">Ti è utile Disability Parking?</h2>
+    <h2 id="v-t">Ti è utile SostAbile?</h2>
     <p>Una recensione su Google Play ci aiuta a farla conoscere a chi ne ha bisogno. Bastano pochi secondi.</p>
     <button class="bp" data-v="si">Lascia una recensione</button>
     <button class="bl" data-v="dopo">Più tardi</button>
@@ -231,11 +369,22 @@
   </div>
 </div>
 
+<!-- Posizione indicativa: posti degli elenchi comunali con il solo nome della via (al primo tocco; «Non mostrare più» lo nasconde su tutti i posti) -->
+<div id="velo-ind" class="velo" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="vi-h">
+    <h2 id="vi-h" tabindex="-1">Posizione indicativa</h2>
+    <p>Il Comune ci ha indicato solo la via di questo posto riservato, non il punto preciso. Il segnaposto è sulla via, ma il posto potrebbe essere più avanti o più indietro.</p>
+    <p class="aiuto"><strong>Ci aiuti?</strong> Se passi di qui e lo trovi, tocca «C'è un problema con questo posto?» e poi «È in un altro punto» per spostarlo dove si trova davvero. Chi cerca parcheggio dopo di te lo troverà subito.</p>
+    <label class="chk" id="vi-chk-l" for="vi-mai"><input type="checkbox" id="vi-mai"><span>Non mostrare più questo messaggio</span></label>
+    <button class="bp" id="vi-ok">Ho capito</button>
+  </div>
+</div>
+
 <!-- Fonti e avvertenze -->
 <div id="fonti" class="page" hidden>
-  <div class="p-top"><button id="f-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Fonti e avvertenze</h1></div>
+  <div class="p-top"><button id="f-back" aria-label="Torna indietro"><svg class="ic"><use href="#i-back"/></svg></button><h1>Fonti, condizioni e privacy</h1></div>
   <div class="testo">
-    <p><b>Disability Parking è un progetto indipendente e non rappresenta alcun ente pubblico.</b> Non è affiliata né autorizzata da Comuni, Regioni o Ministeri. Le informazioni arrivano dalle fonti pubbliche elencate qui sotto.</p>
+    <p><b>SostAbile è un progetto indipendente e non rappresenta alcun ente pubblico.</b> Non è affiliata né autorizzata da Comuni, Regioni o Ministeri. Le informazioni arrivano dalle fonti pubbliche elencate qui sotto.</p>
     <p><b>I dati possono contenere errori.</b> Un posto segnato in mappa può essere stato spostato, tolto o riservato a una sola targa. Controlla sempre la segnaletica sul posto: è quella che vale.</p>
     <p><b>Da dove arrivano i posti</b></p>
     <p>Dati ufficiali pubblicati dalle amministrazioni come open data (licenza CC BY o equivalente). Fonti originali: <a href="https://opendata.comune.bologna.it/explore/dataset/sosta-veicoli-a-servizio-di-persone-disabili-h/" target="_blank" rel="noopener">Bologna</a>, <a href="https://opendata.comune.fi.it/page_dataset_show?id=c27abf04-33c0-44ba-ad74-ef8272af90d2" target="_blank" rel="noopener">Firenze</a>, <a href="https://dati.trentino.it/dataset/parcheggi-disabili-open-data" target="_blank" rel="noopener">Trento</a>, <a href="https://risorse.comune.torino.it/" target="_blank" rel="noopener">Torino</a>, <a href="https://dati.veneto.it/" target="_blank" rel="noopener">Verona</a>, <a href="https://www.dati.lombardia.it/" target="_blank" rel="noopener">Comuni lombardi</a>, <a href="https://servizisit.unionevallesavio.it/" target="_blank" rel="noopener">Cesena</a>, <a href="https://sit.comune.fe.it/" target="_blank" rel="noopener">Ferrara</a>, <a href="https://odn.comune.prato.it/" target="_blank" rel="noopener">Prato</a>, <a href="https://siena.ldpgis.it/" target="_blank" rel="noopener">Siena</a>, <a href="https://livornosit.ldpgis.it/" target="_blank" rel="noopener">Livorno</a>, <a href="https://dati.comune.matera.it/" target="_blank" rel="noopener">Matera</a>, <a href="https://opendata.comune.modena.it/" target="_blank" rel="noopener">Modena</a>, <a href="https://www.comune.chieri.to.it/" target="_blank" rel="noopener">Chieri</a>, <a href="https://www.comune.nichelino.to.it/" target="_blank" rel="noopener">Nichelino</a>.</p>
@@ -244,7 +393,10 @@
     <p>Riconoscimento automatico sulle foto aeree della <a href="https://www.regione.fvg.it/" target="_blank" rel="noopener">Regione Friuli Venezia Giulia</a> e segnalazioni di chi usa l'app.</p>
     <p><b>Regole della sosta</b></p>
     <p>Le regole sul contrassegno riassunte nell'app derivano dall'art. 188 del Codice della strada: <a href="https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285~art188" target="_blank" rel="noopener">testo ufficiale su Normattiva</a>.</p>
-    <p><a href="https://19andrea90.github.io/disability-parking/sito/fonti.html" target="_blank" rel="noopener">Elenco completo delle fonti</a></p>
+    <p><a id="f-elenco" href="#" target="_blank" rel="noopener">Elenco completo delle fonti</a></p>
+    <p><a id="f-cond" href="#" target="_blank" rel="noopener">Condizioni d'uso</a></p>
+    <p><a id="f-priv" href="#" target="_blank" rel="noopener">Informativa sulla privacy</a></p>
+    <p>I dati non possono essere copiati o estratti in blocco: vedi le condizioni d'uso.</p>
     <p><b>Affidabilità</b></p>
     <p>"Ufficiale": viene dal Comune. "Verificato": presente su OpenStreetMap o confermato da più persone. "Da verificare": segnalato da poco, non ancora confermato.</p>
     <p><b>Mappa e percorsi</b></p>
@@ -259,16 +411,27 @@
 <div id="aggiorna" role="dialog" aria-modal="true" aria-labelledby="ag-t" hidden>
   <div class="logo"><svg class="ic"><use href="#i-wc"/></svg></div>
   <h1 id="ag-t">Aggiorna l'app per continuare</h1>
-  <p class="lead">Questa versione di Disability Parking non è più supportata. Scarica l'aggiornamento da Google Play: ci vuole un minuto e i tuoi posti salvati restano dove sono.</p>
+  <p class="lead">Questa versione di SostAbile non è più supportata. Scarica l'aggiornamento da Google Play: ci vuole un minuto e i tuoi posti salvati restano dove sono.</p>
   <div class="bottom">
     <button id="ag-go" class="primary"><svg class="ic"><use href="#i-nav"/></svg><span>Apri Google Play</span></button>
+  </div>
+</div>
+
+<!-- Condizioni d'uso aggiornate: chi aveva già aperto l'app le accetta una volta -->
+<div id="condizioni" role="dialog" aria-modal="true" aria-labelledby="cd-t" hidden>
+  <div class="logo"><svg class="ic"><use href="#i-wc"/></svg></div>
+  <h1 id="cd-t">Abbiamo aggiornato le condizioni d'uso</h1>
+  <p class="lead">SostAbile resta gratuita e senza pubblicità. Le condizioni spiegano come usare l'app e i suoi dati: per esempio, i posti in mappa non si possono copiare o scaricare in blocco.</p>
+  <div class="bottom">
+    <label class="accetto"><input type="checkbox" id="cd-acc"><span>Ho letto e accetto le <a class="l-cond" href="#">Condizioni d'uso</a> e l'<a class="l-priv" href="#">Informativa privacy</a></span></label>
+    <button id="cd-go" class="primary" disabled><span>Accetto e continuo</span></button>
   </div>
 </div>
 
 <!-- Schermata 1 · Primo avvio -->
 <div id="welcome" hidden>
   <div class="logo"><svg class="ic"><use href="#i-wc"/></svg></div>
-  <h1>Tutti i posti riservati d'Italia, in una mappa.</h1>
+  <h1>Tutti i posti per disabili d'Italia, in una mappa.</h1>
   <p class="lead">Apri l'app, guarda la mappa e fatti portare allo stallo. Puoi usarla subito, anche senza account.</p>
   <ul>
     <li><span class="bul"><svg class="ic"><use href="#i-pin"/></svg></span><span>Oltre 50.000 posti in tutta Italia, vicino a te o dove stai andando.</span></li>
@@ -277,8 +440,9 @@
   </ul>
   <div class="bottom">
     <p class="small">La posizione serve solo a mostrarti i posti vicini. Non viene salvata.</p>
-    <button id="w-go" class="primary"><svg class="ic"><use href="#i-locate"/></svg><span>Attiva la posizione</span></button>
-    <button id="w-skip" class="ghost">Non ora, guardo la mappa</button>
+    <label class="accetto"><input type="checkbox" id="w-acc"><span>Ho letto e accetto le <a class="l-cond" href="#">Condizioni d'uso</a> e l'<a class="l-priv" href="#">Informativa privacy</a></span></label>
+    <button id="w-go" class="primary" disabled><svg class="ic"><use href="#i-locate"/></svg><span>Attiva la posizione</span></button>
+    <button id="w-skip" class="ghost" disabled>Non ora, guardo la mappa</button>
     <p class="small center">I dati arrivano da Comuni, OpenStreetMap e segnalazioni degli utenti e possono contenere errori.</p>
   </div>
 </div>

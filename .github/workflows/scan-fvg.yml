@@ -52,6 +52,12 @@ jobs:
         run: |
           pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
           pip install -r tools/requisiti-scansione.txt
+      - name: Cache letture Supabase
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/sostabile
+          key: sbleggero-${{ github.run_id }}-${{ matrix.parte }}
+          restore-keys: sbleggero-
       - name: Scansione
         env:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -73,6 +79,12 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - name: Cache letture Supabase
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/sostabile
+          key: sbleggero-rilancio
+          restore-keys: sbleggero-
       - name: Se restano comuni, avvia il giro successivo
         env:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

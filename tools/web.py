@@ -25,7 +25,7 @@ s = open(os.path.join(W, 'index.html'), encoding='utf-8').read()
 for f in FILES:
     n = len(re.findall(r'(href|src)="%s"' % re.escape(f), s)); assert n == 1, (f, n)
     s = re.sub(r'(href|src)="%s"' % re.escape(f), r'\1="mobile/www/%s?v=%s"' % (f, v), s)
-testa = '''<meta name="description" content="Tutti i posti riservati d'Italia, in una mappa: trova il parcheggio per persone con disabilità più vicino e fatti portare lì.">
+testa = '''<meta name="description" content="Tutti i posti per disabili d'Italia, in una mappa: trova il parcheggio per persone con disabilità più vicino e fatti portare lì.">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">

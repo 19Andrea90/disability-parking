@@ -7,6 +7,8 @@ Per contenere i tempi su CPU valuta su un solo gruppo di zone tenuto fuori (25%)
 Uso: SUPABASE_SERVICE_KEY=... python3 finetune.py CROPS_DIR OUT_DIR [--steps 2500] [--holdout-only]
 """
 import argparse, json, math, os, sys, time, urllib.parse, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sbleggero as L  # regola: mai scaricare tutti gli stalli
 import numpy as np
 from PIL import Image
 import torch, torchvision
@@ -113,7 +115,9 @@ def load_extra(crops, key, cand_filter=None, n_city=None, seed=0):
     cands = T.sb_all('candidati?select=id,lat,lon,stato,stallo_id,classe,comune&stato=in.(accettato,scartato)', key)
     b20 = {x.strip() for x in EXTRA20.split(',') if x.strip()}
     getw = lambda c: wms_bz if c.get('comune') in b20 else T.wms
-    stalli = {r['id']: r for r in T.sb_all('stalli?select=id,lat,lon,note&stato=in.(proposto,verificato,ufficiale)', key)}
+    # solo gli stalli collegati ai candidati (ricerca mirata per id), non tutti gli ~55.000 stalli attivi
+    ids = sorted({c['stallo_id'] for c in cands if c.get('stallo_id')})
+    stalli = {r['id']: r for r in L.esistono('stalli', 'id', ids, key, cols='id,lat,lon,note', extra_filtri='&stato=in.(proposto,verificato,ufficiale)')}
     # gli stalli confermati in automatico dalla rete e non ancora controllati a mano non sono etichette affidabili: li escludo
     unver = {i for i, r in stalli.items() if unverified_auto(r)}
     cands = [c for c in cands if c.get('stallo_id') not in unver]

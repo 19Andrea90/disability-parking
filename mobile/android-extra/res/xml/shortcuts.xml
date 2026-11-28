@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scorciatoie dall'icona dell'app (tenendo premuta l'icona). Ognuna apre l'app con un indirizzo it.disabilityparking.app://azione/<nome>,
+     che app.js esegue (vedi azione() in mobile/www/app.js). Copiato nel progetto Android dai workflow (android.yml, play.yml). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="vicino"
+        android:enabled="true"
+        android:icon="@drawable/ic_sc_vicino"
+        android:shortcutShortLabel="@string/sc_vicino_corto"
+        android:shortcutLongLabel="@string/sc_vicino_lungo">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="it.disabilityparking.app://azione/vicino"
+            android:targetPackage="it.disabilityparking.app"
+            android:targetClass="it.disabilityparking.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="casa"
+        android:enabled="true"
+        android:icon="@drawable/ic_sc_casa"
+        android:shortcutShortLabel="@string/sc_casa_corto"
+        android:shortcutLongLabel="@string/sc_casa_lungo">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="it.disabilityparking.app://azione/casa"
+            android:targetPackage="it.disabilityparking.app"
+            android:targetClass="it.disabilityparking.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="lavoro"
+        android:enabled="true"
+        android:icon="@drawable/ic_sc_lavoro"
+        android:shortcutShortLabel="@string/sc_lavoro_corto"
+        android:shortcutLongLabel="@string/sc_lavoro_lungo">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="it.disabilityparking.app://azione/lavoro"
+            android:targetPackage="it.disabilityparking.app"
+            android:targetClass="it.disabilityparking.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="auto"
+        android:enabled="true"
+        android:icon="@drawable/ic_sc_auto"
+        android:shortcutShortLabel="@string/sc_auto_corto"
+        android:shortcutLongLabel="@string/sc_auto_lungo">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="it.disabilityparking.app://azione/auto"
+            android:targetPackage="it.disabilityparking.app"
+            android:targetClass="it.disabilityparking.app.MainActivity" />
+    </shortcut>
+</shortcuts>

@@ -53,14 +53,49 @@ jobs:
         run: |
           sed -i '0,/<\/activity>/s##    <intent-filter>\n                <action android:name="android.intent.action.VIEW" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <category android:name="android.intent.category.BROWSABLE" />\n                <data android:scheme="it.disabilityparking.app" android:host="login" />\n            </intent-filter>\n        </activity>#' android/app/src/main/AndroidManifest.xml
           grep -q 'android:scheme="it.disabilityparking.app"' android/app/src/main/AndroidManifest.xml
+      - name: Tastiera che ridimensiona la finestra (adjustResize), così i campi non restano coperti
+        run: |
+          m=android/app/src/main/AndroidManifest.xml
+          if grep -q 'android:windowSoftInputMode' $m; then sed -i 's#android:windowSoftInputMode="[^"]*"#android:windowSoftInputMode="adjustResize"#' $m; else sed -i '0,/<activity/s#<activity#<activity android:windowSoftInputMode="adjustResize"#' $m; fi
+          grep -q 'android:windowSoftInputMode="adjustResize"' $m
+      - name: Plugin locali TestLab e SostAbile (statistiche sui dispositivi di prova, dimensione del carattere, testo condiviso, scorciatoie)
+        run: |
+          d=android/app/src/main/java/it/disabilityparking/app
+          test -f $d/MainActivity.java
+          cp android-extra/TestLabPlugin.java android-extra/SostAbilePlugin.java android-extra/MainActivity.java $d/
+          grep -q 'registerPlugin(TestLabPlugin.class)' $d/MainActivity.java
+          grep -q 'registerPlugin(SostAbilePlugin.class)' $d/MainActivity.java
+      - name: Condividi verso SostAbile da altre app, per esempio Google Maps (testo semplice)
+        run: |
+          m=android/app/src/main/AndroidManifest.xml
+          sed -i '0,/<\/activity>/s##    <intent-filter>\n                <action android:name="android.intent.action.SEND" />\n                <category android:name="android.intent.category.DEFAULT" />\n                <data android:mimeType="text/plain" />\n            </intent-filter>\n        </activity>#' $m
+          grep -q 'android.intent.action.SEND' $m
+      - name: Scorciatoie dall'icona dell'app (Posto più vicino, Casa, Lavoro, Auto)
+        run: |
+          m=android/app/src/main/AndroidManifest.xml
+          cp -r android-extra/res/. android/app/src/main/res/
+          test -f android/app/src/main/res/xml/shortcuts.xml
+          sed -i '0,/<\/activity>/s##    <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />\n        </activity>#' $m
+          grep -q 'android.app.shortcuts' $m
       - name: Permessi per la posizione
         run: |
-          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" tools:node="replace" />\n</manifest>#' android/app/src/main/AndroidManifest.xml
+          m=android/app/src/main/AndroidManifest.xml
+          grep -q 'xmlns:tools=' $m || sed -i '0,/<manifest /s##<manifest xmlns:tools="http://schemas.android.com/tools" #' $m
+          grep -n 'xmlns:tools\|location.gps' $m
       - name: Versione
         run: |
           sed -i "s/versionCode 1/versionCode ${{ steps.v.outputs.code }}/; s/versionName \"1.0\"/versionName \"${{ steps.v.outputs.name }}\"/" android/app/build.gradle
           grep -n "versionCode\|versionName\|applicationId" android/app/build.gradle
           grep -n "Sdk" android/variables.gradle
+      - name: Riduzione del codice (R8) con file di deoffuscamento e simboli nativi, per togliere gli avvisi di Play al caricamento
+        run: |
+          g=android/app/build.gradle
+          sed -i 's/minifyEnabled false/minifyEnabled true/' $g
+          grep -q 'minifyEnabled true' $g
+          sed -i '0,/minifyEnabled true/s//minifyEnabled true\n            ndk { debugSymbolLevel "FULL" }/' $g
+          cat android-extra/proguard-sostabile.pro >> android/app/proguard-rules.pro
+          sed -n '/buildTypes/,/^    }/p' $g
       - name: Icona e schermata di avvio
         run: npx --yes @capacitor/assets@3 generate --android
       - run: npx cap sync android
@@ -73,6 +108,7 @@ jobs:
           KP: ${{ secrets.PLAY_KEYSTORE_PASSWORD }}
         run: |
           cp android/app/build/outputs/bundle/release/app-release.aab disability-parking.aab
+          cp android/app/build/outputs/mapping/release/mapping.txt deoffuscamento-mapping.txt
           if [ -z "$KS" ] || [ -z "$KP" ]; then echo "::warning::Mancano i segreti PLAY_KEYSTORE / PLAY_KEYSTORE_PASSWORD: compilazione riuscita, ma il file non è firmato e non viene pubblicato."; echo "ok=no" >> "$GITHUB_OUTPUT"; exit 0; fi
           printf '%s' "$KS" | tr -d ' \n\r' | base64 -d > "$RUNNER_TEMP/k.jks"
           jarsigner -keystore "$RUNNER_TEMP/k.jks" -storepass:env KP -sigalg SHA256withRSA -digestalg SHA-256 disability-parking.aab upload
@@ -84,7 +120,9 @@ jobs:
         with:
           tag_name: app-play
           name: App Android · file per Google Play
-          body: "Versione ${{ steps.v.outputs.name }} (codice ${{ steps.v.outputs.code }}). File da caricare nella Play Console, non installabile direttamente sul telefono."
+          body: "Versione ${{ steps.v.outputs.name }} (codice ${{ steps.v.outputs.code }}). File da caricare nella Play Console, non installabile direttamente sul telefono. Il file mapping.txt è il file di deoffuscamento da caricare per la stessa versione."
           prerelease: true
           make_latest: false
-          files: mobile/disability-parking.aab
+          files: |
+            mobile/disability-parking.aab
+            mobile/deoffuscamento-mapping.txt

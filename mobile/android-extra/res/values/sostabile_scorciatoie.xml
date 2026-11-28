@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sc_vicino_corto">Più vicino</string>
+    <string name="sc_vicino_lungo">Posto più vicino</string>
+    <string name="sc_casa_corto">Casa</string>
+    <string name="sc_casa_lungo">Posti vicino a casa</string>
+    <string name="sc_lavoro_corto">Lavoro</string>
+    <string name="sc_lavoro_lungo">Posti vicino al lavoro</string>
+    <string name="sc_auto_corto">Auto</string>
+    <string name="sc_auto_lungo">Ritrova l\'auto</string>
+</resources>

@@ -1,0 +1,785 @@
+{
+ "fonte": "Accesso civico, risposta della Polizia Locale del 24/11/2026: elenco per via (52 vie, 104 posti), senza civici né coordinate",
+ "elenco": [
+  {
+   "via": "Via Casale Marini",
+   "posti": 1
+  },
+  {
+   "via": "Via Pò",
+   "posti": 1
+  },
+  {
+   "via": "Via Sacra Famiglia",
+   "posti": 1
+  },
+  {
+   "via": "Via Verdi (Scuola)",
+   "posti": 1
+  },
+  {
+   "via": "Via Mastruccia (Scuola)",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Ferrante",
+   "posti": 4
+  },
+  {
+   "via": "Viale Tevere",
+   "posti": 3
+  },
+  {
+   "via": "Via Aldo Moro",
+   "posti": 2
+  },
+  {
+   "via": "Viale Roma",
+   "posti": 1
+  },
+  {
+   "via": "Piazza S. T. D'Aquino",
+   "posti": 2
+  },
+  {
+   "via": "Viale Mazzini",
+   "posti": 3
+  },
+  {
+   "via": "Poliambulatorio (Ex Ospedale)",
+   "posti": 4
+  },
+  {
+   "via": "Via Sellari",
+   "posti": 3
+  },
+  {
+   "via": "Largo Amendola",
+   "posti": 1
+  },
+  {
+   "via": "Corso della Repubblica",
+   "posti": 3
+  },
+  {
+   "via": "Piazza VI Dicembre",
+   "posti": 3
+  },
+  {
+   "via": "Piazza della Libertà",
+   "posti": 3
+  },
+  {
+   "via": "Piazza S. Maria",
+   "posti": 2
+  },
+  {
+   "via": "Piazza Scappaticci",
+   "posti": 1
+  },
+  {
+   "via": "Via Ricciotti",
+   "posti": 2
+  },
+  {
+   "via": "Via XX Settembre",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Valchera",
+   "posti": 3
+  },
+  {
+   "via": "Via Angeloni",
+   "posti": 2
+  },
+  {
+   "via": "Via Marco Tullio Cicerone",
+   "posti": 1
+  },
+  {
+   "via": "Via Mastroianni",
+   "posti": 1
+  },
+  {
+   "via": "Via Tiburtina",
+   "posti": 1
+  },
+  {
+   "via": "Via Moccia",
+   "posti": 2
+  },
+  {
+   "via": "Piazza IV Novembre",
+   "posti": 1
+  },
+  {
+   "via": "Via Fosse Ardeatine",
+   "posti": 2
+  },
+  {
+   "via": "Piazza Paleario",
+   "posti": 1
+  },
+  {
+   "via": "Via Cesare Battisti",
+   "posti": 2
+  },
+  {
+   "via": "Piazza Garibaldi",
+   "posti": 1
+  },
+  {
+   "via": "Via Minghetti",
+   "posti": 3
+  },
+  {
+   "via": "Via Tiravanti",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Diamanti",
+   "posti": 1
+  },
+  {
+   "via": "Via Acciaccarelli",
+   "posti": 4
+  },
+  {
+   "via": "Via del Rifugio",
+   "posti": 2
+  },
+  {
+   "via": "Via Brighindi",
+   "posti": 3
+  },
+  {
+   "via": "Via America Latina",
+   "posti": 5
+  },
+  {
+   "via": "Via Ferrarelli",
+   "posti": 1
+  },
+  {
+   "via": "Via Albinoni",
+   "posti": 2
+  },
+  {
+   "via": "Corso Lazio",
+   "posti": 8
+  },
+  {
+   "via": "Viale Kennedy",
+   "posti": 2
+  },
+  {
+   "via": "Via Mola Vecchia",
+   "posti": 1
+  },
+  {
+   "via": "Via Veccia",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Fiume",
+   "posti": 2
+  },
+  {
+   "via": "Via Tagliamento",
+   "posti": 2
+  },
+  {
+   "via": "Via Adige",
+   "posti": 1
+  },
+  {
+   "via": "Piazza De Matthaeis",
+   "posti": 2
+  },
+  {
+   "via": "Via De Matthaeis",
+   "posti": 1
+  },
+  {
+   "via": "Piazza M. della Neve",
+   "posti": 1
+  },
+  {
+   "via": "SS 155 per Fiuggi",
+   "posti": 1
+  }
+ ],
+ "caricati_25_11": [
+  {
+   "osm_id": "opendata:frosinone:viapo",
+   "lat": 41.642755,
+   "lon": 13.342913,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Pò",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viasacrafamiglia",
+   "lat": 41.624051,
+   "lon": 13.327967,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Sacra Famiglia",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaverdiscuola",
+   "lat": 41.62229,
+   "lon": 13.335311,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Viale Giuseppe Verdi (scuola)",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viamastrucciascuola",
+   "lat": 41.656856,
+   "lon": 13.350741,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Mastruccia (scuola)",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:vialetevere",
+   "lat": 41.641713,
+   "lon": 13.34205,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Via Tevere",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaaldomoro",
+   "lat": 41.642867,
+   "lon": 13.345494,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Via Aldo Moro",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:vialeroma",
+   "lat": 41.643753,
+   "lon": 13.351754,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Viale Roma",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzastdaquino",
+   "lat": 41.640497,
+   "lon": 13.347895,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Piazza San Tommaso d'Aquino",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:vialemazzini",
+   "lat": 41.63933,
+   "lon": 13.348569,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Viale Giuseppe Mazzini",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:poliambulatorioexospedale",
+   "lat": 41.63893,
+   "lon": 13.34668,
+   "tipo": "generico",
+   "posti": 4,
+   "nome": null,
+   "indirizzo": "Viale Giuseppe Mazzini (poliambulatorio, ex ospedale Umberto I)",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:corsodellarepubblica",
+   "lat": 41.638807,
+   "lon": 13.351288,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Corso della Repubblica",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzavidicembre",
+   "lat": 41.639518,
+   "lon": 13.3508,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Piazza 6 Dicembre",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzadellaliberta",
+   "lat": 41.640745,
+   "lon": 13.350821,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Piazza della Libertà",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzasmaria",
+   "lat": 41.63977,
+   "lon": 13.353164,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Piazza S. Maria",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaxxsettembre",
+   "lat": 41.639359,
+   "lon": 13.35274,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via XX Settembre",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzavalchera",
+   "lat": 41.638958,
+   "lon": 13.351982,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Piazza Valchera",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaangeloni",
+   "lat": 41.638655,
+   "lon": 13.3523,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Via Luigi Angeloni",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viamarcotulliocicerone",
+   "lat": 41.648315,
+   "lon": 13.341849,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Marco Tullio Cicerone",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viamastroianni",
+   "lat": 41.645791,
+   "lon": 13.343265,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Marcello Mastroianni",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viatiburtina",
+   "lat": 41.651235,
+   "lon": 13.34439,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Tiburtina",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viafosseardeatine",
+   "lat": 41.637547,
+   "lon": 13.353595,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Via Fosse Ardeatine",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzapaleario",
+   "lat": 41.64056,
+   "lon": 13.354649,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Piazza Paleario (via Aonio Paleario)",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viacesarebattisti",
+   "lat": 41.641888,
+   "lon": 13.351887,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Viale Cesare Battisti",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzagaribaldi",
+   "lat": 41.640184,
+   "lon": 13.353982,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Piazza Garibaldi (via Giuseppe Garibaldi)",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaminghetti",
+   "lat": 41.641761,
+   "lon": 13.351554,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Via Marco Minghetti",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viatiravanti",
+   "lat": 41.638639,
+   "lon": 13.35275,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Tiravanti",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaacciaccarelli",
+   "lat": 41.635169,
+   "lon": 13.352882,
+   "tipo": "generico",
+   "posti": 4,
+   "nome": null,
+   "indirizzo": "Via Acciaccarelli",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viabrighindi",
+   "lat": 41.630648,
+   "lon": 13.351987,
+   "tipo": "generico",
+   "posti": 3,
+   "nome": null,
+   "indirizzo": "Via Francesco Brighindi",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaamericalatina",
+   "lat": 41.629537,
+   "lon": 13.342789,
+   "tipo": "generico",
+   "posti": 5,
+   "nome": null,
+   "indirizzo": "Viale America Latina",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaferrarelli",
+   "lat": 41.644533,
+   "lon": 13.35714,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Vincenzo Ferrarelli",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaalbinoni",
+   "lat": 41.622387,
+   "lon": 13.321256,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Via Tomaso Albinoni",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:corsolazio",
+   "lat": 41.621928,
+   "lon": 13.324982,
+   "tipo": "generico",
+   "posti": 8,
+   "nome": null,
+   "indirizzo": "Corso Lazio",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:vialekennedy",
+   "lat": 41.637441,
+   "lon": 13.34124,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Via John Fitzgerald Kennedy",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viamolavecchia",
+   "lat": 41.636324,
+   "lon": 13.343089,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Mola Vecchia",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viatagliamento",
+   "lat": 41.64415,
+   "lon": 13.345326,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Via Tagliamento",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viaadige",
+   "lat": 41.643786,
+   "lon": 13.344982,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Adige",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzadematthaeis",
+   "lat": 41.646588,
+   "lon": 13.34715,
+   "tipo": "generico",
+   "posti": 2,
+   "nome": null,
+   "indirizzo": "Piazza De Matthaeis (via Giacomo De Matthaeis)",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:viadematthaeis",
+   "lat": 41.646588,
+   "lon": 13.34715,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Via Giacomo De Matthaeis",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:piazzamdellaneve",
+   "lat": 41.652165,
+   "lon": 13.341506,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "Piazza Madonna della Neve",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:frosinone:ss155perfiuggi",
+   "lat": 41.663196,
+   "lon": 13.345063,
+   "tipo": "generico",
+   "posti": 1,
+   "nome": null,
+   "indirizzo": "SR 155 di Fiuggi",
+   "comune": "Frosinone",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · elenco per via; posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  }
+ ],
+ "senza_posizione": [
+  {
+   "via": "Via Casale Marini",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Ferrante",
+   "posti": 4
+  },
+  {
+   "via": "Via Sellari",
+   "posti": 3
+  },
+  {
+   "via": "Largo Amendola",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Scappaticci",
+   "posti": 1
+  },
+  {
+   "via": "Via Ricciotti",
+   "posti": 2
+  },
+  {
+   "via": "Via Moccia",
+   "posti": 2
+  },
+  {
+   "via": "Piazza IV Novembre",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Diamanti",
+   "posti": 1
+  },
+  {
+   "via": "Via del Rifugio",
+   "posti": 2
+  },
+  {
+   "via": "Via Veccia",
+   "posti": 1
+  },
+  {
+   "via": "Piazza Fiume",
+   "posti": 2
+  }
+ ]
+}

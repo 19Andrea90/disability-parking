@@ -1,5 +1,5 @@
 /* Service worker: app shell offline + cache delle tile già viste */
-const WEB = '0af5f785';
+const WEB = '29683d23';
 const VERSION = 'dp-v0.7.0-' + WEB;
 const W = './mobile/www/';
 const SHELL = ['./', './index.html', './admin.html', './app.css', './admin.js', './config.js', './manifest.json', './icons/icon-192.png', './icons/icon-512.png',
@@ -12,7 +12,7 @@ self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) =
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
-  if (/supabase\.co|nominatim|photon|tomtom|openstreetmap\.de/.test(u.hostname)) return; // sempre in rete
+  if (/supabase\.co|nominatim|photon|tomtom|openstreetmap\.de|challenges\.cloudflare\.com/.test(u.hostname)) return; // sempre in rete
   const isTile = /tile\.openstreetmap\.org|arcgisonline\.com|tiles\.openfreemap\.org/.test(u.hostname);
   if (isTile) {
     e.respondWith(caches.open(TILE_CACHE).then(async (c) => {

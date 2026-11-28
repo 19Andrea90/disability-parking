@@ -4,157 +4,420 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b2a5b">
-<title>Disability Parking — Admin</title>
+<title>SostAbile — Admin</title>
 <link rel="icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="app.css">
 <style>
-body{overflow:auto;background:var(--bg)}
-.wrap{max-width:1100px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
-.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
-.bar h1{font-size:22px}
-.bar .sp{flex:1}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.tabs .btn{padding:9px 12px;min-height:40px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:820px){.grid{grid-template-columns:1fr}}
-#amap{height:380px;border-radius:16px;position:relative;inset:auto}
-.row-item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px;border-radius:14px;background:var(--panel);margin-bottom:8px;border:1px solid var(--line);cursor:pointer}
-.row-item.sel{border-color:var(--giallo);box-shadow:0 0 0 2px var(--giallo)}
-.row-item .n{font-weight:650}
-.row-item .s{font-size:13px;color:var(--muted)}
-.login{max-width:420px;margin:60px auto;background:var(--panel);padding:24px;border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
-.edit{background:var(--panel);padding:16px;border-radius:16px;border:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+/* Pannello admin: sempre in tema chiaro (il foglio dell'app passerebbe al scuro) */
+:root{--bg:#f3f5f9;--panel:#fff;--fg:#131a24;--muted:#4a5668;--line:#e3e8f0;--nav:#0b2a5b;--giallo:#ffcc00;--giallo-ink:#2b2300;--danger:#b3261e;--ok:#1c7c3e;--r:14px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#f3f5f9;--panel:#fff;--fg:#131a24;--muted:#4a5668;--line:#e3e8f0;--blu:#0b2a5b;--blu-2:#163d7c;--generico:#1c7c3e;--personalizzato:#c6411a;--proposto:#8a6a00;--sconosciuto:#4a5563;--shadow:0 6px 24px rgba(10,20,40,.18);color-scheme:light}
+  .leaflet-tile{filter:none}.warn{background:#fff3cd;color:#5a4300}}
+html,body{height:auto;overflow:auto}
+body{background:var(--bg);color:var(--fg)}
+:focus-visible{outline:3px solid #0b2a5b;outline-offset:2px}
+.side :focus-visible{outline-color:#ffcc00}
+button,a,input,select,textarea{font-family:inherit}
+.btn{min-height:44px;border-radius:12px;background:var(--panel)}
+.btn.primary{background:var(--giallo);color:var(--giallo-ink);border-color:var(--giallo)}
+.btn.danger{background:var(--panel)}
+.btn[aria-pressed=true],.btn.active{background:var(--nav);color:#fff;border-color:var(--nav)}
+.btn.sm{min-height:44px;padding:8px 12px;font-size:14px}
+kbd{font:inherit;font-size:12px;border:1px solid currentColor;border-radius:5px;padding:0 5px;opacity:.8;margin-left:4px}
+input[type=search],input[type=date],input[type=email],input[type=password],input[type=text],input[type=number],select,textarea{min-height:44px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* struttura: menu laterale + contenuto */
+.shell{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.side{background:var(--nav);color:#fff;display:flex;flex-direction:column;gap:6px;padding:18px 12px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{font-weight:800;font-size:19px;padding:4px 10px 14px;letter-spacing:-.01em}
+.brand small{display:block;font-weight:400;font-size:12px;opacity:.75;margin-top:2px}
+.side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;flex:1}
+.nv-foot{margin-top:auto}
+.side .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.45);justify-content:flex-start;width:100%}
+.side .btn:hover{background:rgba(255,255,255,.12)}
+.side a.nv{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 12px;border-radius:12px;color:#fff;text-decoration:none;font-weight:600;font-size:15px}
+.side a.nv:hover{background:rgba(255,255,255,.12)}
+.side a.nv[aria-current=page]{background:var(--giallo);color:var(--giallo-ink)}
+.side a.nv .ic{width:22px;text-align:center;flex:none}
+.bdg{margin-left:auto;background:var(--giallo);color:var(--giallo-ink);border-radius:999px;font-size:12px;font-weight:800;min-width:24px;height:24px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.side a[aria-current=page] .bdg{background:var(--nav);color:#fff}
+.bdg[hidden]{display:none}
+main{min-width:0;padding:22px 24px 48px}
+.page[hidden]{display:none}
+.ph{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.ph h2{margin:0;font-size:24px;letter-spacing:-.01em}.ph h2:focus{outline:none}
+.ph .sp{flex:1}
+.sec-h{margin:22px 0 10px;font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.box+.box{margin-top:14px}
+.box>summary{cursor:pointer;font-weight:700;min-height:28px}
+details.box>summary{margin:-4px 0 6px}
+.lede{color:var(--muted);font-size:14px;margin:0 0 10px}
+.edit{background:var(--panel);padding:16px;border-radius:var(--r);border:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
 .edit img{width:100%;max-height:260px;object-fit:cover;border-radius:12px}
-.edit .acts{display:flex;gap:8px;flex-wrap:wrap}
-.kpi{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.kpi div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--muted)}
-.kpi b{display:block;font-size:20px;color:var(--fg);font-variant-numeric:tabular-nums}
-#stat-box summary,#sug-box summary{cursor:pointer;font-weight:600}
-.st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:10px}
-.st{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.st .l,.st .x{text-transform:none;letter-spacing:0}.st .l{font-size:12px;color:var(--muted)}.st b{display:block;font-size:24px;font-variant-numeric:tabular-nums;color:var(--fg)}.st .x{font-size:12px;color:var(--muted)}
-.st.live b::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#1a9e4b;margin-right:7px;vertical-align:middle;animation:pulse 1.6s infinite}
+.edit .acts,.acts{display:flex;gap:8px;flex-wrap:wrap}
+.row-item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px;border-radius:var(--r);background:var(--panel);margin-bottom:8px;border:1px solid var(--line);cursor:pointer;width:100%;text-align:left;font:inherit;color:inherit}
+.row-item.sel{border-color:#0b2a5b;box-shadow:0 0 0 2px var(--giallo)}
+.row-item .n{font-weight:650}.row-item .s{font-size:13px;color:var(--muted)}
+
+/* da fare oggi */
+.todo{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.tile{display:flex;flex-direction:column;gap:2px;padding:14px 16px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line);color:var(--fg);text-decoration:none;min-height:96px;position:relative}
+.tile:hover{border-color:#0b2a5b}
+.tile b{font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .l{font-weight:650;font-size:15px}.tile .x{font-size:13px;color:var(--muted)}
+.tile.on{border-color:#e0a800;box-shadow:inset 5px 0 0 var(--giallo)}
+.tile.zero b{color:var(--ok)}
+.tile .go{position:absolute;right:14px;top:12px;color:var(--muted);font-size:18px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.kpi div,.stc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted)}
+.kpi b{display:block;font-size:22px;color:var(--fg);font-variant-numeric:tabular-nums}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.stc .l,.stc .x{text-transform:none;letter-spacing:0}.stc .l{font-size:12.5px;color:var(--muted)}.stc b{display:block;font-size:24px;font-variant-numeric:tabular-nums;color:var(--fg)}.stc .x{font-size:12.5px;color:var(--muted)}
+.stc.live b::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#1a9e4b;margin-right:7px;vertical-align:middle;animation:pulse 1.6s infinite}
 @keyframes pulse{50%{opacity:.25}}
-.st-h{margin:16px 0 6px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.st-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media (max-width:820px){.st-cols{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.stc.live b::before{animation:none}}
+.st-h{margin:4px 0 6px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.st-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .st-chart{width:100%;height:auto;display:block}
-.st-leg{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:4px}.st-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.st-leg{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:4px;flex-wrap:wrap}.st-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .st-list{list-style:none;margin:0;padding:0;font-size:14px}.st-list li{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line)}
 .st-bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:4px}.st-bar i{display:block;height:100%;background:#0b2a5b}
-.sg-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.sg-tabs .btn{padding:7px 11px;min-height:36px}.sg-tabs .btn.active{outline:2px solid var(--giallo)}
+.st-sec{margin-top:6px}
+
+/* statistiche filtrabili */
+.sf-bar{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+.sf-gr{display:flex;flex-direction:column;gap:4px;min-width:0}.sf-lab{font-size:12.5px;font-weight:700;color:var(--muted)}
+.sf-seg{display:flex;flex-wrap:wrap;gap:6px}.sf-seg .btn{padding:8px 12px}
+.sf-date{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.sf-date label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sf-bar select{border:1px solid var(--line);border-radius:12px;padding:6px 10px;background:var(--panel);color:var(--fg);font-size:15px}
+.sf-sw{display:flex;align-items:center;gap:8px;min-height:44px;font-size:14px;font-weight:600;cursor:pointer}.sf-sw input{width:22px;height:22px;accent-color:var(--nav)}
+.sf-chips{margin-bottom:8px}.sf-chip{font:inherit;font-weight:700;font-size:14px;border:1px solid var(--nav);background:#e9eef6;color:var(--nav);border-radius:999px;padding:8px 14px;min-height:44px;cursor:pointer}
+.sf-avviso{border:1px solid #e0a800;background:#fff7d6;color:#3a2c00;border-radius:12px;padding:12px 14px;margin:8px 0;font-size:14px}
+.sf-int{margin:6px 0;font-size:13px}.sf-int summary{cursor:pointer;color:var(--muted);min-height:32px}.sf-tab{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}.sf-tab th,.sf-tab td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+.sf-nota{color:var(--muted);font-size:13px;line-height:1.45;margin:6px 0}.sf-hint{font-size:12.5px;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:6px}
+.stk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px}
+.stk{font:inherit;text-align:left;display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--muted);font-size:12.5px;min-height:44px}
+.stk:hover{border-color:#9db2d6}.stk[aria-pressed=true]{border-color:var(--nav);box-shadow:inset 5px 0 0 var(--nav)}
+.stk b{font-size:24px;color:var(--fg);font-variant-numeric:tabular-nums}.stk .l{font-size:13px;color:var(--fg);font-weight:600}.sf-x{font-size:12px}
+.sf-var{font-size:12.5px;font-weight:700}.sf-var.buo{color:#14602e}.sf-var.cat{color:#8c1b14}.sf-var.eq{color:var(--muted)}
+.sf-adesso{margin-bottom:6px}.sf-graf{padding-top:10px}
+.sf-wrap{position:relative}.sf-foc{border-radius:8px}.sf-foc:focus-visible{outline:3px solid var(--nav);outline-offset:2px}.sf-svg{touch-action:pan-y;user-select:none}
+.sf-legb{gap:6px 8px;margin:0 0 8px}.sf-lg{font:inherit;font-size:13px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:6px 12px;min-height:36px;cursor:pointer;text-decoration:line-through;text-decoration-color:transparent}
+.sf-lg.on{color:var(--fg);border-color:var(--nav);font-weight:600}.sf-lg:not(.on){opacity:.75;text-decoration-color:var(--muted)}
+.sf-tip{position:absolute;z-index:6;pointer-events:none;background:#131a24;color:#fff;border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.4;width:max-content;max-width:230px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.sf-tip i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}.sf-tip .sf-t2{opacity:.8;font-size:11.5px}
+.sf-righe{display:flex;flex-direction:column}.sf-riga{display:block;width:100%;text-align:left;font:inherit;background:none;border:0;border-radius:8px;padding:6px 4px;color:var(--fg);cursor:default}
+button.sf-riga:not(:disabled){cursor:pointer}button.sf-riga:hover,.sf-riga.on{background:#e9eef6}.sf-riga:focus-visible{outline:3px solid var(--nav);outline-offset:1px}
+.sf-rl{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.sf-dati{margin-top:6px;font-size:13px}.sf-dati summary{cursor:pointer;color:var(--nav);font-weight:600;min-height:32px;display:flex;align-items:center}
+.sf-tw{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;margin-top:4px}.sf-tw table{border-collapse:collapse;width:100%}
+.sf-tw th,.sf-tw td{padding:5px 10px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}.sf-tw thead th{position:sticky;top:0;background:#e9eef6}.sf-tw th:first-child,.sf-tw tbody th{text-align:left;font-weight:600}
+.sf-leg{font-size:14px}.sf-leg summary{cursor:pointer;font-weight:700;color:var(--nav);min-height:32px}.sf-leg ul{margin:6px 0 0;padding-left:20px;color:var(--muted)}.sf-leg li{margin:5px 0}
+.sf-cols>div{min-width:0}
+@media (max-width:820px){.sf-bar{flex-direction:column;align-items:stretch}.stk-grid{grid-template-columns:1fr 1fr}.sf-seg .btn{flex:1 1 30%}.sf-lg{min-height:44px}}
+@media (prefers-reduced-motion:reduce){.sf-tip{transition:none}}
+
+/* mappa */
+.page-map{display:flex;flex-direction:column;height:calc(100vh - 44px);min-height:520px}
+.mbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.msearch{display:flex;gap:6px;flex:1 1 320px;min-width:240px}.sugg-wrap{position:relative;flex:1;min-width:0;display:flex}.sugg-wrap input{width:100%}
+#q-sugg{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:1200;margin:0;padding:6px;list-style:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(11,31,68,.18);max-height:60vh;overflow:auto}
+#q-sugg .h{padding:6px 10px 2px;font-size:12px;font-weight:700;color:var(--mut,#4a5668);text-transform:uppercase;letter-spacing:.04em}
+#q-sugg [role=option]{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:8px;cursor:pointer;min-height:24px}
+#q-sugg [role=option] b{font-size:15px;font-weight:600}#q-sugg [role=option] span{font-size:13px;color:var(--mut,#4a5668)}
+#q-sugg [role=option][aria-selected=true],#q-sugg [role=option]:hover{background:#eef2f8}
+.msearch input{flex:1;min-width:0;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--fg);font-size:15px}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pills .btn{border-radius:999px;padding:6px 14px;font-size:14px}
+.mbar select{width:auto;min-width:130px;padding:8px 10px;font-size:14px;border-radius:12px}
+.bases{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;align-items:center}
+.bases label{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer}
+.bases input{width:20px;height:20px;accent-color:#0b2a5b}
+.mbody{flex:1;min-height:0;display:grid;grid-template-columns:1fr 380px;gap:14px}
+.mmap{position:relative;min-height:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+#amap,#cmap,#zmap{position:relative;inset:auto;border-radius:var(--r)}
+#amap{height:100%;min-height:340px;border-radius:0}
+.mnote{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;z-index:900;background:var(--nav);color:#fff;border-radius:999px;padding:8px 16px;font-size:14px;max-width:calc(100% - 24px);text-align:center}
+.mnote[hidden]{display:none}
+.mbody .edit{overflow:auto;min-height:0}
+.sposta{position:absolute;left:12px;right:12px;top:12px;z-index:1000;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;border-radius:12px;background:#fff3b0;border:2px solid #e0a800;color:#3a2c00;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.sposta[hidden]{display:none}
+.sposta span{flex:1 1 220px}
+
+/* dashboard: schede e consumi */
+.dtabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin:4px 0 16px}
+.dtab{font:inherit;font-weight:700;font-size:15px;padding:10px 16px;border:0;border-bottom:4px solid transparent;margin-bottom:-2px;background:none;color:var(--muted);cursor:pointer;border-radius:10px 10px 0 0;min-height:44px}
+.dtab:hover{background:#e9eef6;color:var(--fg)}
+.dtab[aria-selected=true]{color:var(--nav);border-bottom-color:var(--nav)}
+.dtab:focus-visible{outline:3px solid var(--giallo);outline-offset:-3px}
+.dtab-b{display:inline-block;margin-left:6px;border-radius:999px;font-size:12px;font-weight:800;padding:1px 8px;background:var(--giallo);color:var(--giallo-ink)}
+.dtab-b.crit{background:var(--danger);color:#fff}
+.cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.cs{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.cs.st-crit{border-color:var(--danger);box-shadow:inset 5px 0 0 var(--danger)}.cs.st-att{box-shadow:inset 5px 0 0 var(--giallo)}
+.cs-top{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.cs h4{margin:0;font-size:16px;color:var(--fg)}
+.cs-tag{font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:1px 9px;color:var(--muted);white-space:nowrap}
+.cs-num{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.cs-num b{font-size:22px;font-variant-numeric:tabular-nums;color:var(--fg)}.cs-num span{color:var(--muted);font-size:13px}
+.cs-bar{height:12px;border-radius:999px;background:#e3e8f0;overflow:hidden}
+.cs-bar i{display:block;height:100%;border-radius:999px;background:var(--ok)}
+.cs-bar i.ok{background:var(--ok)}.cs-bar i.att{background:#e0a800}.cs-bar i.crit{background:var(--danger)}
+.cs-lbl{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin-bottom:3px}
+.cs-st{display:inline-flex;gap:5px;align-items:center;font-weight:800;font-size:13px;border-radius:999px;padding:2px 10px}
+.cs-st.ok{background:#e1f3e7;color:#14602e}.cs-st.att{background:#fff0b8;color:#5c4300}.cs-st.crit{background:#fbe0dd;color:#8c1b14}.cs-st.nd{background:#eceff4;color:var(--muted)}
+.cs-nota{margin:0;color:var(--muted);font-size:13px;line-height:1.45}
+.cs-nota b{color:var(--fg)}
+.cs-foot{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;align-items:center;margin-top:auto;font-size:13px}
+.cs-foot a{font-weight:700}
+.cs-warn{border:1px solid #e0a800;background:#fff7d6;color:#3a2c00;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.cs-info{background:var(--panel);border:1px dashed var(--line);border-radius:var(--r);padding:12px 16px;margin-top:12px;font-size:14px;color:var(--muted)}
+.cs-proj{margin-top:18px}.cs-proj h3{margin:0 0 8px;font-size:16px}.cs-proj p{margin:6px 0}
+@media (max-width:820px){.cs-grid{grid-template-columns:1fr}.dtab{flex:1 1 auto;text-align:center;padding:10px 10px}}
+
+/* da controllare */
+.qtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.qtabs .btn{gap:8px}.qtabs .n{background:var(--giallo);color:var(--giallo-ink);border-radius:999px;font-size:12px;font-weight:800;padding:1px 8px}
+.qtabs .btn[aria-pressed=true] .n{background:#fff;color:var(--nav)}
+.queue{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:14px;align-items:start}
+.q-list{max-height:calc(100vh - 190px);overflow:auto;padding-right:4px}
+.q-pg{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-size:14px;color:var(--muted)}
+.q-det{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px}
+#cmap{height:280px;border:1px solid var(--line)}
+.q-acts .btn{flex:1 1 auto}
+.q-acts .ap{background:var(--giallo);border-color:var(--giallo);color:var(--giallo-ink)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:0}.dl dt{color:var(--muted)}.dl dd{margin:0}
+.empty{padding:14px 4px;color:var(--muted);font-size:14px}
+
+/* tabelle e moduli */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}.tbl th{text-align:left;color:var(--muted);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.pec{width:100%;border-collapse:collapse;font-size:13px}.pec th{text-align:left;color:var(--muted);font-weight:600;padding:6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.pec td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle}.pec td.c{font-weight:600;white-space:nowrap}
+.pec select{width:auto;min-width:150px}.pec select,.pec input{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg)}
+.pec input.p{width:150px}.pec textarea{font:inherit;font-size:12px;width:260px;min-height:44px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;background:var(--panel);color:var(--fg)}
+.pec tr.scad td{background:rgba(220,40,40,.07)}.pec .sc{white-space:nowrap}.pec .sc.x{color:#b3261e;font-weight:700}
+.lnk{background:none;border:0;padding:0;min-height:44px;color:#0b2a8f;text-decoration:underline;font-weight:700;font-size:14px;cursor:pointer;text-align:left}
+.pec-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}.pec-f input{flex:1;min-width:200px}
+.sg-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.sg-tabs .btn{padding:7px 12px}
 .sg{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
 .sg .h{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px}.sg .tag{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
-.sg .t{white-space:pre-wrap;font-size:15px}.sg .a{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.sg .a .btn{padding:6px 10px;min-height:34px;font-size:13px}
-.pec{width:100%;border-collapse:collapse;font-size:13px}.pec th{text-align:left;color:var(--muted);font-weight:600;padding:6px;border-bottom:1px solid var(--line);white-space:nowrap}
-.pec td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.pec td.c{font-weight:600;white-space:nowrap}
-.pec select{width:auto;min-width:150px;min-height:0}.pec input{min-height:0}.pec select,.pec input{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg)}
-.pec input.p{width:150px}.pec textarea{font:inherit;font-size:12px;width:260px;min-height:34px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;background:var(--panel);color:var(--fg)}
-.pec tr.scad td{background:rgba(220,40,40,.07)}.pec .sc{white-space:nowrap}.pec .sc.x{color:#c62828;font-weight:700}
-.pec-f{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}.pec-f input{flex:1;min-width:200px}
+.sg .t{white-space:pre-wrap;font-size:15px}.sg .a{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.sg .a .btn{padding:6px 10px;font-size:13px}
 #reg-box textarea,#reg-box input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;width:100%;margin-bottom:8px;background:var(--panel);color:var(--fg)}
 .err{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:13px}.err code{white-space:pre-wrap;word-break:break-word;font-size:12px}.err .s{color:var(--muted);font-size:12px;margin-top:3px}
-#i-sug li{padding:9px 10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column}#i-sug li:hover{background:var(--bg)}#i-sug .m{font-weight:600}#i-sug .s{font-size:12px;color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.u-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.u-bar input{flex:1;min-width:220px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;font-size:15px;background:var(--panel);color:var(--fg)}
+.tag2{display:inline-block;border-radius:999px;border:1px solid var(--line);padding:1px 9px;font-size:12px;background:var(--bg)}
+.tag2.ok{color:var(--ok);border-color:var(--ok)}.tag2.no{color:#8a5a00;border-color:#8a5a00}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--panel);z-index:2000;box-shadow:-8px 0 30px rgba(11,31,68,.25);padding:18px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.drawer[hidden]{display:none}
+.drawer h3{margin:0;font-size:20px}
+
+.login{max-width:420px;margin:60px auto;background:var(--panel);padding:24px;border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+.login h2{margin:0}
+.login input{padding:12px;border:1px solid var(--line);border-radius:12px;font-size:16px}
+.loginbar{max-width:420px;margin:20px auto 0;padding:0 16px;text-align:center}
+
+/* telefono: il menu va in alto, a capo */
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:column;padding:6px 8px 8px;gap:0;overflow:visible}
+  .brand{display:none}
+  .side ul{flex-direction:row;flex-wrap:wrap;gap:4px}
+  .side a.nv{min-height:44px;padding:6px 10px;font-size:14px}
+  .side a.nv .ic{display:none}
+  .nv-foot{margin-top:0}.nv-foot2{margin-left:auto}
+  .side .btn{width:auto;min-height:44px;padding:6px 12px;font-size:14px;justify-content:center}
+  .pills{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;width:100%}.pills .btn{flex:none}
+  .bases{gap:2px 12px;font-size:13px}
+  main{padding:14px 16px 40px}
+  .page-map{height:auto;min-height:0}
+  .mbody{grid-template-columns:1fr;display:flex;flex-direction:column}
+  .mmap{height:62vh;min-height:360px;flex:none}
+  .mbody .edit{overflow:visible}
+  .queue,.two-col,.st-cols{grid-template-columns:1fr}
+  .q-list{max-height:none}.q-det{position:static}
+  .ph h2{font-size:21px}
+  .msearch{flex-basis:100%}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="bar">
-    <h1>Disability Parking · Admin <span class="sub" id="ver" style="font-weight:400;font-size:12px"></span></h1><span class="sp"></span>
-    <a class="btn" href="index.html">← App</a>
-    <button class="btn" id="logout" hidden>Esci</button>
-  </div>
-
-  <div class="login" id="login">
-    <h2>Accesso amministratore</h2>
-    <div class="sub">Usa l'email registrata come admin. La prima volta crea la password con "Registrati".</div>
-    <input type="email" id="l-email" placeholder="email" autocomplete="username">
-    <input type="password" id="l-pass" placeholder="password" autocomplete="current-password">
-    <div class="actions"><button class="btn primary wide" id="l-in">Entra</button><button class="btn" id="l-up">Registrati</button></div>
-    <div class="sub" id="l-msg"></div>
-  </div>
-
-  <div id="panel" hidden>
-    <details class="edit" style="margin-bottom:12px" id="stat-box" open>
-      <summary>Utilizzo dell'app <span class="sub" id="st-agg"></span></summary>
-      <div id="stat"><div class="sub" style="margin-top:8px">Carico le statistiche…</div></div>
-    </details>
-    <details class="edit" style="margin-bottom:12px" id="sug-box">
-      <summary>Suggerimenti degli utenti <span class="sub" id="sug-count"></span></summary>
-      <div class="sg-tabs"><button class="btn active" data-sg="nuovo">Nuovi</button><button class="btn" data-sg="letto">Letti</button><button class="btn" data-sg="fatto">Fatti</button><button class="btn" data-sg="scartato">Scartati</button></div>
-      <div id="sug-rows"></div>
-    </details>
-    <details class="edit" style="margin-bottom:12px" id="err-box">
-      <summary>Errori dell'app <span class="sub" id="err-count"></span></summary>
-      <div class="sub" style="margin:8px 0">Errori capitati sui telefoni o nel browser degli utenti negli ultimi 7 giorni, raggruppati per messaggio.</div>
-      <div id="err-rows"></div>
-    </details>
-    <details class="edit" style="margin-bottom:12px" id="zone-box">
-      <summary>Zone cercate e posti mancanti <span class="sub" id="zone-count"></span></summary>
-      <div class="sub" style="margin:8px 0">Ogni cerchio è una zona di circa 1 km dove qualcuno ha cercato una destinazione negli ultimi <select id="zone-g" style="width:auto;display:inline-block;min-height:0;padding:2px 6px"><option value="7">7</option><option value="30" selected>30</option><option value="90">90</option><option value="365">365</option></select> giorni. Rosso: attorno non c'erano posti. Più grande = più ricerche.</div>
-      <div id="zmap" style="height:420px;border-radius:14px"></div>
-      <div id="zone-list" style="margin-top:10px"></div>
-    </details>
-    <details class="edit" style="margin-bottom:12px" id="reg-box">
-      <summary>Regole della sosta per comune <span class="sub" id="reg-count"></span></summary>
-      <div class="sub" style="margin:8px 0">Le note che scrivi qui compaiono nell'app nella pagina "Regole della sosta" quando si apre un posto di quel comune (ZTL, parcheggi in struttura, come registrare la targa).</div>
-      <div class="pec-f"><input id="reg-comune" placeholder="Comune (es. Udine)"><input id="reg-link" placeholder="Link alla pagina del Comune (facoltativo)"></div>
-      <textarea id="reg-ztl" rows="2" placeholder="ZTL: come si accede con il contrassegno"></textarea>
-      <textarea id="reg-note" rows="3" placeholder="Altre note utili (parcheggi in struttura, eccezioni…)"></textarea>
-      <div class="actions"><button class="btn primary" id="reg-salva">Salva</button><button class="btn" id="reg-nuovo">Nuovo</button><span class="sub" id="reg-msg"></span></div>
-      <div id="reg-rows" style="margin-top:10px"></div>
-    </details>
-    <details class="edit" style="margin-bottom:12px" id="pec-box">
-      <summary>PEC di accesso civico ai comuni <span class="sub" id="pec-count"></span></summary>
-      <div class="sg-tabs" id="pec-tabs"><button class="btn active" data-pf="">Tutti</button><button class="btn" data-pf="Da inviare">Da inviare</button><button class="btn" data-pf="Inviata">Inviate</button><button class="btn" data-pf="Risposta ricevuta">Protocollate</button><button class="btn" data-pf="Dati importati">Dati importati</button><button class="btn" data-pf="Rifiutata">Rifiutate</button><button class="btn" data-pf="scadute">Scadute</button></div>
-      <div style="overflow-x:auto"><table class="pec"><thead><tr><th>Comune</th><th>Prov.</th><th>Stalli</th><th>PEC</th><th>Inviata</th><th>Scadenza</th><th>Stato</th><th>Protocollo</th><th>Note</th></tr></thead><tbody id="pec-rows"></tbody></table></div>
-    </details>
-    <div class="kpi" id="kpi"></div>
-    <details class="edit" style="margin-bottom:12px" id="cand-box" open>
-      <summary style="cursor:pointer;font-weight:600">Candidati trovati dalla rete <span class="sub" id="cand-count"></span></summary>
-      <div class="sub" style="margin:8px 0">La scansione dell'ortofoto propone i possibili stalli: sopra l'85% li conferma da sola, sotto il 30% li scarta da sola. Qui controlli quelli in mezzo e, se vuoi, verifichi quelli confermati in automatico.</div>
-      <div class="grid">
-        <div>
-          <div class="tabs" style="margin-bottom:8px"><button class="btn active" data-cf="nuovo">Da verificare</button><button class="btn" data-cf="auto">Automatici da controllare</button><button class="btn" data-cf="accettato">Accettati</button><button class="btn" data-cf="scartato">Scartati</button></div>
-          <div id="cand-rows"></div>
-        </div>
-        <div id="cand-edit" class="edit"><div class="sub">Seleziona un candidato.</div></div>
-      </div>
-    </details>
-
-    <div class="tabs">
-      <button class="btn active" data-f="utenti">Segnalazioni utenti</button>
-      <button class="btn" data-f="proposto">Da approvare</button>
-      <button class="btn" data-f="verificato">Verificati</button>
-      <button class="btn" data-f="ufficiale">Ufficiali</button>
-      <button class="btn" data-f="rifiutato">Rifiutati</button>
-      <button class="btn" data-f="segnalati">Con "non esiste"</button>
-    </div>
-    <div class="grid">
-      <div>
-        <div id="amap"></div>
-                <div id="rows" style="margin-top:12px"></div>
-      </div>
-      <div class="edit" id="edit"><div class="sub">Seleziona uno stallo dalla lista o dalla mappa.</div></div>
-    </div>
-    <div class="sub" style="margin-top:8px">Mappa: <label><input type="radio" name="base" value="osm" checked> Strade</label> · <label><input type="radio" name="base" value="esri"> Satellite (Esri)</label> · <label><input type="radio" name="base" value="fvg"> TrueOrtofoto FVG 2020</label></div>
-
-    <details class="edit" style="margin-top:16px">
-      <summary style="cursor:pointer;font-weight:600">Strumenti</summary>
-      <div class="sub" style="margin:10px 0 4px;font-weight:600;color:var(--fg)">Raggruppa stalli vicini</div>
-      <div class="sub">Lavora <b>solo sugli stalli dei comuni del Friuli-Venezia Giulia</b>, mai sul resto d'Italia. Entro la distanza scelta resta un solo pin (il più affidabile: ufficiale &gt; verificato a mano &gt; automatico &gt; proposto). Gli altri passano a "rimosso" con la nota "Accorpato in …" e si possono ripristinare. Gli stalli personalizzati (con targa) restano a parte. La scansione lo fa già da sola a 30 m.</div>
-      <div class="actions" style="margin-top:6px;flex-wrap:wrap"><label class="sub" for="g-r">Distanza (m)</label><input type="number" id="g-r" value="30" min="5" max="100" step="5" style="width:80px"><button class="btn" id="g-prev">Anteprima</button><button class="btn primary" id="g-go" disabled>Raggruppa</button></div>
-      <pre id="g-log" class="sub" style="white-space:pre-wrap;margin:6px 0 0;max-height:220px;overflow:auto"></pre>
-      <div class="sub" style="margin:14px 0 4px;font-weight:600;color:var(--fg)">OpenStreetMap</div>
-      <div class="actions" style="flex-wrap:wrap"><button class="btn" id="i-region">Aggiorna stalli da OpenStreetMap (tutto il FVG)</button><span class="sub">Aggiunge gli stalli mappati su OSM che non abbiamo ancora. Utile ogni tanto.</span></div>
-      <div class="actions" style="margin-top:8px;flex-wrap:wrap"><button class="btn" id="ctx-all">Prepara edifici e strade di tutto il FVG</button><button class="btn danger" id="ctx-stop" hidden>Ferma</button><span class="sub">Serve alla scansione (già fatto per tutti i 215 comuni). Salta quelli già pronti; da rifare solo per aggiornare i dati o per una nuova regione.</span></div>
-      <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
-    </details>
-  </div>
+<div class="login" id="login">
+  <h2>SostAbile · Accesso amministratore</h2>
+  <div class="sub">Usa l'email registrata come admin. La prima volta crea la password con "Registrati".</div>
+  <label class="sr" for="l-email">Email</label><input type="email" id="l-email" placeholder="email" autocomplete="username">
+  <label class="sr" for="l-pass">Password</label><input type="password" id="l-pass" placeholder="password" autocomplete="current-password">
+  <div class="actions"><button class="btn primary wide" id="l-in">Entra</button><button class="btn" id="l-up">Registrati</button></div>
+  <div class="sub" id="l-msg" role="status"></div>
+  <a class="btn" id="l-app" href="#">← Torna all'app</a>
 </div>
+
+<div class="shell" id="shell" hidden>
+  <nav class="side" aria-label="Sezioni dell'admin">
+    <div class="brand">SostAbile <small>Admin <span id="ver"></span></small></div>
+    <ul>
+      <li><a class="nv" href="#/dashboard" data-p="dashboard"><span class="ic" aria-hidden="true">📊</span>Dashboard</a></li>
+      <li><a class="nv" href="#/mappa" data-p="mappa"><span class="ic" aria-hidden="true">🗺️</span>Mappa</a></li>
+      <li><a class="nv" href="#/controllare" data-p="controllare"><span class="ic" aria-hidden="true">✅</span>Da controllare<span class="bdg" id="badge" hidden></span></a></li>
+      <li><a class="nv" href="#/comuni" data-p="comuni"><span class="ic" aria-hidden="true">🏛️</span>Comuni</a></li>
+      <li><a class="nv" href="#/utenti" data-p="utenti"><span class="ic" aria-hidden="true">👥</span>Utenti</a></li>
+      <li><a class="nv" href="#/suggerimenti" data-p="suggerimenti"><span class="ic" aria-hidden="true">💬</span>Suggerimenti ed errori</a></li>
+      <li><a class="nv" href="#/strumenti" data-p="strumenti"><span class="ic" aria-hidden="true">🛠️</span>Strumenti</a></li>
+      <li class="nv-foot"><a class="btn" href="index.html">← App</a></li>
+      <li class="nv-foot2"><button class="btn" id="logout">Esci</button></li>
+    </ul>
+  </nav>
+
+  <main id="main">
+    <!-- ================= DASHBOARD ================= -->
+    <section class="page" id="p-dashboard" hidden aria-labelledby="h-dashboard">
+      <div class="ph"><h2 id="h-dashboard" tabindex="-1">Dashboard</h2><span class="sub" id="st-agg"></span><span class="sp"></span><button class="btn" data-refresh="dashboard">↻ Aggiorna</button></div>
+      <div class="dtabs" role="tablist" aria-label="Sezioni della dashboard">
+        <button type="button" role="tab" id="dt-stat" class="dtab" data-s="stat" aria-selected="true" aria-controls="dp-stat" tabindex="0">Statistiche dell'app</button>
+        <button type="button" role="tab" id="dt-consumi" class="dtab" data-s="consumi" aria-selected="false" aria-controls="dp-consumi" tabindex="-1">Consumi e limiti gratuiti <span class="dtab-b" id="dt-consumi-b" hidden></span></button>
+      </div>
+      <div role="tabpanel" id="dp-stat" aria-labelledby="dt-stat">
+        <h3 class="sec-h" style="margin-top:0">Da fare oggi</h3>
+        <div class="todo" id="todo"><div class="empty">Carico…</div></div>
+        <h3 class="sec-h">Posti in mappa</h3>
+        <div class="kpi" id="kpi"></div>
+        <div id="stat"><div class="sub" style="margin-top:12px">Carico le statistiche…</div></div>
+      </div>
+      <div role="tabpanel" id="dp-consumi" aria-labelledby="dt-consumi" hidden>
+        <div id="consumi"><div class="sub" style="margin-top:12px">Carico i consumi…</div></div>
+      </div>
+    </section>
+
+    <!-- ================= MAPPA ================= -->
+    <section class="page page-map" id="p-mappa" hidden aria-labelledby="h-mappa">
+      <div class="ph" style="margin-bottom:10px"><h2 id="h-mappa" tabindex="-1">Mappa</h2><span class="sp"></span></div>
+      <div class="mbar">
+        <form class="msearch" id="q-form" role="search"><label class="sr" for="q-st">Cerca per indirizzo, nome o comune</label><span class="sugg-wrap"><input type="search" id="q-st" placeholder="Cerca per indirizzo, nome o comune (es. via Roma 12 Udine)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="q-sugg"><ul id="q-sugg" role="listbox" hidden></ul></span><button class="btn primary" type="submit">Cerca</button><button class="btn" type="button" id="q-x" hidden aria-label="Chiudi la ricerca">✕</button></form>
+        <button class="btn primary" id="m-new" type="button">+ Nuovo stallo</button>
+      </div>
+      <div class="mbar">
+        <div class="pills" id="m-stati" role="group" aria-label="Filtra per stato">
+          <button class="btn" data-f="tutti" aria-pressed="true">Tutti gli attivi</button>
+          <button class="btn" data-f="utenti" aria-pressed="false">Segnalazioni utenti</button>
+          <button class="btn" data-f="proposto" aria-pressed="false">Da approvare</button>
+          <button class="btn" data-f="verificato" aria-pressed="false">Verificati</button>
+          <button class="btn" data-f="ufficiale" aria-pressed="false">Ufficiali</button>
+          <button class="btn" data-f="rifiutato" aria-pressed="false">Rifiutati</button>
+          <button class="btn" data-f="segnalati" aria-pressed="false">Con "non esiste"</button>
+        </div>
+        <label class="sr" for="m-fonte">Fonte</label>
+        <select id="m-fonte"><option value="">Ogni fonte</option><option value="utente">utente</option><option value="osm">osm</option><option value="opendata">opendata</option><option value="admin">admin</option><option value="mapillary">mapillary</option><option value="satellite">satellite</option></select>
+        <div class="bases" id="m-bases" role="radiogroup" aria-label="Base della mappa"></div>
+      </div>
+      <div class="mbody">
+        <div class="mmap"><div id="amap"></div>
+          <div class="sposta" id="e-sposta" hidden role="status"><span id="e-sposta-t"></span><button class="btn primary" id="e-sposta-ok" disabled>Salva nuova posizione</button><button class="btn" id="e-sposta-no">Annulla</button></div>
+          <div class="mnote" id="m-note" hidden role="status"></div></div>
+        <aside class="edit" id="edit" aria-label="Scheda dello stallo"><div class="sub">Seleziona uno stallo sulla mappa.</div></aside>
+      </div>
+    </section>
+
+    <!-- ================= DA CONTROLLARE ================= -->
+    <section class="page" id="p-controllare" hidden aria-labelledby="h-controllare">
+      <div class="ph"><h2 id="h-controllare" tabindex="-1">Da controllare</h2><span class="sp"></span><button class="btn" data-refresh="controllare">↻ Aggiorna</button></div>
+      <div class="qtabs" id="q-tabs" role="group" aria-label="Coda di lavoro">
+        <button class="btn" data-q="utenti" aria-pressed="true">Segnalazioni utenti <span class="n" data-n="utenti"></span></button>
+        <button class="btn" data-q="proposti" aria-pressed="false">Da approvare <span class="n" data-n="proposti"></span></button>
+        <button class="btn" data-q="precisare" aria-pressed="false">Posizione da precisare <span class="n" data-n="precisare"></span></button>
+        <button class="btn" data-q="problemi" aria-pressed="false">Problemi segnalati <span class="n" data-n="problemi"></span></button>
+        <button class="btn" data-q="nonce" aria-pressed="false">Non c'è più <span class="n" data-n="nonce"></span></button>
+        <button class="btn" data-q="cand" aria-pressed="false">Candidati dal satellite <span class="n" data-n="cand"></span></button>
+      </div>
+      <div class="qtabs" id="cand-sub" role="group" aria-label="Candidati" hidden>
+        <button class="btn sm" data-cf="nuovo" aria-pressed="true">Da verificare</button><button class="btn sm" data-cf="auto" aria-pressed="false">Automatici da controllare</button><button class="btn sm" data-cf="accettato" aria-pressed="false">Accettati</button><button class="btn sm" data-cf="scartato" aria-pressed="false">Scartati</button>
+      </div>
+      <p class="lede" id="q-lede"></p>
+      <div class="queue">
+        <div><div class="q-list" id="q-list" aria-live="polite"></div><div class="q-pg" id="q-pg"></div></div>
+        <div class="edit q-det" id="q-det"><div id="q-acts" class="acts q-acts"></div><div class="sub" id="q-msg" role="status"></div><div id="q-info"><div class="sub">Seleziona un elemento dalla lista.</div></div><div id="q-mapbox" hidden><div id="cmap"></div><div class="bases" id="c-bases" role="radiogroup" aria-label="Base della mappa"></div></div></div>
+      </div>
+    </section>
+
+    <!-- ================= COMUNI ================= -->
+    <section class="page" id="p-comuni" hidden aria-labelledby="h-comuni">
+      <div class="ph"><h2 id="h-comuni" tabindex="-1">Comuni</h2><span class="sp"></span><button class="btn" data-refresh="comuni">↻ Aggiorna</button></div>
+      <div class="box" id="pec-box">
+        <h3 style="margin:0 0 4px;font-size:18px">PEC di accesso civico ai comuni <span class="sub" id="pec-count"></span></h3>
+        <p class="lede">Tocca il nome di un comune per aprire la sua scheda.</p>
+        <div class="sg-tabs" id="pec-tabs"><button class="btn active" data-pf="">Tutti</button><button class="btn" data-pf="Da inviare">Da inviare</button><button class="btn" data-pf="Inviata">Inviate</button><button class="btn" data-pf="Risposta ricevuta">Protocollate</button><button class="btn" data-pf="Dati importati">Dati importati</button><button class="btn" data-pf="Rifiutata">Rifiutate</button><button class="btn" data-pf="scad7">In scadenza (7 giorni)</button><button class="btn" data-pf="scadute">Scadute</button></div>
+        <div style="overflow-x:auto"><table class="pec"><thead><tr><th>Comune</th><th>Prov.</th><th>Stalli</th><th>PEC</th><th>Inviata</th><th>Scadenza</th><th>Stato</th><th>Protocollo</th><th>Note</th></tr></thead><tbody id="pec-rows"></tbody></table></div>
+      </div>
+      <details class="box" id="reg-box" open>
+        <summary>Regole della sosta per comune <span class="sub" id="reg-count"></span></summary>
+        <div class="sub" style="margin:8px 0">Le note che scrivi qui compaiono nell'app nella pagina "Regole della sosta" quando si apre un posto di quel comune (ZTL, parcheggi in struttura, come registrare la targa).</div>
+        <div class="pec-f"><input id="reg-comune" placeholder="Comune (es. Udine)" aria-label="Comune"><input id="reg-link" placeholder="Link alla pagina del Comune (facoltativo)" aria-label="Link"></div>
+        <textarea id="reg-ztl" rows="2" placeholder="ZTL: come si accede con il contrassegno" aria-label="ZTL"></textarea>
+        <textarea id="reg-note" rows="3" placeholder="Altre note utili (parcheggi in struttura, eccezioni…)" aria-label="Note"></textarea>
+        <div class="actions"><button class="btn primary" id="reg-salva">Salva</button><button class="btn" id="reg-nuovo">Nuovo</button><span class="sub" id="reg-msg" role="status"></span></div>
+        <div id="reg-rows" style="margin-top:10px"></div>
+      </details>
+      <details class="box" id="zone-box">
+        <summary>Zone cercate e posti mancanti <span class="sub" id="zone-count"></span></summary>
+        <div class="sub" style="margin:8px 0">Ogni cerchio è una zona di circa 1 km dove qualcuno ha cercato una destinazione negli ultimi <select id="zone-g" aria-label="Giorni" style="width:auto;display:inline-block;min-height:44px;padding:2px 6px"><option value="7">7</option><option value="30" selected>30</option><option value="90">90</option><option value="365">365</option></select> giorni. Rosso: attorno non c'erano posti. Più grande = più ricerche.</div>
+        <div id="zmap" style="height:420px"></div>
+        <div id="zone-list" style="margin-top:10px"></div>
+      </details>
+    </section>
+
+    <!-- ================= UTENTI ================= -->
+    <section class="page" id="p-utenti" hidden aria-labelledby="h-utenti">
+      <div class="ph"><h2 id="h-utenti" tabindex="-1">Utenti</h2><span class="sub" id="u-tot"></span><span class="sp"></span><button class="btn" data-refresh="utenti">↻ Aggiorna</button></div>
+      <div class="box">
+        <p class="lede">Account registrati nell'app (email e password o Google). Eliminando un account si cancellano email e dati salvati nell'account; i posti segnalati e le conferme restano, anonimi, in mappa.</p>
+        <div class="u-bar"><label class="sr" for="u-q">Cerca per email</label><input type="search" id="u-q" placeholder="Cerca per email" autocomplete="off"><span class="sub" id="u-n"></span></div>
+        <div id="u-msg" class="sub" role="status"></div>
+        <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Email</th><th>Accesso</th><th>Registrato il</th><th>Ultimo accesso</th><th>Confermato</th><th><span class="sr">Azioni</span></th></tr></thead><tbody id="u-rows"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ================= SUGGERIMENTI ED ERRORI ================= -->
+    <section class="page" id="p-suggerimenti" hidden aria-labelledby="h-suggerimenti">
+      <div class="ph"><h2 id="h-suggerimenti" tabindex="-1">Suggerimenti ed errori</h2><span class="sp"></span><button class="btn" data-refresh="suggerimenti">↻ Aggiorna</button></div>
+      <div class="two-col">
+        <div class="box" id="sug-box">
+          <h3 style="margin:0;font-size:18px">Suggerimenti degli utenti <span class="sub" id="sug-count"></span></h3>
+          <div class="sg-tabs"><button class="btn active" data-sg="nuovo">Nuovi</button><button class="btn" data-sg="letto">Letti</button><button class="btn" data-sg="fatto">Fatti</button><button class="btn" data-sg="scartato">Scartati</button></div>
+          <div id="sug-rows"></div>
+        </div>
+        <div class="box" id="err-box">
+          <h3 style="margin:0;font-size:18px">Errori dell'app <span class="sub" id="err-count"></span></h3>
+          <div class="sub" style="margin:8px 0">Errori capitati sui telefoni o nel browser degli utenti negli ultimi 7 giorni, raggruppati per messaggio.</div>
+          <div id="err-rows"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STRUMENTI ================= -->
+    <section class="page" id="p-strumenti" hidden aria-labelledby="h-strumenti">
+      <div class="ph"><h2 id="h-strumenti" tabindex="-1">Strumenti</h2></div>
+      <div class="box">
+        <div class="sub" style="margin:0 0 4px;font-weight:600;color:var(--fg)">Raggruppa stalli vicini</div>
+        <div class="sub">Lavora <b>solo sugli stalli dei comuni del Friuli-Venezia Giulia</b>, mai sul resto d'Italia. Entro la distanza scelta resta un solo pin (il più affidabile: ufficiale &gt; verificato a mano &gt; automatico &gt; proposto). Gli altri passano a "rimosso" con la nota "Accorpato in …" e si possono ripristinare. Gli stalli personalizzati (con targa) restano a parte. La scansione lo fa già da sola a 30 m.</div>
+        <div class="actions" style="margin-top:6px;flex-wrap:wrap;align-items:center"><label class="sub" for="g-r">Distanza (m)</label><input type="number" id="g-r" value="30" min="5" max="100" step="5" style="width:90px"><button class="btn" id="g-prev">Anteprima</button><button class="btn primary" id="g-go" disabled>Raggruppa</button></div>
+        <pre id="g-log" class="sub" style="white-space:pre-wrap;margin:6px 0 0;max-height:220px;overflow:auto"></pre>
+        <div class="sub" style="margin:14px 0 4px;font-weight:600;color:var(--fg)">OpenStreetMap</div>
+        <div class="actions" style="flex-wrap:wrap;align-items:center"><button class="btn" id="i-region">Aggiorna stalli da OpenStreetMap (tutto il FVG)</button><span class="sub">Aggiunge gli stalli mappati su OSM che non abbiamo ancora. Utile ogni tanto.</span></div>
+        <div class="actions" style="margin-top:8px;flex-wrap:wrap;align-items:center"><button class="btn" id="ctx-all">Prepara edifici e strade di tutto il FVG</button><button class="btn danger" id="ctx-stop" hidden>Ferma</button><span class="sub">Serve alla scansione (già fatto per tutti i 215 comuni). Salta quelli già pronti; da rifare solo per aggiornare i dati o per una nuova regione.</span></div>
+        <pre id="i-log" class="sub" style="white-space:pre-wrap;margin:8px 0 0;max-height:220px;overflow:auto"></pre>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- scheda comune -->
+<aside class="drawer" id="c-scheda" hidden role="dialog" aria-modal="false" aria-labelledby="c-titolo"></aside>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js?v=0.9.0"></script>
-<script src="admin.js?v=0.9.0"></script>
+<script src="admin.js?v=0.14.0"></script>
 </body>
 </html>

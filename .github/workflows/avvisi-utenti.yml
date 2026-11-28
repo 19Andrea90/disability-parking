@@ -29,8 +29,6 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: sostabile  # il cron parte solo dal ramo principale (main), il codice dell'app nuova sta su sostabile
       - name: Manda gli avvisi
         env:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

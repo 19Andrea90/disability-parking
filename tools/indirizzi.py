@@ -5,20 +5,40 @@
   indirizzo : dal numero civico OSM più vicino (entro 25 m) oppure dal nome della strada OSM più vicina (entro 70 m),
               leggendo gli estratti regionali di download.openstreetmap.fr (cancellati dopo l'uso)
 
-Non tocca gli indirizzi già presenti. Uso: SUPABASE_SERVICE_KEY=... python3 tools/indirizzi.py [--regioni a,b] [--dry-run]
+Non tocca gli indirizzi già presenti.
+Traffico Supabase: l'elenco degli stalli da completare lo dà il database (supabase/21_aggregazioni_servizio.sql, funzione
+stalli_da_completare: solo id, lat, lon, in forma compatta e paginata a chiave); senza quella funzione si ricade sul vecchio
+filtro lato server con un avviso. Non si usa la cache perche' le letture precedono una scrittura sulle stesse righe. Uso: SUPABASE_SERVICE_KEY=... python3 tools/indirizzi.py [--regioni a,b] [--dry-run]
 """
 import argparse, concurrent.futures as cf, json, math, os, sys, time, urllib.parse, urllib.request
 from collections import defaultdict
 import osmium
 
 sys.path.insert(0, os.path.dirname(__file__))
-from scan_area import sb_all  # noqa: E402
+import sbleggero as L  # noqa: E402  (legge solo gli stalli senza comune/indirizzo, colonne id,lat,lon)
 from osm_import_italia import REGIONI, BASE, NOMI  # noqa: E402
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 DIR = '/home/claude/osm'
 CY, CX = 0.001, 0.0014  # celle di circa 110 m
 cell = lambda la, lo: (int(la / CY), int(lo / CX))
+
+
+QUERY = '/rest/v1/stalli?select=id,lat,lon&stato=in.(proposto,verificato,ufficiale)&order=id'
+
+
+def da_completare(campo, key, blocco=5000):
+    """Stalli attivi con `campo` (comune o indirizzo) vuoto: [{id, lat, lon}] in ordine di id. Via funzione SQL (paginata a chiave)."""
+    try:
+        out, dopo = [], None
+        while True:
+            b = L.rpc('stalli_da_completare', dict(p_campo=campo, p_dopo=dopo, p_limite=blocco), key)
+            out += [dict(id=i, lat=la, lon=lo) for i, la, lo in b]
+            if len(b) < blocco: return out
+            dopo = b[-1][0]
+    except L.FunzioneAssente:
+        print('ATTENZIONE: la funzione stalli_da_completare non esiste nel database: uso il vecchio filtro (piu\' byte). Esegui supabase/21_aggregazioni_servizio.sql', flush=True)
+        return L.get(QUERY + f'&{campo}=is.null', key, page=1000, ordine=None)
 
 
 def dist(a, b, c, d): return math.hypot((a - c) * 111320, (b - d) * 111320 * math.cos(math.radians(a)))
@@ -80,9 +100,8 @@ def comuni(st, key, dry):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--regioni', default=''); ap.add_argument('--dry-run', action='store_true'); ap.add_argument('--salta-comuni', action='store_true')
     a = ap.parse_args(); key = os.environ['SUPABASE_SERVICE_KEY']; os.makedirs(DIR, exist_ok=True)
-    q = '/rest/v1/stalli?select=id,lat,lon&stato=in.(proposto,verificato,ufficiale)&order=id'
-    if not a.salta_comuni: comuni(sb_all(q + '&comune=is.null', key), key, a.dry_run)
-    todo = {s['id']: s for s in sb_all(q + '&indirizzo=is.null', key)}; print(f'Senza indirizzo: {len(todo)}', flush=True)
+    if not a.salta_comuni: comuni(da_completare('comune', key), key, a.dry_run)
+    todo = {s['id']: s for s in da_completare('indirizzo', key)}; print(f'Senza indirizzo: {len(todo)}', flush=True)
     for reg in (a.regioni.split(',') if a.regioni else REGIONI):
         if not todo: break
         t0 = time.time(); need = set()

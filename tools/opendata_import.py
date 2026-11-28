@@ -12,7 +12,9 @@ vengono accorpati (stato 'rimosso', nota 'Accorpato in …'), come fa il pulsant
 
 Uso: SUPABASE_SERVICE_KEY=... python3 tools/opendata_import.py bologna firenze trento [--raggio 15] [--dry-run]
 """
-import argparse, io, json, math, os, re, urllib.request, zipfile
+import argparse, io, json, math, os, re, sys, urllib.request, zipfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sbleggero as L  # regola: mai scaricare tutti gli stalli: select + bbox lato server, contatore dei byte
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
 
@@ -216,21 +218,25 @@ def latina():  # risposta del Comune a un accesso civico (novembre 2026): riliev
     return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'latina_accesso_civico_2026.json'), encoding='utf-8'))
 
 
+
+def trani():  # risposta del Comune a un accesso civico (novembre 2026): elenco dei cartelli fig. II 79/a con coordinate WGS84; elaborato in data/opendata/
+    return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'trani_accesso_civico_2026.json'), encoding='utf-8'))
+
+
+def trieste():  # risposta del Comune a un accesso civico (novembre 2026): 665 punti baricentrici degli stalli (EPSG 32633), convertiti in WGS84 in data/opendata/
+    return json.load(open(os.path.join(os.path.dirname(__file__), '..', 'data', 'opendata', 'trieste_accesso_civico_2026.json'), encoding='utf-8'))
+
+
 FONTI = {'bologna': bologna, 'firenze': firenze, 'trento': trento, 'cesena': cesena, 'ferrara': ferrara, 'siena': siena, 'livorno': livorno,
-         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena, 'latina': latina}
+         'verona': verona, 'lombardia': lombardia, 'torino': torino, 'prato': prato, 'matera': matera, 'modena': modena, 'latina': latina, 'trani': trani, 'trieste': trieste}
 
 
 def sb(method, path, key, body=None, prefer='return=minimal'):
-    req = urllib.request.Request(SB + path, data=None if body is None else json.dumps(body).encode(), method=method,
-                                 headers={'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Prefer': prefer})
-    r = urllib.request.urlopen(req, timeout=120).read(); return json.loads(r) if r else None
+    r = L.richiedi(method, path, key, body, extra={'Prefer': prefer}, timeout=120)[0]; return json.loads(r) if r else None
 
 
 def sb_all(path, key):
-    out, off = [], 0
-    while True:
-        b = sb('GET', f'{path}&offset={off}&limit=1000', key); out += b; off += 1000
-        if len(b) < 1000: return out
+    return L.get(path, key, ordine=None)  # sempre con select=colonne e bbox lato server (vedi main)
 
 
 def dist(a, b, c, d): return math.hypot((a - c) * 111320, (b - d) * 111320 * math.cos(math.radians(a)))

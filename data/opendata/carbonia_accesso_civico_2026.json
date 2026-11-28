@@ -1,0 +1,3911 @@
+{
+ "fonte": "Accesso civico, elenco stalli disabili del Comune (aggiornamento 2026), 8 pagine scansionate; trascritto il 25/11/2026. Escluso via Tirso 106 (revocato).",
+ "elenco": [
+  {
+   "via": "Via Ala Italiana",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "Polizia di Stato"
+  },
+  {
+   "via": "Via Ala Italiana",
+   "frazione": "",
+   "civico": "10",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Angioy",
+   "frazione": "",
+   "civico": "12",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": "civ. 12/1"
+  },
+  {
+   "via": "Viale Arsia",
+   "frazione": "",
+   "civico": "28",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Viale Arsia",
+   "frazione": "",
+   "civico": "106",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Viale Arsia",
+   "frazione": "",
+   "civico": "90",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Viale Arsia",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "Ortopedia Chessa, parcheggio interno"
+  },
+  {
+   "via": "Viale Arsia",
+   "frazione": "",
+   "civico": "108",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Asproni",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Bacu Abis",
+   "frazione": "",
+   "civico": "62",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": "civ. 62-64"
+  },
+  {
+   "via": "Via Bellini",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "scuola Gritti"
+  },
+  {
+   "via": "Via Brigata Sassari",
+   "frazione": "",
+   "civico": "5",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Brigata Sassari",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "sede anziani"
+  },
+  {
+   "via": "Via Brigata Sassari",
+   "frazione": "",
+   "civico": "4",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Cagliari",
+   "frazione": "",
+   "civico": "109",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "sede ANMIL"
+  },
+  {
+   "via": "Via Cannas",
+   "frazione": "",
+   "civico": "66",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Cannas",
+   "frazione": "",
+   "civico": "23",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Cannas di Sopra",
+   "frazione": "",
+   "civico": "49",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Caput Acquas",
+   "frazione": "",
+   "civico": "28",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Caput Acquas",
+   "frazione": "",
+   "civico": "48",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Carducci",
+   "frazione": "",
+   "civico": "6",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Carducci",
+   "frazione": "",
+   "civico": "5",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Centro Intermodale",
+   "frazione": "",
+   "civico": null,
+   "posti": 5,
+   "tipo": "generico",
+   "dettaglio": "retro"
+  },
+  {
+   "via": "Via Cristoforo Colombo",
+   "frazione": "",
+   "civico": "21",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Corso Iglesias",
+   "frazione": "",
+   "civico": "77",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Corso Iglesias",
+   "frazione": "",
+   "civico": "115",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Corso Iglesias",
+   "frazione": "",
+   "civico": "117",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Coghinas",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Croazia",
+   "frazione": "",
+   "civico": "85",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Croazia",
+   "frazione": "",
+   "civico": null,
+   "posti": 3,
+   "tipo": "generico",
+   "dettaglio": "Centro Primavera"
+  },
+  {
+   "via": "Chiesa di Serbariu",
+   "frazione": "Serbariu",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Cimitero",
+   "frazione": "",
+   "civico": null,
+   "posti": 3,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dante",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Diaz",
+   "frazione": "Serbariu",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "103",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "95",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "92",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "101",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "107",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "civ. 107-111"
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "43",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "305",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "40",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "civ. 40-41, fronte Poste"
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "ASL 7"
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "ufficio collocamento"
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": null,
+   "posti": 3,
+   "tipo": "generico",
+   "dettaglio": "fronte scuola"
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "109",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "42",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "civ. 40/42, fronte palazzo (assistenza psichici)"
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "117",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Dalmazia",
+   "frazione": "",
+   "civico": "115",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via della Vittoria",
+   "frazione": "",
+   "civico": "154",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via della Vittoria",
+   "frazione": "",
+   "civico": "145",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via della Vittoria",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "scuola media"
+  },
+  {
+   "via": "Via della Vittoria",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "biblioteca comunale"
+  },
+  {
+   "via": "Via della Vittoria",
+   "frazione": "",
+   "civico": "213",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via della Vittoria",
+   "frazione": "",
+   "civico": "201",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Domenico Millelire",
+   "frazione": "",
+   "civico": "13",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Domenico Millelire",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Domenico Millelire",
+   "frazione": "",
+   "civico": "26",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "civ. 26-28"
+  },
+  {
+   "via": "Via Deffenu",
+   "frazione": "",
+   "civico": "4",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Fanelli",
+   "frazione": "",
+   "civico": "9",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Fertilia",
+   "frazione": "",
+   "civico": "121",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": "civ. 121 e civ. 1"
+  },
+  {
+   "via": "Via Filzi",
+   "frazione": "",
+   "civico": "2",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Filzi",
+   "frazione": "",
+   "civico": "31",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Filzi",
+   "frazione": "",
+   "civico": "11",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Filzi",
+   "frazione": "",
+   "civico": "29",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Garibaldi",
+   "frazione": "",
+   "civico": "9",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Gobetti",
+   "frazione": "",
+   "civico": "52",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Gramsci",
+   "frazione": "",
+   "civico": "193",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Gramsci",
+   "frazione": "",
+   "civico": "153",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "fronte farmacia"
+  },
+  {
+   "via": "Via Gramsci",
+   "frazione": "",
+   "civico": "161",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Gramsci",
+   "frazione": "",
+   "civico": "247",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Gramsci",
+   "frazione": "",
+   "civico": "130",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via La Spezia",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Roma",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "retro Torre Littoria"
+  },
+  {
+   "via": "Via Liguria",
+   "frazione": "",
+   "civico": "48",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Liguria",
+   "frazione": "",
+   "civico": "67",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": "civ. 67 o 19"
+  },
+  {
+   "via": "Via Lombardia",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lombardia",
+   "frazione": "",
+   "civico": "72",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Logudoro",
+   "frazione": "",
+   "civico": "2",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "500",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": "vico n. 500"
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "229",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "68",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "109",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "233",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "278",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "87",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "238",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Lubiana",
+   "frazione": "",
+   "civico": "373",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "cooperativa sociale"
+  },
+  {
+   "via": "Via Lucania",
+   "frazione": "",
+   "civico": "63",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Manno",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "fronte bar"
+  },
+  {
+   "via": "Via Magaldi",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Magaldi",
+   "frazione": "",
+   "civico": "13",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Manno",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Marconi",
+   "frazione": "",
+   "civico": "74",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Marche",
+   "frazione": "",
+   "civico": "21",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Marche",
+   "frazione": "",
+   "civico": "75",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Marche",
+   "frazione": "",
+   "civico": "37",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Marche",
+   "frazione": "",
+   "civico": "161",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Mazzini",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "scuole"
+  },
+  {
+   "via": "Via Mazzini",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "fronte Provincia"
+  },
+  {
+   "via": "Via Mazzini",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "ENAP"
+  },
+  {
+   "via": "Via Manzoni",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "scuole Gritti"
+  },
+  {
+   "via": "Via Messina",
+   "frazione": "",
+   "civico": "60",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Messina",
+   "frazione": "",
+   "civico": "41",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Messina",
+   "frazione": "",
+   "civico": "38",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Milano",
+   "frazione": "",
+   "civico": "18",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Napoli",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "Villa Sulcis"
+  },
+  {
+   "via": "Via Nuoro",
+   "frazione": "",
+   "civico": "72",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Nuoro",
+   "frazione": "",
+   "civico": "16",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Nuoro",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Oristano",
+   "frazione": "",
+   "civico": "4",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Ospedale",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "pronto soccorso"
+  },
+  {
+   "via": "Via Ospedale",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "camera mortuaria"
+  },
+  {
+   "via": "Via Pola",
+   "frazione": "",
+   "civico": "12",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Pola",
+   "frazione": "",
+   "civico": "21",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Puglie",
+   "frazione": "",
+   "civico": "56",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Italia",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "angolo via Roma"
+  },
+  {
+   "via": "Piazza Marmilla",
+   "frazione": "",
+   "civico": null,
+   "posti": 3,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Matteotti",
+   "frazione": "",
+   "civico": null,
+   "posti": 4,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Matteotti",
+   "frazione": "",
+   "civico": "12",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Matteotti",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza San Ponziano",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza San Ponziano",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "sotto il campanile della chiesa"
+  },
+  {
+   "via": "Piazza San Ponziano",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "muro dell'oratorio"
+  },
+  {
+   "via": "Piazza Ciusa",
+   "frazione": "",
+   "civico": "2",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Ciusa",
+   "frazione": "",
+   "civico": "54",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "civ. 54-55"
+  },
+  {
+   "via": "Piazza Ciusa",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "angolo mercato"
+  },
+  {
+   "via": "Piazza Ciusa",
+   "frazione": "",
+   "civico": "51",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "bar Torino"
+  },
+  {
+   "via": "Piazza Ciusa",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "saponi e profumi"
+  },
+  {
+   "via": "Piazza Ciusa",
+   "frazione": "",
+   "civico": "16",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Repubblica",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Repubblica",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Garibaldi",
+   "frazione": "",
+   "civico": "9",
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Rinascita",
+   "frazione": "",
+   "civico": "18",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazza Rinascita",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "Poste Italiane"
+  },
+  {
+   "via": "Parcheggio Intermodale",
+   "frazione": "",
+   "civico": null,
+   "posti": 5,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Piazzale ex Stazione FS",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Roux",
+   "frazione": "",
+   "civico": "163",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Roux",
+   "frazione": "",
+   "civico": "79",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Romagna",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Romagna",
+   "frazione": "",
+   "civico": "18",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Roma",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "Enel e aree di parcheggio"
+  },
+  {
+   "via": "Via Santa Maria delle Grazie",
+   "frazione": "",
+   "civico": "52",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Santa Maria delle Grazie",
+   "frazione": "",
+   "civico": "51",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Santa Maria delle Grazie",
+   "frazione": "",
+   "civico": "47",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Santa Caterina",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Santa Caterina",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "ufficio postale"
+  },
+  {
+   "via": "Via San Giorgio",
+   "frazione": "",
+   "civico": "2",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via San Giorgio",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Sarrabus",
+   "frazione": "",
+   "civico": "10",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Satta",
+   "frazione": "",
+   "civico": "21",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Satta",
+   "frazione": "",
+   "civico": "51",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Satta",
+   "frazione": "",
+   "civico": "76",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Satta",
+   "frazione": "",
+   "civico": "156",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Satta",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "civ. 3 (da verificare)"
+  },
+  {
+   "via": "Via Sanzio",
+   "frazione": "",
+   "civico": "67",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via San Pietro",
+   "frazione": "",
+   "civico": "3",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Sirai",
+   "frazione": "Sirai",
+   "civico": "97",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "stallo libero"
+  },
+  {
+   "via": "Viale Trento",
+   "frazione": "",
+   "civico": "68",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Viale Trento",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "SERT"
+  },
+  {
+   "via": "Viale Trento",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "fisioterapista"
+  },
+  {
+   "via": "Viale Trieste",
+   "frazione": "",
+   "civico": "107",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Turati",
+   "frazione": "",
+   "civico": null,
+   "posti": 5,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Turati",
+   "frazione": "",
+   "civico": "10",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Turati",
+   "frazione": "",
+   "civico": "9",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Turati",
+   "frazione": "",
+   "civico": "7",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Turati",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "lato ufficio postale"
+  },
+  {
+   "via": "Via Toscana",
+   "frazione": "",
+   "civico": "16",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Toscana",
+   "frazione": "",
+   "civico": "2",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Tasso",
+   "frazione": "",
+   "civico": "2",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Tasso",
+   "frazione": "",
+   "civico": "14",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": "civ. 2/14"
+  },
+  {
+   "via": "Via Umbria",
+   "frazione": "",
+   "civico": "4",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Umbria",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "fronte istituto Cesare Beccaria"
+  },
+  {
+   "via": "Via Verona",
+   "frazione": "",
+   "civico": "11",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Veneto",
+   "frazione": "",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Verne",
+   "frazione": "",
+   "civico": "20",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": "civ. 20-22"
+  },
+  {
+   "via": "Via XVIII Dicembre",
+   "frazione": "",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "tribunale"
+  },
+  {
+   "via": "Via Bresciano",
+   "frazione": "Cortoghiana",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": "fronte scuola"
+  },
+  {
+   "via": "Via Bernardini",
+   "frazione": "Cortoghiana",
+   "civico": "13",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Bressan",
+   "frazione": "Cortoghiana",
+   "civico": "4",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Bressan",
+   "frazione": "Cortoghiana",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": "AIAS"
+  },
+  {
+   "via": "Via Fausti",
+   "frazione": "Cortoghiana",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Fleming",
+   "frazione": "Cortoghiana",
+   "civico": "1",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Vasco de Gama",
+   "frazione": "Cortoghiana",
+   "civico": "68",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Gherardini",
+   "frazione": "Cortoghiana",
+   "civico": "16",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Magritte",
+   "frazione": "Cortoghiana",
+   "civico": "4",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Chiesa di Bacu Abis",
+   "frazione": "Bacu Abis",
+   "civico": null,
+   "posti": 2,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Gavorrano",
+   "frazione": "Bacu Abis",
+   "civico": "18",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via La Marmora",
+   "frazione": "Bacu Abis",
+   "civico": "35",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via La Marmora",
+   "frazione": "Bacu Abis",
+   "civico": "6",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via La Marmora",
+   "frazione": "Bacu Abis",
+   "civico": "28",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Monte Rosa",
+   "frazione": "Bacu Abis",
+   "civico": "5",
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via Olbia",
+   "frazione": "Bacu Abis",
+   "civico": null,
+   "posti": 1,
+   "tipo": "generico",
+   "dettaglio": ""
+  },
+  {
+   "via": "Via delle Libertà",
+   "frazione": "Bacu Abis",
+   "civico": "55",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Portoferraio",
+   "frazione": "Bacu Abis",
+   "civico": "31",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  },
+  {
+   "via": "Vico Portoferraio",
+   "frazione": "Bacu Abis",
+   "civico": "25",
+   "posti": 1,
+   "tipo": "personalizzato",
+   "dettaglio": ""
+  }
+ ],
+ "record": [
+  {
+   "osm_id": "opendata:carbonia:viaalaitalianapoliziadistato",
+   "lat": 39.1659041,
+   "lon": 8.5234595,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Ala Italiana",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · Polizia di Stato · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaalaitaliana10",
+   "lat": 39.1659041,
+   "lon": 8.5234595,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Ala Italiana 10",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialearsia28",
+   "lat": 39.165107,
+   "lon": 8.5279479,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Arsia 28",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialearsia106",
+   "lat": 39.1639269,
+   "lon": 8.5270602,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Arsia 106",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialearsia90",
+   "lat": 39.1648572,
+   "lon": 8.5279939,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Arsia 90",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialearsiaortopediachessaparcheggiointerno",
+   "lat": 39.165107,
+   "lon": 8.5279479,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Viale Arsia",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · Ortopedia Chessa, parcheggio interno · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialearsia108",
+   "lat": 39.165107,
+   "lon": 8.5279479,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Arsia 108",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaasproni",
+   "lat": 39.1593533,
+   "lon": 8.522352,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Asproni",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabacuabis62civ6264",
+   "lat": 39.1730984,
+   "lon": 8.5261156,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Bacu Abis 62",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 62-64 · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabelliniscuolagritti",
+   "lat": 39.1567177,
+   "lon": 8.5322817,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Bellini",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · scuola Gritti · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabrigatasassari5",
+   "lat": 39.1693496,
+   "lon": 8.5248894,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Brigata Sassari 5",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabrigatasassarisedeanziani",
+   "lat": 39.1681968,
+   "lon": 8.5238743,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Brigata Sassari",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · sede anziani · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabrigatasassari4",
+   "lat": 39.1681968,
+   "lon": 8.5238743,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Brigata Sassari 4",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacagliari109sedeanmil",
+   "lat": 39.1713755,
+   "lon": 8.5239869,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Cagliari 109",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · sede ANMIL · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacannas66",
+   "lat": 39.161925,
+   "lon": 8.5281268,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Cannas 66",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacannas23",
+   "lat": 39.1604784,
+   "lon": 8.5276785,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Cannas 23",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacannasdisopra49",
+   "lat": 39.1711819,
+   "lon": 8.5314997,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Cannas di Sopra 49",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacaputacquas28",
+   "lat": 39.1720884,
+   "lon": 8.5264511,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Caput Acquas 28",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacaputacquas48",
+   "lat": 39.1729688,
+   "lon": 8.5269395,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Caput Acquas 48",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacarducci6",
+   "lat": 39.157124,
+   "lon": 8.5305452,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Carducci 6",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacarducci5",
+   "lat": 39.157124,
+   "lon": 8.5305452,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Carducci 5",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:centrointermodaleretro",
+   "lat": 39.16334,
+   "lon": 8.513305,
+   "tipo": "generico",
+   "posti": 5,
+   "indirizzo": "Centro Intermodale",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · retro · posizione approssimata presso il centro intermodale: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacristoforocolombo21",
+   "lat": 39.1492031,
+   "lon": 8.5344482,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Cristoforo Colombo 21",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:corsoiglesias77",
+   "lat": 39.163487,
+   "lon": 8.5300844,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Corso Iglesias 77",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:corsoiglesias115",
+   "lat": 39.1633661,
+   "lon": 8.530196,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Corso Iglesias 115",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:corsoiglesias117",
+   "lat": 39.1634,
+   "lon": 8.5302021,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Corso Iglesias 117",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacoghinas",
+   "lat": 39.1734239,
+   "lon": 8.5282284,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Coghinas",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacroazia85",
+   "lat": 39.1693,
+   "lon": 8.523608,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Croazia 85",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viacroaziacentroprimavera",
+   "lat": 39.1693,
+   "lon": 8.523608,
+   "tipo": "generico",
+   "posti": 3,
+   "indirizzo": "Via Croazia",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · Centro Primavera · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:chiesadiserbariuserbariu",
+   "lat": 39.157612,
+   "lon": 8.540091,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Chiesa di Serbariu",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata presso la chiesa di San Narciso: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:cimitero",
+   "lat": 39.154111,
+   "lon": 8.536605,
+   "tipo": "generico",
+   "posti": 3,
+   "indirizzo": "Cimitero",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata presso il cimitero comunale: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadante",
+   "lat": 39.1590453,
+   "lon": 8.5317517,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dante",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadiazserbariu",
+   "lat": 39.1580331,
+   "lon": 8.5397927,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Diaz (Serbariu)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia103",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 103",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia95",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 95",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia92",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 92",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia101",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 101",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia107civ107111",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 107",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 107-111 · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia43",
+   "lat": 39.1714591,
+   "lon": 8.5165368,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 43",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia305",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 305",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia40civ4041fronteposte",
+   "lat": 39.1712966,
+   "lon": 8.5160302,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 40",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 40-41, fronte Poste · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmaziaasl7",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · ASL 7 · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmaziaufficiocollocamento",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · ufficio collocamento · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmaziafrontescuola",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 3,
+   "indirizzo": "Via Dalmazia",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · fronte scuola · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia109",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 109",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia42civ4042frontepalazzoassistenzapsichic",
+   "lat": 39.1789795,
+   "lon": 8.5105248,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 42",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 40/42, fronte palazzo (assistenza psichici) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia117",
+   "lat": 39.1746822,
+   "lon": 8.5151394,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 117",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadalmazia115",
+   "lat": 39.1749261,
+   "lon": 8.515021,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Dalmazia 115",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadellavittoria154",
+   "lat": 39.1566767,
+   "lon": 8.5243766,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via della Vittoria 154",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadellavittoria145",
+   "lat": 39.1580918,
+   "lon": 8.5243881,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via della Vittoria 145",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadellavittoriascuolamedia",
+   "lat": 39.1606694,
+   "lon": 8.5252376,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via della Vittoria",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · scuola media · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadellavittoriabibliotecacomunale",
+   "lat": 39.1606694,
+   "lon": 8.5252376,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via della Vittoria",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · biblioteca comunale · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadellavittoria213",
+   "lat": 39.1561202,
+   "lon": 8.5240402,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via della Vittoria 213",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadellavittoria201",
+   "lat": 39.1562743,
+   "lon": 8.5240739,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via della Vittoria 201",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadomenicomillelire13",
+   "lat": 39.1573859,
+   "lon": 8.5214208,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Domenico Millelire 13",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadomenicomillelire3",
+   "lat": 39.1566242,
+   "lon": 8.5250631,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Domenico Millelire 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadomenicomillelire26civ2628",
+   "lat": 39.1571853,
+   "lon": 8.5231992,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Domenico Millelire 26",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 26-28 · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadeffenu4",
+   "lat": 39.1643086,
+   "lon": 8.5217833,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Deffenu 4",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viafanelli9",
+   "lat": 39.1552963,
+   "lon": 8.5189221,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Fanelli 9",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viafertilia121civ121eciv1",
+   "lat": 39.1654744,
+   "lon": 8.5329063,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Fertilia 121",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 121 e civ. 1 · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viafilzi2",
+   "lat": 39.157615,
+   "lon": 8.5397873,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Filzi 2",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viafilzi31",
+   "lat": 39.159112,
+   "lon": 8.5394838,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Filzi 31",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viafilzi11",
+   "lat": 39.1581604,
+   "lon": 8.5397559,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Filzi 11",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viafilzi29",
+   "lat": 39.1586053,
+   "lon": 8.5395781,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Filzi 29",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagaribaldi9",
+   "lat": 39.1623033,
+   "lon": 8.5247511,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Garibaldi 9",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagobetti52",
+   "lat": 39.1771937,
+   "lon": 8.5196504,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Gobetti 52",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagramsci193",
+   "lat": 39.16977,
+   "lon": 8.5218579,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Gramsci 193",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagramsci153frontefarmacia",
+   "lat": 39.1693485,
+   "lon": 8.5222895,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Gramsci 153",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · fronte farmacia · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagramsci161",
+   "lat": 39.1696655,
+   "lon": 8.522,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Gramsci 161",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagramsci247",
+   "lat": 39.1706271,
+   "lon": 8.5206927,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Gramsci 247",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagramsci130",
+   "lat": 39.1693485,
+   "lon": 8.5222895,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Gramsci 130",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialaspezia3",
+   "lat": 39.1767736,
+   "lon": 8.524555,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via La Spezia 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaromaretrotorrelittoria",
+   "lat": 39.1659544,
+   "lon": 8.5258205,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Piazza Roma",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · retro Torre Littoria · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialiguria48",
+   "lat": 39.1752279,
+   "lon": 8.5196523,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Liguria 48",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialiguria67civ67o19",
+   "lat": 39.174388,
+   "lon": 8.5202319,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Liguria 67",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 67 o 19 · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialombardia",
+   "lat": 39.1749151,
+   "lon": 8.5185197,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Lombardia",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialombardia72",
+   "lat": 39.1749151,
+   "lon": 8.5185197,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Lombardia 72",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialogudoro2",
+   "lat": 39.1770567,
+   "lon": 8.5174475,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Logudoro 2",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana500vicon500",
+   "lat": 39.1552895,
+   "lon": 8.5226862,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 500",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · vico n. 500 · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana229",
+   "lat": 39.1543252,
+   "lon": 8.5172459,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 229",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana68",
+   "lat": 39.1570169,
+   "lon": 8.5370227,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 68",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana109",
+   "lat": 39.1552895,
+   "lon": 8.5226862,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 109",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana233",
+   "lat": 39.1552895,
+   "lon": 8.5226862,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 233",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana278",
+   "lat": 39.1548605,
+   "lon": 8.5209032,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 278",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana87",
+   "lat": 39.1552058,
+   "lon": 8.5281637,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 87",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana238",
+   "lat": 39.1552895,
+   "lon": 8.5226862,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 238",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialubiana373cooperativasociale",
+   "lat": 39.1552895,
+   "lon": 8.5226862,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Lubiana 373",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · cooperativa sociale · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialucania63",
+   "lat": 39.166942,
+   "lon": 8.5287812,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Lucania 63",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamannofrontebar",
+   "lat": 39.1658949,
+   "lon": 8.5255279,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Manno",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · fronte bar · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamagaldi",
+   "lat": 39.2115515,
+   "lon": 8.463025,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Magaldi",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamagaldi13",
+   "lat": 39.2115515,
+   "lon": 8.463025,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Magaldi 13",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vicomanno",
+   "lat": 39.1658949,
+   "lon": 8.5255279,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Vico Manno",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamarconi74",
+   "lat": 39.1676268,
+   "lon": 8.520059,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Marconi 74",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamarche21",
+   "lat": 39.1692493,
+   "lon": 8.5282068,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Marche 21",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamarche75",
+   "lat": 39.1700664,
+   "lon": 8.528474,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Marche 75",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamarche37",
+   "lat": 39.169559,
+   "lon": 8.5283823,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Marche 37",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamarche161",
+   "lat": 39.1700664,
+   "lon": 8.528474,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Marche 161",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamazziniscuole",
+   "lat": 39.1587556,
+   "lon": 8.5234903,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Mazzini",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · scuole · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamazzinifronteprovincia",
+   "lat": 39.1587556,
+   "lon": 8.5234903,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Mazzini",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · fronte Provincia · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamazzinienap",
+   "lat": 39.1587556,
+   "lon": 8.5234903,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Mazzini",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · ENAP · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamanzoniscuolegritti",
+   "lat": 39.1581692,
+   "lon": 8.5319414,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Manzoni",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · scuole Gritti · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamessina60",
+   "lat": 39.1728655,
+   "lon": 8.5203722,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Messina 60",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamessina41",
+   "lat": 39.1742126,
+   "lon": 8.5197745,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Messina 41",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamessina38",
+   "lat": 39.1745569,
+   "lon": 8.5192759,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Messina 38",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamilano18",
+   "lat": 39.1759499,
+   "lon": 8.5257379,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Milano 18",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vianapolivillasulcis",
+   "lat": 39.1640414,
+   "lon": 8.5245747,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Napoli",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · Villa Sulcis · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vianuoro72",
+   "lat": 39.169115,
+   "lon": 8.5266873,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Nuoro 72",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viconuoro16",
+   "lat": 39.169115,
+   "lon": 8.5266873,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Vico Nuoro 16",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viconuoro3",
+   "lat": 39.169115,
+   "lon": 8.5266873,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Vico Nuoro 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaoristano4",
+   "lat": 39.169713,
+   "lon": 8.5224805,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Oristano 4",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaospedaleprontosoccorso",
+   "lat": 39.18571,
+   "lon": 8.507018,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Ospedale",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · pronto soccorso · posizione approssimata presso l'ospedale Sirai: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaospedalecameramortuaria",
+   "lat": 39.18571,
+   "lon": 8.507018,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Ospedale",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · camera mortuaria · posizione approssimata presso l'ospedale Sirai: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viapola12",
+   "lat": 39.1770878,
+   "lon": 8.5243385,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Pola 12",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viapola21",
+   "lat": 39.1770878,
+   "lon": 8.5243385,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Pola 21",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viapuglie56",
+   "lat": 39.1741449,
+   "lon": 8.5286398,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Puglie 56",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaitaliaangoloviaroma",
+   "lat": 39.1722047,
+   "lon": 8.5212729,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Italia",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · angolo via Roma · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzamarmilla",
+   "lat": 39.1656925,
+   "lon": 8.5245752,
+   "tipo": "generico",
+   "posti": 3,
+   "indirizzo": "Piazza Marmilla",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzamatteotti",
+   "lat": 39.1663885,
+   "lon": 8.5260886,
+   "tipo": "generico",
+   "posti": 4,
+   "indirizzo": "Piazza Matteotti",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzamatteotti12",
+   "lat": 39.1663885,
+   "lon": 8.5260886,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Matteotti 12",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vicomatteotti",
+   "lat": 39.1663885,
+   "lon": 8.5260886,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Vico Matteotti",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzasanponziano",
+   "lat": 39.1664175,
+   "lon": 8.5266206,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Piazza San Ponziano",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzasanponzianosottoilcampaniledellachiesa",
+   "lat": 39.1664175,
+   "lon": 8.5266206,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza San Ponziano",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · sotto il campanile della chiesa · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzasanponzianomurodelloratorio",
+   "lat": 39.1664175,
+   "lon": 8.5266206,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza San Ponziano",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · muro dell'oratorio · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaciusa2",
+   "lat": 39.1674504,
+   "lon": 8.526678,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Ciusa 2",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaciusa54civ5455",
+   "lat": 39.1675251,
+   "lon": 8.5265124,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Ciusa 54",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 54-55 · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaciusaangolomercato",
+   "lat": 39.1674504,
+   "lon": 8.526678,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Ciusa",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · angolo mercato · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaciusa51bartorino",
+   "lat": 39.1674835,
+   "lon": 8.5266021,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Ciusa 51",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · bar Torino · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaciusasaponieprofumi",
+   "lat": 39.1674504,
+   "lon": 8.526678,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Ciusa",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · saponi e profumi · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaciusa16",
+   "lat": 39.1674504,
+   "lon": 8.526678,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Ciusa 16",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzarepubblica",
+   "lat": 39.1697965,
+   "lon": 8.5179126,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Piazza Repubblica",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzarepubblica2",
+   "lat": 39.1697965,
+   "lon": 8.5179126,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Repubblica",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzagaribaldi9",
+   "lat": 39.1622329,
+   "lon": 8.5251172,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Piazza Garibaldi 9",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzarinascita18",
+   "lat": 39.16824,
+   "lon": 8.5260551,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Piazza Rinascita 18",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzarinascitaposteitaliane",
+   "lat": 39.168139,
+   "lon": 8.525557,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazza Rinascita",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · Poste Italiane · posizione approssimata presso l'ufficio postale centrale: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:parcheggiointermodale",
+   "lat": 39.16334,
+   "lon": 8.513305,
+   "tipo": "generico",
+   "posti": 5,
+   "indirizzo": "Parcheggio Intermodale",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata presso il centro intermodale: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:piazzaleexstazionefs",
+   "lat": 39.163797,
+   "lon": 8.510362,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Piazzale ex Stazione FS",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata presso l'ex stazione FS: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaroux163",
+   "lat": 39.156042,
+   "lon": 8.520204,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Roux 163",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaroux79",
+   "lat": 39.1594427,
+   "lon": 8.5209773,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Roux 79",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaromagna3",
+   "lat": 39.1774196,
+   "lon": 8.5173519,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Romagna 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaromagna18",
+   "lat": 39.1789259,
+   "lon": 8.5207103,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Romagna 18",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaromaeneleareediparcheggio",
+   "lat": 39.1636987,
+   "lon": 8.5149903,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Roma",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · Enel e aree di parcheggio · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasantamariadellegrazie52",
+   "lat": 39.2022435,
+   "lon": 8.5071366,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Santa Maria delle Grazie 52",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasantamariadellegrazie51",
+   "lat": 39.2022435,
+   "lon": 8.5071366,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Santa Maria delle Grazie 51",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasantamariadellegrazie47",
+   "lat": 39.2022435,
+   "lon": 8.5071366,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Santa Maria delle Grazie 47",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vicosantacaterina3",
+   "lat": 39.160484,
+   "lon": 8.5318791,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Vico Santa Caterina 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasantacaterinaufficiopostale",
+   "lat": 39.1589325,
+   "lon": 8.5349244,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Santa Caterina",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · ufficio postale · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasangiorgio2",
+   "lat": 39.1616012,
+   "lon": 8.5228683,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via San Giorgio 2",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasangiorgio3",
+   "lat": 39.1616012,
+   "lon": 8.5228683,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via San Giorgio 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasarrabus10",
+   "lat": 39.1737004,
+   "lon": 8.5298296,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Sarrabus 10",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasatta21",
+   "lat": 39.1758963,
+   "lon": 8.5172682,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Satta 21",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasatta51",
+   "lat": 39.1758963,
+   "lon": 8.5172682,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Satta 51",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasatta76",
+   "lat": 39.1729561,
+   "lon": 8.5183362,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Satta 76",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasatta156",
+   "lat": 39.1760865,
+   "lon": 8.5172067,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Satta 156",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasatta3civ3daverificare",
+   "lat": 39.171196,
+   "lon": 8.5196265,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Satta 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 3 (da verificare) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasanzio67",
+   "lat": 39.1588397,
+   "lon": 8.5342389,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Sanzio 67",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viasanpietro3",
+   "lat": 39.1797055,
+   "lon": 8.5130642,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via San Pietro 3",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:siraisirai97stallolibero",
+   "lat": 39.1847875,
+   "lon": 8.4889497,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Sirai 97",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · stallo libero · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialetrento68",
+   "lat": 39.161304,
+   "lon": 8.5252575,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Trento 68",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialetrentosert",
+   "lat": 39.161304,
+   "lon": 8.5252575,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Trento",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · SERT · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialetrentofisioterapista",
+   "lat": 39.161304,
+   "lon": 8.5252575,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Trento",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · fisioterapista · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialetrieste107",
+   "lat": 39.166898,
+   "lon": 8.5215283,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Viale Trieste 107",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaturati",
+   "lat": 39.1683966,
+   "lon": 8.5254549,
+   "tipo": "generico",
+   "posti": 5,
+   "indirizzo": "Via Turati",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaturati10",
+   "lat": 39.1684987,
+   "lon": 8.5251071,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Turati 10",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaturati9",
+   "lat": 39.1683966,
+   "lon": 8.5254549,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Turati 9",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaturati7",
+   "lat": 39.1683966,
+   "lon": 8.5254549,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Turati 7",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaturatilatoufficiopostale",
+   "lat": 39.1683966,
+   "lon": 8.5254549,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Turati",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · lato ufficio postale · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viatoscana16",
+   "lat": 39.169301,
+   "lon": 8.5255668,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Toscana 16",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viatoscana2",
+   "lat": 39.1691147,
+   "lon": 8.5263615,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Toscana 2",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viatasso2",
+   "lat": 39.1589529,
+   "lon": 8.5330542,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Tasso 2",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viatasso14civ214",
+   "lat": 39.1591709,
+   "lon": 8.5329272,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Tasso 14",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 2/14 · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaumbria4",
+   "lat": 39.171397,
+   "lon": 8.5198839,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Umbria 4",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaumbriafronteistitutocesarebeccaria",
+   "lat": 39.1720714,
+   "lon": 8.5209192,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Umbria",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · fronte istituto Cesare Beccaria · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaverona11",
+   "lat": 39.1676887,
+   "lon": 8.5233195,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Verona 11",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaveneto",
+   "lat": 39.1745321,
+   "lon": 8.5169556,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Veneto",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaverne20civ2022",
+   "lat": 39.159388,
+   "lon": 8.535391,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via Verne 20",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · civ. 20-22 · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabrescianocortoghianafrontescuola",
+   "lat": 39.2093272,
+   "lon": 8.4607067,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Bresciano (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · fronte scuola · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabernardinicortoghiana13",
+   "lat": 39.2121733,
+   "lon": 8.4591778,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Bernardini 13 (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabressancortoghiana4",
+   "lat": 39.2133895,
+   "lon": 8.4638123,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Bressan 4 (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viabressancortoghianaaias",
+   "lat": 39.2133895,
+   "lon": 8.4638123,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Via Bressan (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · AIAS · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viafausticortoghiana",
+   "lat": 39.2115524,
+   "lon": 8.4638083,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Fausti (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaflemingcortoghiana1",
+   "lat": 39.2081823,
+   "lon": 8.4660936,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Fleming 1 (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viavascodegamacortoghiana68",
+   "lat": 39.1534005,
+   "lon": 8.5305626,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Vasco de Gama 68 (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viagherardinicortoghiana16",
+   "lat": 39.2115498,
+   "lon": 8.4615058,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Gherardini 16 (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viamagrittecortoghiana4",
+   "lat": 39.1605188,
+   "lon": 8.5376953,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Magritte 4 (Cortoghiana)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:chiesadibacuabisbacuabis",
+   "lat": 39.244363,
+   "lon": 8.466658,
+   "tipo": "generico",
+   "posti": 2,
+   "indirizzo": "Chiesa di Bacu Abis",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata presso la chiesa di Santa Barbara: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vicogavorranobacuabis18",
+   "lat": 39.241546,
+   "lon": 8.4677331,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Vico Gavorrano 18 (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialamarmorabacuabis35",
+   "lat": 39.2420299,
+   "lon": 8.4674066,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via La Marmora 35 (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialamarmorabacuabis6",
+   "lat": 39.2420299,
+   "lon": 8.4674066,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via La Marmora 6 (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vialamarmorabacuabis28",
+   "lat": 39.2420299,
+   "lon": 8.4674066,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via La Marmora 28 (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viaolbiabacuabis",
+   "lat": 39.2467152,
+   "lon": 8.4602804,
+   "tipo": "generico",
+   "posti": 1,
+   "indirizzo": "Via Olbia (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:viadellelibertabacuabis55",
+   "lat": 39.244851,
+   "lon": 8.4638209,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Via delle Libertà 55 (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione dal numero civico (±20 m)",
+   "stato": "ufficiale",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vicoportoferraiobacuabis31",
+   "lat": 39.2416926,
+   "lon": 8.4693179,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Vico Portoferraio 31 (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  },
+  {
+   "osm_id": "opendata:carbonia:vicoportoferraiobacuabis25",
+   "lat": 39.2416926,
+   "lon": 8.4693179,
+   "tipo": "personalizzato",
+   "posti": 1,
+   "indirizzo": "Vico Portoferraio 25 (Bacu Abis)",
+   "comune": "Carbonia",
+   "note": "Dato ufficiale (accesso civico, novembre 2026) · posizione approssimata sulla via: da verificare",
+   "stato": "proposto",
+   "fonte": "opendata"
+  }
+ ],
+ "senza_posizione": [
+  {
+   "via": "Via Angioy",
+   "civico": "12",
+   "posti": 1,
+   "dettaglio": "civ. 12/1"
+  },
+  {
+   "via": "Via XVIII Dicembre",
+   "civico": null,
+   "posti": 2,
+   "dettaglio": "tribunale"
+  },
+  {
+   "via": "Via Monte Rosa",
+   "civico": "5",
+   "posti": 1,
+   "dettaglio": ""
+  }
+ ]
+}

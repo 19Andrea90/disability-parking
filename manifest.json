@@ -1,7 +1,7 @@
 {
-  "name": "Disability Parking",
-  "short_name": "Disability Parking",
-  "description": "Tutti i posti riservati d'Italia, in una mappa.",
+  "name": "SostAbile",
+  "short_name": "SostAbile",
+  "description": "Tutti i posti per disabili d'Italia, in una mappa.",
   "lang": "it",
   "start_url": "./index.html",
   "scope": "./",
