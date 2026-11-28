@@ -341,6 +341,7 @@ button.handle::after{content:"";position:absolute;left:50%;top:10px;width:44px;h
   #top,#destbar{left:16px;right:auto;width:var(--col);top:16px}
   #home{left:16px;right:auto;width:var(--col);top:150px;bottom:16px;display:flex;flex-direction:column}
   #home .float{position:fixed;left:calc(var(--col) + 32px);right:16px;bottom:34px;padding:0}
+  .fl-dx{position:fixed;right:16px;bottom:34px;padding:0}
   #near{max-height:100%;min-height:0}
   #near-body{min-height:0;overflow-y:auto}
   #near .others,#near.exp .others{max-height:none;overflow:visible}
@@ -619,3 +620,7 @@ body.prob-pos #home,body.prob-pos #top,body.prob-pos #arrivo,body.prob-pos #dest
 
 /* Accessibilità: chi ha chiesto meno animazioni nelle impostazioni di sistema non vede transizioni né movimenti */
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* tasti a destra sopra la scheda del posto e l'elenco della destinazione */
+.fl-dx{justify-content:flex-end;pointer-events:none}
+#card>.fl-dx{pointer-events:none}

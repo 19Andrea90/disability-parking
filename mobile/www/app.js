@@ -164,7 +164,16 @@
   const LARGO = () => window.matchMedia('(min-width:900px)').matches, COL = 448;
   const padPC = (m) => ({ top: 30 + (m || 0), bottom: 30 + (m || 0), left: COL + (m || 0), right: 30 + (m || 0) });
   const padHome = () => LARGO() ? padPC() : (aggiungo ? { top: 90, bottom: $('#add .sheet').offsetHeight || 0, left: 0, right: 0 } : { top: dest ? 90 : 150 + ($('#b-auto').hidden ? 0 : 58), bottom: $(dest ? '#arrivo' : '#home').offsetHeight || 0, left: 0, right: 0 });
-  function mostra() { setTimeout(posizionaOffline, 0); const c = !!selId, d = !!dest, n = aggiungo; $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
+  // I tasti a destra (vista satellitare, «i», la mia posizione) seguono il pannello aperto: home, destinazione o scheda del posto
+  function spostaTasti(c, d) {
+    const dx = document.querySelector('.dx'); if (!dx) return;
+    const dove = c ? $('#card') : d ? $('#arrivo') : null;
+    if (!dove) { const f = $('#home .float'); if (dx.parentNode !== f) f.appendChild(dx); return; }
+    let f = dove.querySelector(':scope > .fl-dx');
+    if (!f) { f = document.createElement('div'); f.className = 'float fl-dx'; dove.insertBefore(f, dove.querySelector(':scope > .sheet')); }
+    if (dx.parentNode !== f) f.appendChild(dx);
+  }
+  function mostra() { setTimeout(posizionaOffline, 0); const c = !!selId, d = !!dest, n = aggiungo; spostaTasti(c, d); $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
   window.addEventListener('resize', () => { if (!pronta) return; map.resize(); if (LARGO()) espandi(true); if (!selId) map.setPadding(padHome()); });
   function affidabilita(s) { return s.stato === 'ufficiale' ? ['uff', 'Ufficiale'] : s.stato === 'verificato' ? ['ver', 'Verificato'] : ['prop', 'Da verificare']; }
   function posti(n) { return n === 1 ? '1 posto' : n + ' posti'; }
