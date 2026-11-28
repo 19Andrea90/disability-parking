@@ -304,6 +304,10 @@
   const map = new maplibregl.Map({ container: 'map', style: window.matchMedia('(prefers-color-scheme: dark)').matches ? CFG.STYLE_SCURO : CFG.STYLE,
     transformRequest: (url) => (chiaveEsri && ESRI_HOST.test(url) && !/[?&]token=/.test(url)) ? { url: url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(chiaveEsri) } : undefined, center: CFG.HOME, zoom: 14.5, attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false });
   map.touchZoomRotate.disableRotation();
+  // Accessibilità: la mappa ha un nome in italiano per i lettori di schermo; i posti si raggiungono anche dall'elenco «Il più vicino in questa zona»
+  try { const cv = map.getCanvas(); cv.setAttribute('aria-label', 'Mappa dei posti per disabili. L\'elenco dei posti vicini è sotto la mappa.'); cv.setAttribute('role', 'region'); } catch (e) {}
+  // Chi ha chiesto meno animazioni (impostazioni di sistema) non vede voli e scorrimenti della mappa
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { map.flyTo = map.jumpTo.bind(map); map.easeTo = map.jumpTo.bind(map); }
   map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
   { const at = document.querySelector('.maplibregl-ctrl-attrib'), slot = document.getElementById('slot-i'); if (at && slot) slot.appendChild(at); } // la «i» sta nella colonna dei pulsanti, subito sopra la vista satellitare
   (function () { // «Come leggere la mappa»: la legenda dei segnaposto sta nel pannello della «i» della mappa, sopra i crediti
@@ -517,7 +521,7 @@
   function setMe(lat, lon, vecchia) {
     if (vecchia && me) return;
     const primo = !me, affina = !!me && meVecchia && !vecchia && dist(lat, lon, me.lat, me.lon) > 30; meVecchia = !!vecchia; me = { lat, lon };
-    if (!meMarker) { const el = document.createElement('div'); el.className = 'me'; el.innerHTML = '<i></i>'; meMarker = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map); } else meMarker.setLngLat([lon, lat]);
+    if (!meMarker) { const el = document.createElement('div'); el.className = 'me'; el.setAttribute('role', 'img'); el.setAttribute('aria-label', 'La tua posizione'); el.innerHTML = '<i></i>'; meMarker = new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map); } else meMarker.setLngLat([lon, lat]);
     if (primo && seguo && !selId) map.jumpTo({ center: [lon, lat], zoom: 16, padding: padHome() });
     else if (affina && seguo && !selId) map.easeTo({ center: [lon, lat], duration: 400 }); // la posizione precisa è lontana da quella mostrata subito: la mappa la segue, senza cambiare lo zoom
     if (!ultimoCarico || dist(lat, lon, ultimoCarico.lat, ultimoCarico.lon) > 300) { ultimoCarico = { lat, lon }; carica(lat - 0.024, lon - 0.035, lat + 0.024, lon + 0.035, false); }

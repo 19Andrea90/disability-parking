@@ -616,3 +616,6 @@ body.prob-pos #home,body.prob-pos #top,body.prob-pos #arrivo,body.prob-pos #dest
 /* la «i» (legenda e crediti) nella colonna dei pulsanti a destra, subito sopra la vista satellitare: si apre verso sinistra e verso l'alto */
 .slot-i{position:relative;width:3rem;height:2rem;flex:none}
 .slot-i .maplibregl-ctrl-attrib{position:absolute;right:0.5rem;bottom:0;margin:0;z-index:3;max-width:min(320px,calc(100vw - 48px))}
+
+/* Accessibilità: chi ha chiesto meno animazioni nelle impostazioni di sistema non vede transizioni né movimenti */
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
