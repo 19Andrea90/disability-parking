@@ -22,6 +22,7 @@
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
     TURNSTILE: '0x4AAAAAAGVzj8VvrCjB4I81',        // chiave pubblica (sitekey) di Cloudflare Turnstile per il web; VUOTA = passo anti-bot spento (vedi docs/anti-bot.md)
     PASSO_URL: 'https://wwereqrojlwktgwlrsib.supabase.co/functions/v1/passo', // funzione Edge che scambia la prova Turnstile con un passo
+    DONA: '', // link per le donazioni (PayPal/Ko-fi), solo sito e web: le regole di Google Play vietano i pagamenti esterni nell'app Android. Vuoto = voce nascosta
     SITO: sitoBase(location.hostname, SITO_NATIVO()), // indirizzo base del sito vetrina (con / finale): vedi sitoBase() qui sopra
   };
   const $ = (s) => document.querySelector(s);
@@ -1827,7 +1828,7 @@
     $('#m-body').innerHTML = `${acc}
       ${sez('h-posti', 'Dove vai spesso', `<div class="luoghi">${luogo('casa', 'Casa', 'casa')}${luogo('lavoro', 'Lavoro', 'lavoro')}</div>`)}
       ${sez('h-salvati', 'Posti salvati' + (v.length ? ' · ' + v.length : ''), salv)}
-      ${sez('h-info', 'Aiuto e informazioni', `<div class="grp">${riga('regole', 'shield', 'Regole della sosta con il contrassegno')}${riga('sugg', 'idea', 'Suggerisci un miglioramento')}${riga('consiglia', 'share', 'Consiglia l\'app a un amico')}${riga('novita', 'bell', 'Novità dell\'app')}${riga('fonti', 'flag', 'Fonti, condizioni e privacy')}</div>`)}
+      ${sez('h-info', 'Aiuto e informazioni', `<div class="grp">${riga('regole', 'shield', 'Regole della sosta con il contrassegno')}${riga('sugg', 'idea', 'Suggerisci un miglioramento')}${riga('consiglia', 'share', 'Consiglia l\'app a un amico')}${riga('novita', 'bell', 'Novità dell\'app')}${CFG.DONA && !NATIVO() ? riga('dona', 'cuore', 'Sostieni SostAbile') : ''}${riga('fonti', 'flag', 'Fonti, condizioni e privacy')}</div>`)}
       ${sez('h-imp', 'Impostazioni', `<div class="grp"><label class="vaip stat nav"><span class="t">Navigatore<span>Si apre con «Portami lì»</span></span><select id="m-nav"><option value="google"${np === 'google' ? ' selected' : ''}>Google Maps</option><option value="waze"${np === 'waze' ? ' selected' : ''}>Waze</option><option value="chiedi"${np === 'chiedi' ? ' selected' : ''}>Chiedi ogni volta</option></select></label><button class="vaip stat" data-a="stat" role="switch" aria-checked="${statAttive()}"><span class="t">Statistiche anonime<span>${statAttive() ? 'Attive: ci aiutano a capire cosa migliorare. Niente posizione né dati personali.' : 'Disattivate su questo telefono.'}</span></span><span class="tgl" aria-hidden="true"></span></button>${eInterno() ? '<button class="rg int" data-a="interno-off">Dispositivo interno · tocca per togliere</button>' : ''}</div>`)}
       <div class="vers" data-a="versione">Versione ${esc(window.DP_VERSIONE || '')}</div>`;
   }
@@ -1887,6 +1888,7 @@
     }
     else if (a === 'interno-off') { ls.set('dp.interno', 0); menu(); toast('Dispositivo non più interno: rientra nelle statistiche.', 3500); }
     else if (a === 'google') accediGoogle();
+    else if (a === 'dona' && CFG.DONA && !NATIVO()) apri(CFG.DONA);
     else if (a === 'novita') apri('https://sostabile.it/novita.html'); // pagina sempre sul dominio, anche dall'app Android
     else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-cond').href = CFG.SITO + 'condizioni.html'; $('#f-priv').href = CFG.SITO + 'privacy.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
