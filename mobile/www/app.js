@@ -293,7 +293,7 @@
       if (modo !== 'conteggi' || ctlC !== mio) return;
       conteggi = { celle: rows, b: { s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast() } };
       map.getSource('conteggi').setData({ type: 'FeatureCollection', features: rows.map((c) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
-        properties: { n: c.stalli, p: c.posti, t: num(c.posti), r: Math.round(Math.min(46, 15 + 2.4 * Math.sqrt(c.posti))) } })) });
+        properties: { n: c.stalli, p: c.posti, t: num(c.stalli), r: Math.round(Math.min(46, 15 + 2.4 * Math.sqrt(c.stalli))) } })) });
       vicini();
     } catch (err) { erroreDati(err); }
   }
@@ -372,12 +372,12 @@
   function aggiungiLivelli() { // immagini, sorgenti e livelli nostri: si rifanno da capo se la mappa cambia stile (tema chiaro/scuro)
     const P = PAL(), img = (n, im, o) => { if (map.hasImage(n)) map.removeImage(n); map.addImage(n, im, Object.assign({ pixelRatio: 2 }, o)); };
     img('wc-w', glifo(P.icPieno)); img('wc-b', glifo(P.icDav)); img('wc-d', glifo('#2b2300')); img('x-w', glifoX('#ffffff'));
-    map.addSource('stalli', { type: 'geojson', data: VUOTO, cluster: true, clusterRadius: 42, clusterMaxZoom: 15, clusterProperties: { posti: ['+', ['get', 'posti']] } }); // i gruppi contano i posti, come i cerchi a mappa larga e la ricerca
+    map.addSource('stalli', { type: 'geojson', data: VUOTO, cluster: true, clusterRadius: 42, clusterMaxZoom: 15 }); // gruppi, cerchi a mappa larga e «nel comune» contano tutti gli stalli (non i posti)
     map.addSource('sel', { type: 'geojson', data: VUOTO }); map.addSource('conteggi', { type: 'geojson', data: VUOTO });
     map.addSource('zone', { type: 'geojson', data: VUOTO }); img('zona', fondoZona(P), { stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
     map.addLayer({ id: 'zone', type: 'symbol', source: 'zone', maxzoom: CFG.MIN_ZOOM_DATI, layout: { 'icon-image': 'zona', 'icon-text-fit': 'both', 'symbol-sort-key': ['-', ['get', 't']], 'text-field': ['format', ['get', 'n'], { 'font-scale': 0.8 }, '\n', {}, ['get', 'tl'], { 'text-font': ['literal', ['Noto Sans Bold']] }], 'text-font': ['Noto Sans Regular'], 'text-size': 15, 'text-line-height': 1.25, 'text-max-width': 9, 'text-padding': 6 }, paint: { 'text-color': P.testoG } });
-    map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': P.gruppo, 'circle-radius': ['step', ['get', 'posti'], 17, 10, 21, 50, 25], 'circle-stroke-color': P.anello, 'circle-stroke-width': 3 } });
-    map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['to-string', ['get', 'posti']], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': P.testoG } });
+    map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': P.gruppo, 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': P.anello, 'circle-stroke-width': 3 } });
+    map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': P.testoG } });
     const dav = ['==', ['get', 'stato'], 'proposto'];
     map.addLayer({ id: 'pin', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['!', ['has', 'point_count']], paint: {
       'circle-radius': ['case', ['get', 'occ'], 16, dav, 14.5, 17], 'circle-color': ['case', ['get', 'occ'], P.occ, dav, P.dav, P.pieno],
@@ -512,7 +512,7 @@
   function disegna() {
     if (!pronta) return;
     const feats = [];
-    for (const s of stalli.values()) if (passa(s)) feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: { id: s.id, stato: s.stato, occ: occupati.has(s.id), posti: Math.max(1, s.posti || 1) } });
+    for (const s of stalli.values()) if (passa(s)) feats.push({ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: { id: s.id, stato: s.stato, occ: occupati.has(s.id) } });
     map.getSource('stalli').setData({ type: 'FeatureCollection', features: feats });
     const s = selId && stalli.get(selId);
     map.getSource('sel').setData(s ? { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [s.lon, s.lat] }, properties: {} }] } : VUOTO);
