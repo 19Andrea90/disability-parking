@@ -22,7 +22,7 @@
     PLAY: 'https://play.google.com/store/apps/details?id=it.disabilityparking.app',
     TURNSTILE: '0x4AAAAAAGVzj8VvrCjB4I81',        // chiave pubblica (sitekey) di Cloudflare Turnstile per il web; VUOTA = passo anti-bot spento (vedi docs/anti-bot.md)
     PASSO_URL: 'https://wwereqrojlwktgwlrsib.supabase.co/functions/v1/passo', // funzione Edge che scambia la prova Turnstile con un passo
-    DONA: '', // link per le donazioni (PayPal/Ko-fi), solo sito e web: le regole di Google Play vietano i pagamenti esterni nell'app Android. Vuoto = voce nascosta
+    DONA: 'https://ko-fi.com/sostabile', // link per le donazioni (PayPal/Ko-fi), solo sito e web: le regole di Google Play vietano i pagamenti esterni nell'app Android. Vuoto = voce nascosta
     SITO: sitoBase(location.hostname, SITO_NATIVO()), // indirizzo base del sito vetrina (con / finale): vedi sitoBase() qui sopra
   };
   const $ = (s) => document.querySelector(s);
@@ -188,7 +188,10 @@
   window.addEventListener('online', () => { reteKO = false; aggiornaOffline(); if (pronta) caricaVista(); });
   window.addEventListener('resize', posizionaOffline);
   if (window.ResizeObserver) { const ro = new ResizeObserver(posizionaOffline); ['#home', '#arrivo', '#card .sheet', '#add .sheet', '#fg-sheet'].forEach((q) => { const el = document.querySelector(q); if (el) ro.observe(el); }); }
-  function apri(url) { window.open(url, '_blank'); }
+  function apri(url) { // dall'app Android le pagine del sito si aprono con ?app=1: il sito nasconde il link alle donazioni (regole di Google Play)
+    try { if (NATIVO() && /^https:\/\/sostabile\.it\//.test(url)) url += (url.includes('?') ? '&' : '?') + 'app=1'; } catch (e) {}
+    window.open(url, '_blank');
+  }
   function passa(s) { return !(filtri.ver && s.stato === 'proposto') && !(filtri.cop && !s.coperto) && !(filtri.multi && !(s.posti >= 2)); }
 
   // ---------- dati ----------
@@ -1890,7 +1893,7 @@
     else if (a === 'google') accediGoogle();
     else if (a === 'dona' && CFG.DONA && !NATIVO()) apri(CFG.DONA);
     else if (a === 'novita') apri('https://sostabile.it/novita.html'); // pagina sempre sul dominio, anche dall'app Android
-    else if (a === 'fonti') { $('#fonti').hidden = false; $('#f-elenco').href = CFG.SITO + 'fonti.html'; $('#f-cond').href = CFG.SITO + 'condizioni.html'; $('#f-priv').href = CFG.SITO + 'privacy.html'; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
+    else if (a === 'fonti') { $('#fonti').hidden = false; const qa = NATIVO() ? '?app=1' : ''; $('#f-elenco').href = CFG.SITO + 'fonti.html' + qa; $('#f-cond').href = CFG.SITO + 'condizioni.html' + qa; $('#f-priv').href = CFG.SITO + 'privacy.html' + qa; $('#f-ver').textContent = 'SostAbile, versione di prova ' + (window.DP_VERSIONE || ''); }
   });
   $('#m-body').addEventListener('change', (e) => {
     if (e.target.id !== 'm-nav') return; const v = e.target.value === 'waze' || e.target.value === 'chiedi' ? e.target.value : 'google';
