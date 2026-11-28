@@ -173,7 +173,9 @@
     if (!f) { f = document.createElement('div'); f.className = 'float fl-dx'; dove.insertBefore(f, dove.querySelector(':scope > .sheet')); }
     if (dx.parentNode !== f) f.appendChild(dx);
   }
-  function mostra() { setTimeout(posizionaOffline, 0); const c = !!selId, d = !!dest, n = aggiungo; spostaTasti(c, d); $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
+  function mostra() { setTimeout(posizionaOffline, 0); const c = !!selId, d = !!dest, n = aggiungo; spostaTasti(c, d);
+    // con una destinazione aperta i riquadri dei comuni (mappa da lontano) si sovrappongono ai posti numerati: si nascondono
+    try { if (map && map.getLayer('zone')) map.setLayoutProperty('zone', 'visibility', d ? 'none' : 'visible'); } catch (e) {} $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
   window.addEventListener('resize', () => { if (!pronta) return; map.resize(); if (LARGO()) espandi(true); if (!selId) map.setPadding(padHome()); });
   function affidabilita(s) { return s.stato === 'ufficiale' ? ['uff', 'Ufficiale'] : s.stato === 'verificato' ? ['ver', 'Verificato'] : ['prop', 'Da verificare']; }
   function posti(n) { return n === 1 ? '1 posto' : n + ' posti'; }
@@ -385,6 +387,7 @@
     map.addSource('sel', { type: 'geojson', data: VUOTO }); map.addSource('conteggi', { type: 'geojson', data: VUOTO });
     map.addSource('zone', { type: 'geojson', data: VUOTO }); img('zona', fondoZona(P), { stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
     map.addLayer({ id: 'zone', type: 'symbol', source: 'zone', maxzoom: CFG.MIN_ZOOM_DATI, layout: { 'icon-image': 'zona', 'icon-text-fit': 'both', 'symbol-sort-key': ['-', ['get', 't']], 'text-field': ['format', ['get', 'n'], { 'font-scale': 0.8 }, '\n', {}, ['get', 'tl'], { 'text-font': ['literal', ['Noto Sans Bold']] }], 'text-font': ['Noto Sans Regular'], 'text-size': 15, 'text-line-height': 1.25, 'text-max-width': 9, 'text-padding': 6 }, paint: { 'text-color': P.testoG } });
+    if (dest) map.setLayoutProperty('zone', 'visibility', 'none');
     map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': P.gruppo, 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': P.anello, 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': P.testoG } });
     const dav = ['==', ['get', 'stato'], 'proposto'];
