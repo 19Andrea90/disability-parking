@@ -73,6 +73,7 @@ details.box>summary{margin:-4px 0 6px}
 .kpi{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .kpi div,.stc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted)}
 .kpi b{display:block;font-size:22px;color:var(--fg);font-variant-numeric:tabular-nums}
+.tg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:10px}.tg>div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px}.tg h4{margin:0 0 6px;font-size:13px}.tb{display:grid;grid-template-columns:52px 1fr 34px;align-items:center;gap:6px;margin:3px 0;font-variant-numeric:tabular-nums}.tb i{display:block;height:10px;border-radius:5px;background:var(--blu-2)}
 .st-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .stc .l,.stc .x{text-transform:none;letter-spacing:0}.stc .l{font-size:12.5px;color:var(--muted)}.stc b{display:block;font-size:24px;font-variant-numeric:tabular-nums;color:var(--fg)}.stc .x{font-size:12.5px;color:var(--muted)}
 .stc.live b::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#1a9e4b;margin-right:7px;vertical-align:middle;animation:pulse 1.6s infinite}
@@ -284,6 +285,8 @@ button.sf-riga:not(:disabled){cursor:pointer}button.sf-riga:hover,.sf-riga.on{ba
         <div class="todo" id="todo"><div class="empty">Carico…</div></div>
         <h3 class="sec-h">Posti in mappa</h3>
         <div class="kpi" id="kpi"></div>
+        <h3 class="sec-h">Tester Android <span class="sub">(test chiuso di Google Play, dal 27/11 · telefoni, non persone · esclusi i tuoi dispositivi)</span></h3>
+        <div id="tester"><div class="sub">Carico…</div></div>
         <div id="stat"><div class="sub" style="margin-top:12px">Carico le statistiche…</div></div>
       </div>
       <div role="tabpanel" id="dp-consumi" aria-labelledby="dt-consumi" hidden>

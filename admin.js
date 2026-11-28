@@ -103,7 +103,7 @@
   // La dashboard ha due schede: "Statistiche dell'app" e "Consumi e limiti gratuiti" (#/dashboard?s=consumi). L'ultima scelta resta in memoria nel browser.
   let dashSez = null;
   PAGES.dashboard = {
-    load(forza) { renderTodo(); aggiornaTodo(); kpiFast(); statistiche(); caricaConsumi(); },
+    load(forza) { renderTodo(); aggiornaTodo(); kpiFast(); statistiche(); caricaConsumi(); caricaTester(); },
     show(params) {
       const s = params.get('s') || lsGet('adm.dashSez', 'stat'); dashSez = s === 'consumi' ? 'consumi' : 'stat';
       if (params.get('s')) lsSet('adm.dashSez', dashSez);
@@ -567,6 +567,24 @@
       ${fissi.length ? `<p>Da tenere d'occhio (spazio occupato, senza proiezione): ${fissi.join(', ')}.</p>` : ''}
       <p class="cs-nota">Proiezione = consumo medio giornaliero finora × giorni del periodo. Serve a capire l'ordine di grandezza: con pochi giorni di dati è molto instabile.</p></section>`;
   }
+  // ---------- tester Android del test chiuso Play (rpc tester_android_admin, supabase/25_tester_android.sql) ----------
+  async function caricaTester() {
+    const box = $('#tester'); if (!box) return;
+    const { data: d, error } = await sb.rpc('tester_android_admin');
+    if (error) {
+      const manca = /function|does not exist|schema cache|could not find/i.test(error.message);
+      box.innerHTML = `<div class="cs-warn" role="alert">${manca ? 'Esegui <b>supabase/25_tester_android.sql</b> nell\'editor SQL di Supabase.' : 'Errore: ' + esc(error.message)}</div>`; return;
+    }
+    const giorni = d.giorni || [], max = Math.max(1, ...giorni.map((x) => x.dispositivi));
+    const barre = giorni.length ? giorni.map((x) => `<div class="tb"><span>${esc(String(x.g).slice(8, 10) + '/' + String(x.g).slice(5, 7))}</span><i style="width:${Math.max(4, Math.round(100 * x.dispositivi / max))}%" title="${x.eventi} eventi"></i><b>${x.dispositivi}</b></div>`).join('') : '<div class="sub">Ancora nessun telefono Android.</div>';
+    const lista = (a, k, l) => a.length ? a.map((x) => `<div class="tb"><span>${esc(String(x[k]))}</span><i style="width:${Math.max(4, Math.round(100 * x[l] / Math.max(...a.map((y) => y[l]))))}%"></i><b>${x[l]}</b></div>`).join('') : '<div class="sub">—</div>';
+    const nomi = { destinazione: 'ricerche', naviga: 'navigazioni', scheda: 'schede aperte', streetview: 'Street View', condividi: 'condivisioni', salva: 'salvati', conferma: 'conferme', segnala: 'segnalazioni', accesso: 'accessi', registrazione: 'registrazioni', suggerimento: 'suggerimenti' };
+    box.innerHTML = `<div class="kpi"><div><b>${d.totale}</b>telefoni dal 27/11</div><div><b>${d.attivi7}</b>attivi negli ultimi 7 giorni</div><div><b>${d.ricorrenti}</b>usati in almeno 3 giorni</div></div>
+      <div class="tg"><div><h4>Telefoni al giorno</h4>${barre}</div>
+      <div><h4>Versione installata</h4>${lista(d.versioni || [], 'v', 'dispositivi')}</div>
+      <div><h4>Cosa fanno</h4>${lista((d.azioni || []).map((x) => ({ t: nomi[x.tipo] || x.tipo, n: x.n })), 't', 'n')}</div></div>`;
+  }
+
   async function caricaConsumi() {
     const box = $('#consumi'); if (!box.innerHTML.trim()) box.innerHTML = '<div class="sub">Carico i consumi…</div>';
     const { data: d, error } = await sb.rpc('consumi_admin');
