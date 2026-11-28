@@ -1,0 +1,32 @@
+name: Copertura per comune
+
+# Ricalcola i totali per comune/provincia/regione (tools/copertura.py) e li carica su Supabase Storage.
+# Serve dopo ogni import di dati: i numeri «nel comune» della ricerca e la mappa da lontano leggono questo file.
+# La copia statica sostabile.it/app/copertura.json si aggiorna alla pubblicazione successiva del sito.
+# Si lancia a mano (Run workflow). Il codice è quello del ramo sostabile.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: copertura
+  cancel-in-progress: false
+
+jobs:
+  copertura:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: sostabile
+      - name: Librerie
+        run: pip install --quiet pyshp shapely pyproj
+      - name: Calcola e carica
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ISTAT_DIR: ${{ runner.temp }}/istat
+        run: python3 -u tools/copertura.py

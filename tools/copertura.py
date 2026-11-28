@@ -26,7 +26,7 @@ import sbleggero as L  # noqa: E402  (regola: mai scaricare tutti gli stalli: i 
 if '--no-cache' in sys.argv: L.NOCACHE = True
 
 SB = 'https://wwereqrojlwktgwlrsib.supabase.co'
-DIR = '/home/claude/istat'
+DIR = os.environ.get('ISTAT_DIR', '/home/claude/istat')
 ANNO = time.strftime('%Y')
 LIM = f'https://www.istat.it/storage/cartografia/confini_amministrativi/generalizzati/{ANNO}/Limiti0101{ANNO}_g.zip'
 ELENCO = 'https://www.istat.it/storage/codici-unita-amministrative/Elenco-comuni-italiani.csv'
