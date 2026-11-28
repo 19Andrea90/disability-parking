@@ -281,7 +281,8 @@ footer .fine{flex-basis:100%;border-top:1px solid rgba(255,255,255,.14);padding-
   <div class="wrap due">
     <div class="box g">
       <h2>Sostieni il progetto</h2>
-      <p>SostAbile è gratuita e senza pubblicità, ed è sviluppata da un privato. Mappe, server e pubblicazione hanno un costo: presto potrai contribuire con una donazione.</p>
+      <p>SostAbile è gratuita e senza pubblicità, ed è sviluppata da un privato. Mappe, server e pubblicazione hanno un costo: con una donazione ci aiuti a tenerla gratis per tutti e a portare sulla mappa nuovi Comuni.</p>
+      <a class="btn giallo" href="https://ko-fi.com/sostabile" rel="noopener">Fai una donazione<svg><use href="#i-freccia"/></svg></a>
     </div>
     <div class="box b">
       <h2>Comuni e associazioni</h2>
@@ -321,6 +322,6 @@ footer .fine{flex-basis:100%;border-top:1px solid rgba(255,255,255,.14);padding-
   }).catch(function () {});
 })();
 </script>
-<script>(function(){try{var q=/[?&]app=1/.test(location.search);if(q)sessionStorage.setItem("dp.app","1");if(q||sessionStorage.getItem("dp.app")){document.querySelectorAll('a[href*="ko-fi.com"]').forEach(function(a){a.remove()})}}catch(e){}})();</script>
+<script>(function(){try{var q=/[?&]app=1/.test(location.search);if(q)sessionStorage.setItem("dp.app","1");if(q||sessionStorage.getItem("dp.app")){document.querySelectorAll('a[href*="ko-fi.com"]').forEach(function(a){a.remove()});var g=document.querySelector('#sostieni .box.g');if(g)g.remove()}}catch(e){}})();</script>
 </body>
 </html>
