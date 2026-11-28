@@ -48,10 +48,16 @@ LIVELLI = (0.02, 0.005)  # lati (gradi) delle celle: prima ~2 km, poi ~500 m, in
 ATTIVI = '/rest/v1/stalli?select=lat,lon,fonte,stato,tipo&stato=in.(proposto,verificato,ufficiale)&order=id'
 
 
+POS = defaultdict(list)  # per comune: (x, y, peso) dei posti visibili, per mettere l'etichetta dove ci sono i posti (di solito il centro del paese)
+
+
 def conta_punto(cnt, geoms, tree, utm, s):
     x, y = utm.transform(s['lon'], s['lat']); p = Point(x, y)
     for i in tree.query(p):
-        if geoms[i].contains(p): cnt[i]['tot'] += 1; cnt[i][s['fonte']] += 1; cnt[i][s['stato']] += 1; cnt[i]['vis'] += s['tipo'] != 'personalizzato'; break
+        if geoms[i].contains(p):
+            cnt[i]['tot'] += 1; cnt[i][s['fonte']] += 1; cnt[i][s['stato']] += 1; cnt[i]['vis'] += s['tipo'] != 'personalizzato'
+            if s['tipo'] != 'personalizzato': POS[int(i)].append((x, y, 1))
+            break
 
 
 def conteggi_scarico(key, geoms, tree, utm):
@@ -82,6 +88,7 @@ def conteggi_db(key, geoms, tree, utm):
             tot += n
             if i >= 0:
                 c = cnt[i]; c['tot'] += n; c['vis'] += vis; c['opendata'] += od; c['osm'] += osm; c['satellite'] += sat; c['utente'] += ut; c['proposto'] += pr
+                if vis: x, y = utm.transform((lo0 + lo1) / 2e5, (la0 + la1) / 2e5); POS[i].append((x, y, vis))
         padre = lato
         print(f'  celle da {lato}\u00b0: {len(celle)} · da raffinare {len(ric)}', flush=True)
         if not ric: break
@@ -89,6 +96,16 @@ def conteggi_db(key, geoms, tree, utm):
         punti = L.rpc('copertura_punti', dict(p_in=ric[k:k + 5000], p_cella_in=padre), key, cache=True); tot += len(punti)
         for lat, lon, fonte, stato, tipo in punti: conta_punto(cnt, geoms, tree, utm, dict(lat=lat, lon=lon, fonte=fonte, stato=stato, tipo=tipo))
     return cnt, tot
+
+
+def etichetta(i, g):
+    """Punto dell'etichetta del comune: tra i punti/celle con posti, quello più vicino al baricentro pesato dei posti
+    (cade sul paese, non nel mezzo dei boschi); senza posti, un punto interno qualsiasi del territorio."""
+    pp = POS.get(i)
+    if not pp: return g.representative_point()
+    w = sum(p[2] for p in pp); mx = sum(p[0] * p[2] for p in pp) / w; my = sum(p[1] * p[2] for p in pp) / w
+    x, y, _ = min(pp, key=lambda p: (p[0] - mx) ** 2 + (p[1] - my) ** 2)
+    return Point(x, y)
 
 
 def main():
@@ -129,7 +146,7 @@ def main():
     for i, m in enumerate(meta):
         t = cnt.get(i, Counter())['vis']
         if not t: continue
-        pt = geoms[i].representative_point(); lo, la = wgs.transform(pt.x, pt.y); com.append(dict(n=m['nome'], lat=round(la, 4), lon=round(lo, 4), t=t))
+        pt = etichetta(i, geoms[i]); lo, la = wgs.transform(pt.x, pt.y); com.append(dict(n=m['nome'], lat=round(la, 4), lon=round(lo, 4), t=t))
         for g, k in ((gr, m.get('regione', '?')), (gp, m.get('prov_nome') or m.get('regione', '?'))): g[k][0] += t; g[k][1] += la * t; g[k][2] += lo * t
     gruppo = lambda g: [dict(n=k.split('/')[0], lat=round(v[1] / v[0], 4), lon=round(v[2] / v[0], 4), t=v[0]) for k, v in g.items() if v[0]]
     rie = json.dumps(dict(creato=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), totale=sum(c['t'] for c in com), regioni=gruppo(gr), province=gruppo(gp), comuni=com), ensure_ascii=False).encode()
