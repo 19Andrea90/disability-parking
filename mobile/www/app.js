@@ -174,8 +174,7 @@
     if (dx.parentNode !== f) f.appendChild(dx);
   }
   function mostra() { setTimeout(posizionaOffline, 0); const c = !!selId, d = !!dest, n = aggiungo; spostaTasti(c, d);
-    // con una destinazione aperta i riquadri dei comuni (mappa da lontano) si sovrappongono ai posti numerati: si nascondono
-    try { if (map && map.getLayer('zone')) map.setLayoutProperty('zone', 'visibility', d ? 'none' : 'visible'); } catch (e) {} $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
+    filtroZone(); $('#card').hidden = !c; $('#add').hidden = !n || c; $('#home').hidden = c || d || n; $('#top').hidden = c || d || n; $('#destbar').hidden = c || !d || n; $('#arrivo').hidden = c || !d || n; }
   window.addEventListener('resize', () => { if (!pronta) return; map.resize(); if (LARGO()) espandi(true); if (!selId) map.setPadding(padHome()); });
   function affidabilita(s) { return s.stato === 'ufficiale' ? ['uff', 'Ufficiale'] : s.stato === 'verificato' ? ['ver', 'Verificato'] : ['prop', 'Da verificare']; }
   function posti(n) { return n === 1 ? '1 posto' : n + ' posti'; }
@@ -351,6 +350,19 @@
   const VUOTO = { type: 'FeatureCollection', features: [] };
   // ---------- vista da lontano: quanti posti per regione, provincia, comune ----------
   let riepilogo = null, livello = '';
+  // con una destinazione aperta si nasconde solo il riquadro del comune della destinazione (finiva sopra i posti numerati); gli altri comuni restano
+  function filtroZone() {
+    try {
+      if (!map.getLayer('zone')) return;
+      let f = null;
+      if (dest && riepilogo && riepilogo.comuni) {
+        let best = null, bd = Infinity;
+        for (const v of riepilogo.comuni) { const dd = (v.lat - dest.lat) ** 2 + ((v.lon - dest.lon) * 0.7) ** 2; if (dd < bd) { bd = dd; best = v; } }
+        if (best && bd < 0.0025) f = ['!=', ['get', 'n'], best.n]; // entro ~5 km
+      }
+      map.setFilter('zone', f);
+    } catch (e) {}
+  }
   const LIVELLI = [['regioni', 7.2, 8.4], ['province', 9.6, 10.6], ['comuni', CFG.MIN_ZOOM_DATI, 14.2]]; // nome, fino a che zoom, zoom dopo il tocco (14,2: la vista è abbastanza stretta per i singoli posti)
   const num = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+$)/g, '.');
   function fondoZona(P) { // fondo blu arrotondato che si allarga attorno al testo
@@ -371,7 +383,7 @@
   // (finché CFG.SITO è l'indirizzo provvisorio la copia non c'è e si usa la riserva).
   const COPERTURA_STATICA = SITO_NATIVO() ? CFG.SITO + 'app/copertura.json' : 'copertura.json';
   const copertura = (url) => fetch(url).then((r) => r.ok ? r.json() : null).then((j) => j && j.regioni ? j : null).catch(() => null);
-  copertura(COPERTURA_STATICA).then((j) => j || copertura(CFG.SB + '/storage/v1/object/public/foto/copertura/riepilogo.json')).then((j) => { if (j) { riepilogo = j; zone(); vicini(); } });
+  copertura(COPERTURA_STATICA).then((j) => j || copertura(CFG.SB + '/storage/v1/object/public/foto/copertura/riepilogo.json')).then((j) => { if (j) { riepilogo = j; zone(); vicini(); filtroZone(); } });
   let baseVis = null; // i livelli della mappa stradale e come erano: servono per nasconderli in vista satellitare
   // Tema: segue il telefono/browser (prefers-color-scheme), nessun interruttore. I colori dei pin e dei cerchi sulla mappa vengono da qui.
   const TEMA_SCURO = window.matchMedia('(prefers-color-scheme: dark)');
@@ -387,7 +399,7 @@
     map.addSource('sel', { type: 'geojson', data: VUOTO }); map.addSource('conteggi', { type: 'geojson', data: VUOTO });
     map.addSource('zone', { type: 'geojson', data: VUOTO }); img('zona', fondoZona(P), { stretchX: [[26, 38]], stretchY: [[26, 38]], content: [16, 11, 48, 53] });
     map.addLayer({ id: 'zone', type: 'symbol', source: 'zone', maxzoom: CFG.MIN_ZOOM_DATI, layout: { 'icon-image': 'zona', 'icon-text-fit': 'both', 'symbol-sort-key': ['-', ['get', 't']], 'text-field': ['format', ['get', 'n'], { 'font-scale': 0.8 }, '\n', {}, ['get', 'tl'], { 'text-font': ['literal', ['Noto Sans Bold']] }], 'text-font': ['Noto Sans Regular'], 'text-size': 15, 'text-line-height': 1.25, 'text-max-width': 9, 'text-padding': 6 }, paint: { 'text-color': P.testoG } });
-    if (dest) map.setLayoutProperty('zone', 'visibility', 'none');
+    filtroZone();
     map.addLayer({ id: 'gruppi', type: 'circle', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], paint: { 'circle-color': P.gruppo, 'circle-radius': ['step', ['get', 'point_count'], 17, 10, 21, 50, 25], 'circle-stroke-color': P.anello, 'circle-stroke-width': 3 } });
     map.addLayer({ id: 'gruppi-n', type: 'symbol', source: 'stalli', minzoom: CFG.MIN_ZOOM_DATI, filter: ['has', 'point_count'], layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': ['Noto Sans Bold'], 'text-size': 14, 'text-allow-overlap': true }, paint: { 'text-color': P.testoG } });
     const dav = ['==', ['get', 'stato'], 'proposto'];
